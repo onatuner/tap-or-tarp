@@ -1,100 +1,136 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MTG Timer</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div id="app">
-    <div id="setup-screen">
-      <h1>MTG Game Timer</h1>
-      <div class="setup-form">
-        <div class="form-group">
-          <label for="player-count">Number of Players (2-8)</label>
-          <input type="number" id="player-count" min="2" max="8" value="2">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tap or Tarp</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="setup-screen">
+        <h1>Tap or Tarp</h1>
+        <div class="setup-form">
+          <div class="form-group">
+            <label for="player-count">Number of Players (2-8)</label>
+            <input type="number" id="player-count" min="2" max="8" value="2" />
+          </div>
+          <div class="form-group">
+            <label for="initial-time">Starting Time (minutes)</label>
+            <input type="number" id="initial-time" min="1" value="10" />
+          </div>
+          <div class="form-group">
+            <label for="penalty-type">Timeout Penalty</label>
+            <select id="penalty-type">
+              <option value="warning">Warning Only</option>
+              <option value="time_deduction">Time Deduction</option>
+              <option value="game_loss">Game Loss</option>
+            </select>
+          </div>
+          <div class="form-group" id="deduction-group" style="display: none">
+            <label for="deduction-amount">Deduction (minutes)</label>
+            <input type="number" id="deduction-amount" min="1" value="5" />
+          </div>
+          <div class="form-group">
+            <label for="join-game">Join Existing Game</label>
+            <input type="text" id="join-game" placeholder="Enter game code" />
+          </div>
+          <button id="create-game" class="btn btn-primary" aria-label="Create new game">
+            Create New Game
+          </button>
+          <button id="join-btn" class="btn btn-secondary" aria-label="Join existing game">
+            Join Game
+          </button>
         </div>
-        <div class="form-group">
-          <label for="initial-time">Starting Time (minutes)</label>
-          <input type="number" id="initial-time" min="1" value="30">
+      </div>
+
+      <div id="game-screen" style="display: none">
+        <div class="game-header">
+          <h1>Tap or Tarp</h1>
+          <div class="game-header-right">
+            <button
+              id="back-to-menu-btn"
+              class="btn btn-secondary"
+              aria-label="Return to main menu"
+            >
+              Back to Menu
+            </button>
+            <div class="game-code">Game Code: <span id="game-code-display"></span></div>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="penalty-type">Timeout Penalty</label>
-          <select id="penalty-type">
-            <option value="warning">Warning Only</option>
-            <option value="time_deduction">Time Deduction</option>
-            <option value="game_loss">Game Loss</option>
-          </select>
+
+        <div id="lobby-banner" class="lobby-banner" style="display: none">
+          <div class="lobby-content">
+            <h2>Select Your Player</h2>
+            <p>
+              Tap a player card to claim it as your own. Share the game code with friends to join
+              from their devices.
+            </p>
+          </div>
         </div>
-        <div class="form-group" id="deduction-group" style="display: none;">
-          <label for="deduction-amount">Deduction (minutes)</label>
-          <input type="number" id="deduction-amount" min="1" value="5">
+
+        <div id="players-container"></div>
+
+        <div class="controls">
+          <button
+            id="start-btn"
+            class="btn btn-control btn-primary"
+            style="display: none"
+            aria-label="Start game"
+          >
+            Start Game
+          </button>
+          <button id="pass-turn-btn" class="btn btn-control" aria-label="Pass turn to next player">
+            Pass Turn
+          </button>
+          <button id="pause-btn" class="btn btn-control" aria-label="Pause or resume game">
+            Pause
+          </button>
+          <button id="reset-btn" class="btn btn-control" aria-label="Reset game">Reset</button>
+          <button id="settings-btn" class="btn btn-control" aria-label="Open settings">
+            Settings
+          </button>
         </div>
-        <div class="form-group">
-          <label for="join-game">Join Existing Game</label>
-          <input type="text" id="join-game" placeholder="Enter game code">
+      </div>
+
+      <div id="settings-modal" style="display: none" class="modal">
+        <div class="modal-content">
+          <h2>Settings</h2>
+          <div class="form-group">
+            <label>Warning Thresholds (minutes)</label>
+            <input
+              type="text"
+              id="warning-thresholds"
+              value="5,1,0.5"
+              placeholder="Comma-separated"
+            />
+          </div>
+          <div class="form-group">
+            <label>Volume</label>
+            <input type="range" id="volume" min="0" max="1" step="0.1" value="0.5" />
+          </div>
+          <div class="modal-actions">
+            <button id="save-settings" class="btn btn-primary" aria-label="Save settings">
+              Save
+            </button>
+            <button id="close-settings" class="btn btn-secondary" aria-label="Close settings">
+              Cancel
+            </button>
+          </div>
         </div>
-        <button id="create-game" class="btn btn-primary" aria-label="Create new game">Create New Game</button>
-        <button id="join-btn" class="btn btn-secondary" aria-label="Join existing game">Join Game</button>
+      </div>
+
+      <div id="timeout-modal" style="display: none" class="modal">
+        <div class="modal-content modal-danger">
+          <h2>TIMEOUT!</h2>
+          <p id="timeout-message"></p>
+          <button id="acknowledge-timeout" class="btn btn-primary" aria-label="Acknowledge timeout">
+            Acknowledge
+          </button>
+        </div>
       </div>
     </div>
 
-    <div id="game-screen" style="display: none;">
-      <div class="game-header">
-        <h1>MTG Timer</h1>
-        <div class="game-header-right">
-          <button id="back-to-menu-btn" class="btn btn-secondary" aria-label="Return to main menu">Back to Menu</button>
-          <div class="game-code">Game Code: <span id="game-code-display"></span></div>
-        </div>
-      </div>
-
-      <div id="lobby-banner" class="lobby-banner" style="display: none;">
-        <div class="lobby-content">
-          <h2>Select Your Player</h2>
-          <p>Tap a player card to claim it as your own. Share the game code with friends to join from their devices.</p>
-        </div>
-      </div>
-
-      <div id="players-container"></div>
-
-      <div class="controls">
-        <button id="start-btn" class="btn btn-control btn-primary" style="display: none;" aria-label="Start game">Start Game</button>
-        <button id="pass-turn-btn" class="btn btn-control" aria-label="Pass turn to next player">Pass Turn</button>
-        <button id="pause-btn" class="btn btn-control" aria-label="Pause or resume game">Pause</button>
-        <button id="reset-btn" class="btn btn-control" aria-label="Reset game">Reset</button>
-        <button id="settings-btn" class="btn btn-control" aria-label="Open settings">Settings</button>
-        <button id="mute-btn" class="btn btn-control" aria-label="Mute or unmute audio">Mute</button>
-      </div>
-    </div>
-
-    <div id="settings-modal" style="display: none;" class="modal">
-      <div class="modal-content">
-        <h2>Settings</h2>
-        <div class="form-group">
-          <label>Warning Thresholds (minutes)</label>
-          <input type="text" id="warning-thresholds" value="5,1,0.5" placeholder="Comma-separated">
-        </div>
-        <div class="form-group">
-          <label>Volume</label>
-          <input type="range" id="volume" min="0" max="1" step="0.1" value="0.5">
-        </div>
-        <div class="modal-actions">
-          <button id="save-settings" class="btn btn-primary" aria-label="Save settings">Save</button>
-          <button id="close-settings" class="btn btn-secondary" aria-label="Close settings">Cancel</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="timeout-modal" style="display: none;" class="modal">
-      <div class="modal-content modal-danger">
-        <h2>TIMEOUT!</h2>
-        <p id="timeout-message"></p>
-        <button id="acknowledge-timeout" class="btn btn-primary" aria-label="Acknowledge timeout">Acknowledge</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="client.js"></script>
-</body>
+    <script src="client.js"></script>
+  </body>
 </html>

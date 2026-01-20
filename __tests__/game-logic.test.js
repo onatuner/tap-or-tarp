@@ -16,7 +16,7 @@ describe("CONSTANTS", () => {
     expect(CONSTANTS.MAX_PLAYERS).toBe(8);
     expect(CONSTANTS.MAX_INITIAL_TIME).toBe(24 * 60 * 60 * 1000);
     expect(CONSTANTS.MAX_PLAYER_NAME_LENGTH).toBe(50);
-    expect(CONSTANTS.DEFAULT_INITIAL_TIME).toBe(30 * 60 * 1000);
+    expect(CONSTANTS.DEFAULT_INITIAL_TIME).toBe(10 * 60 * 1000);
   });
 });
 
@@ -226,6 +226,9 @@ describe("GameSession", () => {
         expect(player.penalties).toBe(0);
         expect(player.isEliminated).toBe(false);
         expect(player.claimedBy).toBe(null);
+        expect(player.life).toBe(20);
+        expect(player.drunkCounter).toBe(0);
+        expect(player.genericCounter).toBe(0);
       });
     });
 
@@ -432,6 +435,28 @@ describe("GameSession", () => {
       session.updatePlayer(99, { name: "Nobody" });
       // Should not throw, just do nothing
       expect(session.players.find(p => p.name === "Nobody")).toBeUndefined();
+    });
+
+    test("should update player life", () => {
+      session.updatePlayer(1, { life: 15 });
+      expect(session.players[0].life).toBe(15);
+    });
+
+    test("should update player drunkCounter", () => {
+      session.updatePlayer(1, { drunkCounter: 3 });
+      expect(session.players[0].drunkCounter).toBe(3);
+    });
+
+    test("should update player genericCounter", () => {
+      session.updatePlayer(1, { genericCounter: 5 });
+      expect(session.players[0].genericCounter).toBe(5);
+    });
+
+    test("should update all counters at once", () => {
+      session.updatePlayer(1, { life: 10, drunkCounter: 2, genericCounter: 4 });
+      expect(session.players[0].life).toBe(10);
+      expect(session.players[0].drunkCounter).toBe(2);
+      expect(session.players[0].genericCounter).toBe(4);
     });
   });
 
