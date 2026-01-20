@@ -8,8 +8,21 @@
   </head>
   <body>
     <div id="app">
-      <div id="setup-screen">
+      <!-- Main Menu Screen -->
+      <div id="main-menu-screen">
         <h1>Tap or Tarp</h1>
+        <div class="menu-container">
+          <button id="menu-casual-btn" class="btn btn-menu">Start New Casual Game</button>
+          <button id="menu-campaign-btn" class="btn btn-menu">Start New Campaign</button>
+          <button id="menu-join-btn" class="btn btn-menu">Join Game</button>
+          <button id="menu-load-btn" class="btn btn-menu">Load Game</button>
+          <button id="menu-settings-btn" class="btn btn-menu">Settings</button>
+        </div>
+      </div>
+
+      <!-- Casual Game Setup Screen -->
+      <div id="casual-setup-screen" style="display: none">
+        <h1>New Casual Game</h1>
         <div class="setup-form">
           <div class="form-group">
             <label for="player-count">Number of Players (2-8)</label>
@@ -19,28 +32,74 @@
             <label for="initial-time">Starting Time (minutes)</label>
             <input type="number" id="initial-time" min="1" value="10" />
           </div>
+          <div class="menu-actions">
+            <button id="create-game" class="btn btn-primary" aria-label="Create new game">
+              Create Game
+            </button>
+            <button id="casual-back-btn" class="btn btn-secondary" aria-label="Back to menu">
+              Back
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Join Game Screen -->
+      <div id="join-screen" style="display: none">
+        <h1>Join Game</h1>
+        <div class="setup-form">
           <div class="form-group">
-            <label for="penalty-type">Timeout Penalty</label>
-            <select id="penalty-type">
-              <option value="warning">Warning Only</option>
-              <option value="time_deduction">Time Deduction</option>
-              <option value="game_loss">Game Loss</option>
-            </select>
+            <label for="join-game">Enter Game Code</label>
+            <input type="text" id="join-game" placeholder="e.g. ABC123" maxlength="6" />
           </div>
-          <div class="form-group" id="deduction-group" style="display: none">
-            <label for="deduction-amount">Deduction (minutes)</label>
-            <input type="number" id="deduction-amount" min="1" value="5" />
+          <div class="menu-actions">
+            <button id="join-btn" class="btn btn-primary" aria-label="Join game">Join</button>
+            <button id="join-back-btn" class="btn btn-secondary" aria-label="Back to menu">
+              Back
+            </button>
           </div>
-          <div class="form-group">
-            <label for="join-game">Join Existing Game</label>
-            <input type="text" id="join-game" placeholder="Enter game code" />
-          </div>
-          <button id="create-game" class="btn btn-primary" aria-label="Create new game">
-            Create New Game
+        </div>
+      </div>
+
+      <!-- Campaign Screen (Placeholder) -->
+      <div id="campaign-screen" style="display: none">
+        <h1>Campaign Mode</h1>
+        <div class="placeholder-content">
+          <p>Campaign mode coming soon!</p>
+          <button id="campaign-back-btn" class="btn btn-secondary" aria-label="Back to menu">
+            Back to Menu
           </button>
-          <button id="join-btn" class="btn btn-secondary" aria-label="Join existing game">
-            Join Game
+        </div>
+      </div>
+
+      <!-- Load Game Screen (Placeholder) -->
+      <div id="load-screen" style="display: none">
+        <h1>Load Game</h1>
+        <div class="placeholder-content">
+          <p>No saved games found.</p>
+          <button id="load-back-btn" class="btn btn-secondary" aria-label="Back to menu">
+            Back to Menu
           </button>
+        </div>
+      </div>
+
+      <!-- Menu Settings Screen -->
+      <div id="menu-settings-screen" style="display: none">
+        <h1>Settings</h1>
+        <div class="setup-form">
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="menu-mute-checkbox" />
+              Mute Audio
+            </label>
+          </div>
+          <div class="menu-actions">
+            <button id="menu-settings-save-btn" class="btn btn-primary" aria-label="Save settings">
+              Save
+            </button>
+            <button id="menu-settings-back-btn" class="btn btn-secondary" aria-label="Back to menu">
+              Back
+            </button>
+          </div>
         </div>
       </div>
 
@@ -95,7 +154,7 @@
 
       <div id="settings-modal" style="display: none" class="modal">
         <div class="modal-content">
-          <h2>Settings</h2>
+          <h2>Game Settings</h2>
           <div class="form-group">
             <label>Warning Thresholds (minutes)</label>
             <input
@@ -104,10 +163,6 @@
               value="5,1,0.5"
               placeholder="Comma-separated"
             />
-          </div>
-          <div class="form-group">
-            <label>Volume</label>
-            <input type="range" id="volume" min="0" max="1" step="0.1" value="0.5" />
           </div>
           <div class="modal-actions">
             <button id="save-settings" class="btn btn-primary" aria-label="Save settings">

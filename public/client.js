@@ -1,10 +1,10 @@
 let ws;
 let gameState = null;
-const audioEnabled = true;
+let audioEnabled = true;
 let audioContext;
 let reconnectAttempts = 0;
 let reconnectTimeout = null;
-let volume = 0.5;
+const volume = 0.5;
 let myClientId = null;
 
 const CONSTANTS = {
@@ -18,17 +18,47 @@ const CONSTANTS = {
   MINUTE_MS: 60000,
 };
 
-const setupScreen = document.getElementById("setup-screen");
-const gameScreen = document.getElementById("game-screen");
+// Screen elements
+const screens = {
+  mainMenu: document.getElementById("main-menu-screen"),
+  casualSetup: document.getElementById("casual-setup-screen"),
+  joinScreen: document.getElementById("join-screen"),
+  campaignScreen: document.getElementById("campaign-screen"),
+  loadScreen: document.getElementById("load-screen"),
+  menuSettings: document.getElementById("menu-settings-screen"),
+  game: document.getElementById("game-screen"),
+};
+
 const playersContainer = document.getElementById("players-container");
 const gameCodeDisplay = document.getElementById("game-code-display");
+
+// Main menu buttons
+const menuButtons = {
+  casual: document.getElementById("menu-casual-btn"),
+  campaign: document.getElementById("menu-campaign-btn"),
+  join: document.getElementById("menu-join-btn"),
+  load: document.getElementById("menu-load-btn"),
+  settings: document.getElementById("menu-settings-btn"),
+};
+
+// Back buttons
+const backButtons = {
+  casual: document.getElementById("casual-back-btn"),
+  join: document.getElementById("join-back-btn"),
+  campaign: document.getElementById("campaign-back-btn"),
+  load: document.getElementById("load-back-btn"),
+  menuSettings: document.getElementById("menu-settings-back-btn"),
+};
+
+// Menu settings
+const menuSettingsForm = {
+  muteCheckbox: document.getElementById("menu-mute-checkbox"),
+  save: document.getElementById("menu-settings-save-btn"),
+};
 
 const setupForm = {
   playerCount: document.getElementById("player-count"),
   initialTime: document.getElementById("initial-time"),
-  penaltyType: document.getElementById("penalty-type"),
-  deductionAmount: document.getElementById("deduction-amount"),
-  deductionGroup: document.getElementById("deduction-group"),
   joinGame: document.getElementById("join-game"),
   createGame: document.getElementById("create-game"),
   joinBtn: document.getElementById("join-btn"),
@@ -47,7 +77,6 @@ const controls = {
 const settingsModal = {
   modal: document.getElementById("settings-modal"),
   thresholds: document.getElementById("warning-thresholds"),
-  volume: document.getElementById("volume"),
   save: document.getElementById("save-settings"),
   close: document.getElementById("close-settings"),
 };
@@ -467,8 +496,8 @@ function createPlayerCard(player, isActive) {
 function renderGame() {
   if (!gameState) return;
 
-  setupScreen.style.display = "none";
-  gameScreen.style.display = "block";
+  hideAllScreens();
+  screens.game.style.display = "block";
   gameCodeDisplay.textContent = gameState.id;
 
   // Show/hide lobby banner based on game status and player selection
@@ -476,10 +505,10 @@ function renderGame() {
   const hasClaimedPlayer = gameState.players.some(p => p.claimedBy === myClientId);
   if (gameState.status === "waiting" && !hasClaimedPlayer) {
     lobbyBanner.style.display = "block";
-    gameScreen.classList.add("lobby-mode");
+    screens.game.classList.add("lobby-mode");
   } else {
     lobbyBanner.style.display = "none";
-    gameScreen.classList.remove("lobby-mode");
+    screens.game.classList.remove("lobby-mode");
   }
 
   playersContainer.innerHTML = "";
@@ -535,8 +564,13 @@ function updateControls() {
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayer);
   const isActivePlayer = activePlayer && activePlayer.claimedBy === myClientId;
 
+  // Check if all players are claimed
+  const allPlayersClaimed = gameState.players.every(p => p.claimedBy !== null);
+
   if (gameState.status === "waiting") {
     controls.start.style.display = "inline-block";
+    controls.start.disabled = !allPlayersClaimed;
+    controls.start.title = allPlayersClaimed ? "" : "All players must be claimed before starting";
     controls.passTurn.style.display = "none";
   } else {
     controls.start.style.display = "none";
@@ -551,7 +585,11 @@ function safeSend(message) {
       ws.send(JSON.stringify(message));
     } catch (e) {
       console.error("Failed to send message:", e.message);
+      alert("Failed to send message. Please try again.");
     }
+  } else {
+    console.error("WebSocket not connected. State:", ws ? ws.readyState : "no socket");
+    alert("Not connected to server. Please wait and try again.");
   }
 }
 
@@ -634,25 +672,93 @@ function hideSettingsModal() {
   settingsModal.modal.style.display = "none";
 }
 
+function hideAllScreens() {
+  Object.values(screens).forEach(screen => {
+    if (screen) screen.style.display = "none";
+  });
+}
+
+function showScreen(screenName) {
+  hideAllScreens();
+  if (screens[screenName]) {
+    screens[screenName].style.display = "block";
+  }
+}
+
 function backToMenu() {
-  setupScreen.style.display = "block";
-  gameScreen.style.display = "none";
+  showScreen("mainMenu");
   gameState = null;
   setupForm.joinGame.value = "";
   playClick();
 }
 
-setupForm.penaltyType.addEventListener("change", e => {
-  setupForm.deductionGroup.style.display = e.target.value === "time_deduction" ? "block" : "none";
+// Main menu navigation
+menuButtons.casual.addEventListener("click", () => {
+  showScreen("casualSetup");
+  playClick();
+});
+
+menuButtons.campaign.addEventListener("click", () => {
+  showScreen("campaignScreen");
+  playClick();
+});
+
+menuButtons.join.addEventListener("click", () => {
+  showScreen("joinScreen");
+  playClick();
+});
+
+menuButtons.load.addEventListener("click", () => {
+  showScreen("loadScreen");
+  playClick();
+});
+
+menuButtons.settings.addEventListener("click", () => {
+  menuSettingsForm.muteCheckbox.checked = !audioEnabled;
+  showScreen("menuSettings");
+  playClick();
+});
+
+// Back buttons
+backButtons.casual.addEventListener("click", () => {
+  showScreen("mainMenu");
+  playClick();
+});
+
+backButtons.join.addEventListener("click", () => {
+  showScreen("mainMenu");
+  playClick();
+});
+
+backButtons.campaign.addEventListener("click", () => {
+  showScreen("mainMenu");
+  playClick();
+});
+
+backButtons.load.addEventListener("click", () => {
+  showScreen("mainMenu");
+  playClick();
+});
+
+backButtons.menuSettings.addEventListener("click", () => {
+  showScreen("mainMenu");
+  playClick();
+});
+
+// Menu settings save
+menuSettingsForm.save.addEventListener("click", () => {
+  audioEnabled = !menuSettingsForm.muteCheckbox.checked;
+  showScreen("mainMenu");
+  playClick();
 });
 
 setupForm.createGame.addEventListener("click", () => {
+  console.log("Create game button clicked");
   const settings = {
     playerCount: parseInt(setupForm.playerCount.value),
     initialTime: parseInt(setupForm.initialTime.value) * 60 * 1000,
-    penaltyType: setupForm.penaltyType.value,
-    penaltyTimeDeduction: parseInt(setupForm.deductionAmount.value) * 60 * 1000,
   };
+  console.log("Settings:", settings);
   sendCreateGame(settings);
 });
 
@@ -704,8 +810,6 @@ settingsModal.save.addEventListener("click", () => {
     sendUpdateSettings({ warningThresholds: thresholds });
   }
 
-  volume = parseFloat(settingsModal.volume.value);
-
   hideSettingsModal();
   playClick();
 });
@@ -730,7 +834,7 @@ timeoutModal.acknowledge.addEventListener("click", () => {
 });
 
 document.addEventListener("keydown", e => {
-  if (!gameState || setupScreen.style.display !== "none") return;
+  if (!gameState || screens.game.style.display === "none") return;
 
   if (e.code === "Space") {
     e.preventDefault();
