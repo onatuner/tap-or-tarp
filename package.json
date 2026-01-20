@@ -1,0 +1,30 @@
+{
+  "name": "tap-or-tarp",
+  "version": "1.0.0",
+  "description": "Browser-based Magic: The Gathering game timer with server-authoritative time tracking",
+  "main": "server.js",
+  "scripts": {
+    "start": "NODE_ENV=production node server.js",
+    "dev": "node server.js",
+    "lint": "eslint server.js public/client.js",
+    "format": "prettier --write server.js public/*.js public/*.html public/*.css"
+  },
+  "keywords": ["mtg", "magic", "timer", "websocket"],
+  "author": "MTG Timer Contributors",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/mtg-timer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/mtg-timer/issues"
+  },
+  "homepage": "https://github.com/yourusername/mtg-timer#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2"
+  }
+}
