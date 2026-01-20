@@ -341,6 +341,21 @@ h1 {
   font-weight: bold;
 }
 
+.you-indicator {
+  font-size: 0.8em;
+  padding: 5px 10px;
+  background: #ff69b4;
+  color: #fff;
+  border-radius: 5px;
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.player-card.my-player {
+  background: rgba(255, 105, 180, 0.1);
+  border-color: #ff69b4;
+}
+
 @media (max-width: 768px) {
   #players-container.players-2,
   #players-container.players-3,

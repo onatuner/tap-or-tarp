@@ -5,6 +5,7 @@ let audioContext;
 let reconnectAttempts = 0;
 let reconnectTimeout = null;
 let volume = 0.5;
+let myPlayerId = null;
 
 const CONSTANTS = {
   RECONNECT_INITIAL_DELAY: 1000,
@@ -105,6 +106,22 @@ function playClick() {
 function playPauseResume() {
   playTone(523.25, 0.15);
   setTimeout(() => playTone(659.25, 0.15), 100);
+}
+
+function loadMyPlayerId() {
+  const savedId = localStorage.getItem('myPlayerId');
+  if (savedId) {
+    myPlayerId = parseInt(savedId);
+  }
+}
+
+function saveMyPlayerId(playerId) {
+  if (playerId === null) {
+    localStorage.removeItem('myPlayerId');
+  } else {
+    localStorage.setItem('myPlayerId', playerId.toString());
+  }
+  myPlayerId = playerId;
 }
 
 function connect() {
@@ -212,6 +229,10 @@ function createPlayerCard(player, isActive) {
     card.classList.add('active');
   }
   
+  if (player.id === myPlayerId) {
+    card.classList.add('my-player');
+  }
+  
   if (gameState.status === 'paused' && isActive) {
     card.classList.add('paused');
   }
@@ -237,6 +258,12 @@ function createPlayerCard(player, isActive) {
   });
   
   const statusSpan = document.createElement('span');
+  if (player.id === myPlayerId) {
+    const youIndicator = document.createElement('span');
+    youIndicator.className = 'you-indicator';
+    youIndicator.textContent = 'YOU';
+    statusSpan.appendChild(youIndicator);
+  }
   if (isActive) {
     const activeIndicator = document.createElement('span');
     activeIndicator.className = 'active-indicator';
@@ -288,6 +315,17 @@ function createPlayerCard(player, isActive) {
   
   card.addEventListener('click', () => {
     sendSwitchPlayer(player.id);
+    playClick();
+  });
+  
+  card.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (player.id === myPlayerId) {
+      saveMyPlayerId(null);
+    } else {
+      saveMyPlayerId(player.id);
+    }
+    renderGame();
     playClick();
   });
   
@@ -368,10 +406,6 @@ function sendCreateGame(settings) {
 
 function sendJoinGame(gameId) {
   safeSend({ type: 'join', data: { gameId } });
-}
-
-function sendStartGame() {
-  safeSend({ type: 'start' });
 }
 
 function sendPause() {
@@ -526,4 +560,5 @@ window.addEventListener('click', () => {
   }
 });
 
+loadMyPlayerId();
 connect();

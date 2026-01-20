@@ -17,7 +17,9 @@ const CONSTANTS = {
   INACTIVE_SESSION_THRESHOLD: 24 * 60 * 60 * 1000,
   EMPTY_SESSION_THRESHOLD: 5 * 60 * 1000,
   DEFAULT_INITIAL_TIME: 30 * 60 * 1000,
-  WARNING_TICK_DELTA: 100
+  WARNING_TICK_DELTA: 100,
+  RATE_LIMIT_WINDOW: 1000,
+  RATE_LIMIT_MAX_MESSAGES: 20
 };
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -246,6 +248,13 @@ class GameSession {
       settings: this.settings
     };
   }
+
+  cleanup() {
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
+  }
 }
 
 function validateSettings(settings) {
@@ -270,15 +279,54 @@ function validatePlayerName(name) {
   return true;
 }
 
+function validateWarningThresholds(thresholds) {
+  if (!Array.isArray(thresholds)) return false;
+  if (thresholds.length === 0 || thresholds.length > 10) return false;
+  return thresholds.every(t => 
+    typeof t === 'number' && 
+    Number.isFinite(t) && 
+    t > 0 && 
+    t <= CONSTANTS.MAX_INITIAL_TIME
+  );
+}
+
+function validateTimeValue(time) {
+  if (typeof time !== 'number') return false;
+  if (!Number.isFinite(time)) return false;
+  if (time < 0 || time > CONSTANTS.MAX_INITIAL_TIME) return false;
+  return true;
+}
+
 function sanitizeString(str) {
   if (typeof str !== 'string') return str;
   return str.replace(/[<>]/g, '');
 }
 
 wss.on('connection', (ws) => {
+  ws.messageTimestamps = [];
+
   ws.on('message', (message) => {
+    // Rate limiting
+    const now = Date.now();
+    ws.messageTimestamps = ws.messageTimestamps.filter(
+      ts => now - ts < CONSTANTS.RATE_LIMIT_WINDOW
+    );
+    
+    if (ws.messageTimestamps.length >= CONSTANTS.RATE_LIMIT_MAX_MESSAGES) {
+      ws.send(JSON.stringify({ type: 'error', data: { message: 'Rate limit exceeded' } }));
+      return;
+    }
+    ws.messageTimestamps.push(now);
+
     try {
-      const { type, data } = JSON.parse(message);
+      const parsed = JSON.parse(message);
+      const type = parsed.type;
+      const data = parsed.data || {};
+
+      if (!type || typeof type !== 'string') {
+        ws.send(JSON.stringify({ type: 'error', data: { message: 'Invalid message type' } }));
+        return;
+      }
 
       switch (type) {
       case 'create': {
@@ -346,6 +394,7 @@ wss.on('connection', (ws) => {
         if (session) {
           if (data.playerId === undefined || data.playerId < 1 || data.playerId > CONSTANTS.MAX_PLAYERS) break;
           if (data.name !== undefined && !validatePlayerName(data.name)) break;
+          if (data.time !== undefined && !validateTimeValue(data.time)) break;
           if (data.name !== undefined) {
             data.name = sanitizeString(data.name);
           }
@@ -377,6 +426,10 @@ wss.on('connection', (ws) => {
         if (session) {
           session.lastActivity = Date.now();
           if (data.warningThresholds !== undefined) {
+            if (!validateWarningThresholds(data.warningThresholds)) {
+              ws.send(JSON.stringify({ type: 'error', data: { message: 'Invalid warning thresholds' } }));
+              break;
+            }
             session.settings.warningThresholds = data.warningThresholds;
             session.broadcastState();
           }
@@ -406,11 +459,20 @@ wss.on('connection', (ws) => {
 
 function generateGameId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let id = '';
-  for (let i = 0; i < 6; i++) {
-    id += chars.charAt(Math.floor(Math.random() * chars.length));
+  const maxAttempts = 100;
+  
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    let id = '';
+    for (let i = 0; i < 6; i++) {
+      id += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    if (!gameSessions.has(id)) {
+      return id;
+    }
   }
-  return id;
+  
+  // Fallback: append timestamp if all attempts fail
+  return Date.now().toString(36).toUpperCase().slice(-6);
 }
 
 setInterval(() => {
@@ -421,9 +483,12 @@ setInterval(() => {
       client => client.gameId === gameId && client.readyState === WebSocket.OPEN
     ).length;
 
-    if (clientsConnected === 0 && now - session.lastActivity > CONSTANTS.EMPTY_SESSION_THRESHOLD) {
-      gameSessions.delete(gameId);
-    } else if (now - session.lastActivity > CONSTANTS.INACTIVE_SESSION_THRESHOLD) {
+    const shouldDelete = 
+      (clientsConnected === 0 && now - session.lastActivity > CONSTANTS.EMPTY_SESSION_THRESHOLD) ||
+      (now - session.lastActivity > CONSTANTS.INACTIVE_SESSION_THRESHOLD);
+
+    if (shouldDelete) {
+      session.cleanup();
       gameSessions.delete(gameId);
     }
   }
