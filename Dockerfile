@@ -31,6 +31,7 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy application code
 COPY --chown=mtgtimer:nodejs server.js ./
 COPY --chown=mtgtimer:nodejs public ./public
+COPY --chown=mtgtimer:nodejs lib ./lib
 
 # Switch to non-root user
 USER mtgtimer
