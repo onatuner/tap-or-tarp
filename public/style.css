@@ -357,8 +357,99 @@ h1 {
 }
 
 .player-card.my-player {
-  background: rgba(204, 85, 144, 0.1);
+  background: rgba(204, 85, 144, 0.15);
   border-color: #cc5590;
+  box-shadow: 0 0 20px rgba(204, 85, 144, 0.4);
+}
+
+/* Lobby/Waiting state styles */
+.lobby-banner {
+  background: linear-gradient(135deg, rgba(0, 102, 0, 0.2) 0%, rgba(0, 50, 0, 0.3) 100%);
+  border: 2px solid #006600;
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.lobby-banner h2 {
+  color: #00cc00;
+  margin-bottom: 10px;
+  font-size: 1.5em;
+}
+
+.lobby-banner p {
+  color: #aaa;
+  font-size: 1em;
+  margin: 0;
+}
+
+/* Selectable cards in lobby mode */
+.player-card.selectable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.player-card.selectable:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 102, 0, 0.3);
+}
+
+.player-card.selectable:not(.my-player):not(.claimed-other):hover {
+  border-color: #006600;
+  background: rgba(0, 102, 0, 0.1);
+}
+
+/* Claimed by another player */
+.player-card.claimed-other {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.player-card.claimed-other:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Claimed/Taken indicator */
+.claimed-indicator {
+  font-size: 0.8em;
+  padding: 5px 10px;
+  background: #666;
+  color: #fff;
+  border-radius: 5px;
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+/* Select prompt for unclaimed cards */
+.select-prompt {
+  text-align: center;
+  color: #00cc00;
+  font-size: 0.9em;
+  padding: 10px;
+  margin: 10px 0;
+  border: 2px dashed rgba(0, 204, 0, 0.4);
+  border-radius: 8px;
+  background: rgba(0, 102, 0, 0.1);
+  animation: pulse-prompt 2s infinite;
+}
+
+@keyframes pulse-prompt {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Status badges container */
+.status-badges {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 768px) {

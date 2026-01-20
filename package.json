@@ -7,9 +7,17 @@
     "start": "NODE_ENV=production node server.js",
     "dev": "node server.js",
     "lint": "eslint server.js public/client.js",
-    "format": "prettier --write server.js public/*.js public/*.html public/*.css"
+    "format": "prettier --write server.js public/*.js public/*.html public/*.css",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
-  "keywords": ["mtg", "magic", "timer", "websocket"],
+  "keywords": [
+    "mtg",
+    "magic",
+    "timer",
+    "websocket"
+  ],
   "author": "MTG Timer Contributors",
   "license": "MIT",
   "engines": {
@@ -29,6 +37,7 @@
   },
   "devDependencies": {
     "eslint": "^8.57.0",
+    "jest": "^30.2.0",
     "prettier": "^3.2.5"
   }
 }

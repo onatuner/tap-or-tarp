@@ -5,7 +5,7 @@ let audioContext;
 let reconnectAttempts = 0;
 let reconnectTimeout = null;
 let volume = 0.5;
-let myPlayerId = null;
+let myClientId = null;
 
 const CONSTANTS = {
   RECONNECT_INITIAL_DELAY: 1000,
@@ -111,20 +111,12 @@ function playPauseResume() {
   setTimeout(() => playTone(659.25, 0.15), 100);
 }
 
-function loadMyPlayerId() {
-  const savedId = localStorage.getItem('myPlayerId');
-  if (savedId) {
-    myPlayerId = parseInt(savedId);
-  }
-}
-
-function saveMyPlayerId(playerId) {
-  if (playerId === null) {
-    localStorage.removeItem('myPlayerId');
-  } else {
-    localStorage.setItem('myPlayerId', playerId.toString());
-  }
-  myPlayerId = playerId;
+// Get the player ID claimed by this client (used for future features)
+// eslint-disable-next-line no-unused-vars
+function getMyPlayerId() {
+  if (!gameState || !myClientId) return null;
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  return myPlayer ? myPlayer.id : null;
 }
 
 function connect() {
@@ -161,6 +153,9 @@ function connect() {
 
 function handleMessage(message) {
   switch (message.type) {
+    case 'clientId':
+      myClientId = message.data.clientId;
+      break;
     case 'error':
       alert(message.data.message);
       break;
@@ -224,6 +219,10 @@ function createPlayerCard(player, isActive) {
   card.className = 'player-card';
   card.dataset.playerId = player.id;
   
+  const isMyPlayer = player.claimedBy && player.claimedBy === myClientId;
+  const isClaimed = player.claimedBy != null; // using != to catch both null and undefined
+  const isWaiting = gameState.status === 'waiting';
+  
   if (player.isEliminated) {
     card.classList.add('eliminated');
   }
@@ -232,8 +231,16 @@ function createPlayerCard(player, isActive) {
     card.classList.add('active');
   }
   
-  if (player.id === myPlayerId) {
+  if (isMyPlayer) {
     card.classList.add('my-player');
+  }
+  
+  if (isClaimed && !isMyPlayer) {
+    card.classList.add('claimed-other');
+  }
+  
+  if (isWaiting) {
+    card.classList.add('selectable');
   }
   
   if (gameState.status === 'paused' && isActive) {
@@ -259,14 +266,25 @@ function createPlayerCard(player, isActive) {
   nameInput.addEventListener('change', (e) => {
     sendUpdatePlayer(player.id, { name: e.target.value });
   });
+  nameInput.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
   
   const statusSpan = document.createElement('span');
-  if (player.id === myPlayerId) {
+  statusSpan.className = 'status-badges';
+  
+  if (isMyPlayer) {
     const youIndicator = document.createElement('span');
     youIndicator.className = 'you-indicator';
     youIndicator.textContent = 'YOU';
     statusSpan.appendChild(youIndicator);
+  } else if (isClaimed && isWaiting) {
+    const claimedIndicator = document.createElement('span');
+    claimedIndicator.className = 'claimed-indicator';
+    claimedIndicator.textContent = 'TAKEN';
+    statusSpan.appendChild(claimedIndicator);
   }
+  
   if (isActive) {
     const activeIndicator = document.createElement('span');
     activeIndicator.className = 'active-indicator';
@@ -277,6 +295,14 @@ function createPlayerCard(player, isActive) {
   nameContainer.appendChild(nameInput);
   nameContainer.appendChild(statusSpan);
   card.appendChild(nameContainer);
+  
+  // Show selection prompt in waiting phase for unclaimed cards
+  if (isWaiting && !isClaimed) {
+    const selectPrompt = document.createElement('div');
+    selectPrompt.className = 'select-prompt';
+    selectPrompt.textContent = 'Tap to select';
+    card.appendChild(selectPrompt);
+  }
   
   const timeDisplay = document.createElement('div');
   timeDisplay.className = 'player-time';
@@ -316,15 +342,29 @@ function createPlayerCard(player, isActive) {
   status.innerHTML = `Penalties: <span class="penalties">${player.penalties}</span>`;
   card.appendChild(status);
   
+  // Click to claim/unclaim in waiting phase
+  card.addEventListener('click', () => {
+    if (isWaiting) {
+      if (isMyPlayer) {
+        sendUnclaim();
+      } else if (!isClaimed) {
+        sendClaim(player.id);
+      }
+      playClick();
+    }
+  });
+  
+  // Right-click also works for claiming
   card.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    if (player.id === myPlayerId) {
-      saveMyPlayerId(null);
-    } else {
-      saveMyPlayerId(player.id);
+    if (isWaiting) {
+      if (isMyPlayer) {
+        sendUnclaim();
+      } else if (!isClaimed) {
+        sendClaim(player.id);
+      }
+      playClick();
     }
-    renderGame();
-    playClick();
   });
   
   return card;
@@ -336,6 +376,16 @@ function renderGame() {
   setupScreen.style.display = 'none';
   gameScreen.style.display = 'block';
   gameCodeDisplay.textContent = gameState.id;
+  
+  // Show/hide lobby banner based on game status
+  const lobbyBanner = document.getElementById('lobby-banner');
+  if (gameState.status === 'waiting') {
+    lobbyBanner.style.display = 'block';
+    gameScreen.classList.add('lobby-mode');
+  } else {
+    lobbyBanner.style.display = 'none';
+    gameScreen.classList.remove('lobby-mode');
+  }
   
   playersContainer.innerHTML = '';
   playersContainer.className = `players-${gameState.players.length}`;
@@ -452,6 +502,14 @@ function sendUpdatePlayer(playerId, updates) {
 
 function sendUpdateSettings(settings) {
   safeSend({ type: 'updateSettings', data: settings });
+}
+
+function sendClaim(playerId) {
+  safeSend({ type: 'claim', data: { playerId } });
+}
+
+function sendUnclaim() {
+  safeSend({ type: 'unclaim', data: {} });
 }
 
 function showTimeoutModal(player) {
@@ -590,5 +648,4 @@ window.addEventListener('click', () => {
   }
 });
 
-loadMyPlayerId();
 connect();
