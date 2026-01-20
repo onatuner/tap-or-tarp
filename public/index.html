@@ -43,12 +43,17 @@
     <div id="game-screen" style="display: none;">
       <div class="game-header">
         <h1>MTG Timer</h1>
-        <div class="game-code">Game Code: <span id="game-code-display"></span></div>
+        <div class="game-header-right">
+          <button id="back-to-menu-btn" class="btn btn-secondary" aria-label="Return to main menu">Back to Menu</button>
+          <div class="game-code">Game Code: <span id="game-code-display"></span></div>
+        </div>
       </div>
 
       <div id="players-container"></div>
 
       <div class="controls">
+        <button id="start-btn" class="btn btn-control btn-primary" style="display: none;" aria-label="Start game">Start Game</button>
+        <button id="pass-turn-btn" class="btn btn-control" aria-label="Pass turn to next player">Pass Turn</button>
         <button id="pause-btn" class="btn btn-control" aria-label="Pause or resume game">Pause</button>
         <button id="reset-btn" class="btn btn-control" aria-label="Reset game">Reset</button>
         <button id="settings-btn" class="btn btn-control" aria-label="Open settings">Settings</button>

@@ -35,10 +35,13 @@ const setupForm = {
 };
 
 const controls = {
+  start: document.getElementById('start-btn'),
+  passTurn: document.getElementById('pass-turn-btn'),
   pause: document.getElementById('pause-btn'),
   reset: document.getElementById('reset-btn'),
   settings: document.getElementById('settings-btn'),
-  mute: document.getElementById('mute-btn')
+  mute: document.getElementById('mute-btn'),
+  backToMenu: document.getElementById('back-to-menu-btn')
 };
 
 const settingsModal = {
@@ -313,11 +316,6 @@ function createPlayerCard(player, isActive) {
   status.innerHTML = `Penalties: <span class="penalties">${player.penalties}</span>`;
   card.appendChild(status);
   
-  card.addEventListener('click', () => {
-    sendSwitchPlayer(player.id);
-    playClick();
-  });
-  
   card.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     if (player.id === myPlayerId) {
@@ -388,6 +386,12 @@ function updateControls() {
   
   controls.pause.textContent = gameState.status === 'paused' ? 'Resume' : 'Pause';
   controls.mute.textContent = audioEnabled ? 'Mute' : 'Unmute';
+  
+  if (gameState.status === 'waiting') {
+    controls.start.style.display = 'inline-block';
+  } else {
+    controls.start.style.display = 'none';
+  }
 }
 
 function safeSend(message) {
@@ -408,6 +412,10 @@ function sendJoinGame(gameId) {
   safeSend({ type: 'join', data: { gameId } });
 }
 
+function sendStart() {
+  safeSend({ type: 'start' });
+}
+
 function sendPause() {
   safeSend({ type: 'pause' });
 }
@@ -418,6 +426,24 @@ function sendReset() {
 
 function sendSwitchPlayer(playerId) {
   safeSend({ type: 'switch', data: { playerId } });
+}
+
+function sendPassTurn() {
+  if (!gameState || gameState.players.length <= 1) return;
+  
+  const activeIndex = gameState.players.findIndex(p => p.id === gameState.activePlayer);
+  let nextPlayer;
+  let offset = 1;
+  do {
+    const nextIndex = (activeIndex + offset) % gameState.players.length;
+    nextPlayer = gameState.players[nextIndex];
+    offset++;
+  } while (nextPlayer.isEliminated && offset <= gameState.players.length);
+  
+  if (!nextPlayer.isEliminated) {
+    sendSwitchPlayer(nextPlayer.id);
+    playClick();
+  }
 }
 
 function sendUpdatePlayer(playerId, updates) {
@@ -443,6 +469,14 @@ function showSettingsModal() {
 
 function hideSettingsModal() {
   settingsModal.modal.style.display = 'none';
+}
+
+function backToMenu() {
+  setupScreen.style.display = 'block';
+  gameScreen.style.display = 'none';
+  gameState = null;
+  setupForm.joinGame.value = '';
+  playClick();
 }
 
 setupForm.penaltyType.addEventListener('change', (e) => {
@@ -490,6 +524,12 @@ controls.mute.addEventListener('click', () => {
   playClick();
 });
 
+controls.backToMenu.addEventListener('click', () => {
+  if (confirm('Are you sure you want to return to the main menu? This will disconnect you from the current game.')) {
+    backToMenu();
+  }
+});
+
 settingsModal.save.addEventListener('click', () => {
   const thresholdsValue = settingsModal.thresholds.value;
   const thresholds = thresholdsValue.split(',').map(t => {
@@ -512,6 +552,15 @@ settingsModal.close.addEventListener('click', () => {
   playClick();
 });
 
+controls.start.addEventListener('click', () => {
+  sendStart();
+  playClick();
+});
+
+controls.passTurn.addEventListener('click', () => {
+  sendPassTurn();
+});
+
 timeoutModal.acknowledge.addEventListener('click', () => {
   hideTimeoutModal();
   playClick();
@@ -522,35 +571,16 @@ document.addEventListener('keydown', (e) => {
   
   if (e.code === 'Space') {
     e.preventDefault();
-    const activeIndex = gameState.players.findIndex(p => p.id === gameState.activePlayer);
-    let nextPlayer;
-    let offset = 1;
-    do {
-      const nextIndex = (activeIndex + offset) % gameState.players.length;
-      nextPlayer = gameState.players[nextIndex];
-      offset++;
-    } while (nextPlayer.isEliminated && offset <= gameState.players.length);
-    
-    if (!nextPlayer.isEliminated) {
-      sendSwitchPlayer(nextPlayer.id);
-      playClick();
-    }
+    sendPassTurn();
   } else if (e.code === 'KeyP') {
     e.preventDefault();
     sendPause();
-    playClick();
+    playPauseResume();
   } else if (e.code === 'KeyM') {
     e.preventDefault();
     audioEnabled = !audioEnabled;
     updateControls();
     playClick();
-  } else if (e.key >= '1' && e.key <= '8') {
-    const playerId = parseInt(e.key);
-    const player = gameState.players.find(p => p.id === playerId);
-    if (player && !player.isEliminated) {
-      sendSwitchPlayer(playerId);
-      playClick();
-    }
   }
 });
 
