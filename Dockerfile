@@ -3,6 +3,9 @@
 # Use Node.js 20 LTS (Alpine for smaller image size)
 FROM node:20-alpine AS base
 
+# Install build dependencies for native modules (better-sqlite3)
+RUN apk add --no-cache python3 make g++
+
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
@@ -10,11 +13,11 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install production dependencies only
+# Install production dependencies (including native modules)
 RUN npm ci --only=production && npm cache clean --force
 
 # Production image
-FROM base AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Set production environment
@@ -25,7 +28,10 @@ ENV PORT=8080
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 mtgtimer
 
-# Copy built dependencies
+# Create data directory for SQLite persistence
+RUN mkdir -p /app/data && chown -R mtgtimer:nodejs /app/data
+
+# Copy built dependencies (including native modules)
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy application code
@@ -38,6 +44,9 @@ USER mtgtimer
 
 # Expose port
 EXPOSE 8080
+
+# Volume for persistent data
+VOLUME ["/app/data"]
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

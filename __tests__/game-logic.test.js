@@ -523,6 +523,207 @@ describe("GameSession", () => {
       expect(state).toHaveProperty("status", "waiting");
       expect(state).toHaveProperty("createdAt");
       expect(state).toHaveProperty("settings");
+      expect(state).toHaveProperty("ownerId");
+    });
+  });
+
+  describe("authorization", () => {
+    describe("setOwner", () => {
+      test("should set owner when not already set", () => {
+        session.setOwner("client1");
+        expect(session.ownerId).toBe("client1");
+      });
+
+      test("should not overwrite existing owner", () => {
+        session.setOwner("client1");
+        session.setOwner("client2");
+        expect(session.ownerId).toBe("client1");
+      });
+    });
+
+    describe("isOwner", () => {
+      test("should return true for owner", () => {
+        session.setOwner("client1");
+        expect(session.isOwner("client1")).toBe(true);
+      });
+
+      test("should return false for non-owner", () => {
+        session.setOwner("client1");
+        expect(session.isOwner("client2")).toBe(false);
+      });
+
+      test("should return false when no owner set", () => {
+        expect(session.isOwner("client1")).toBe(false);
+      });
+    });
+
+    describe("isPlayerOwner", () => {
+      test("should return true when client claimed the player", () => {
+        session.claimPlayer(1, "client1");
+        expect(session.isPlayerOwner(1, "client1")).toBe(true);
+      });
+
+      test("should return false when client did not claim the player", () => {
+        session.claimPlayer(1, "client1");
+        expect(session.isPlayerOwner(1, "client2")).toBe(false);
+      });
+
+      test("should return false for unclaimed player", () => {
+        expect(session.isPlayerOwner(1, "client1")).toBe(false);
+      });
+
+      test("should return false for non-existent player", () => {
+        expect(session.isPlayerOwner(99, "client1")).toBe(false);
+      });
+    });
+
+    describe("hasClaimedPlayer", () => {
+      test("should return true when client has claimed a player", () => {
+        session.claimPlayer(1, "client1");
+        expect(session.hasClaimedPlayer("client1")).toBe(true);
+      });
+
+      test("should return false when client has not claimed any player", () => {
+        expect(session.hasClaimedPlayer("client1")).toBe(false);
+      });
+
+      test("should return false after unclaiming", () => {
+        session.claimPlayer(1, "client1");
+        session.unclaimPlayer("client1");
+        expect(session.hasClaimedPlayer("client1")).toBe(false);
+      });
+    });
+
+    describe("canModifyPlayer", () => {
+      test("should return true for owner modifying any player", () => {
+        session.setOwner("owner");
+        session.claimPlayer(1, "client1");
+        expect(session.canModifyPlayer(1, "owner")).toBe(true);
+        expect(session.canModifyPlayer(2, "owner")).toBe(true);
+      });
+
+      test("should return true for player owner modifying their player", () => {
+        session.setOwner("owner");
+        session.claimPlayer(1, "client1");
+        expect(session.canModifyPlayer(1, "client1")).toBe(true);
+      });
+
+      test("should return false for non-owner modifying other player", () => {
+        session.setOwner("owner");
+        session.claimPlayer(1, "client1");
+        session.claimPlayer(2, "client2");
+        expect(session.canModifyPlayer(1, "client2")).toBe(false);
+      });
+    });
+
+    describe("canControlGame", () => {
+      test("should return true for owner", () => {
+        session.setOwner("owner");
+        expect(session.canControlGame("owner")).toBe(true);
+      });
+
+      test("should return true for client with claimed player", () => {
+        session.setOwner("owner");
+        session.claimPlayer(1, "client1");
+        expect(session.canControlGame("client1")).toBe(true);
+      });
+
+      test("should return false for client without claimed player and not owner", () => {
+        session.setOwner("owner");
+        expect(session.canControlGame("spectator")).toBe(false);
+      });
+    });
+
+    describe("canSwitchPlayer", () => {
+      test("should return true for anyone during waiting phase", () => {
+        session.setOwner("owner");
+        expect(session.canSwitchPlayer(1, "spectator")).toBe(true);
+      });
+
+      test("should return true for owner during game", () => {
+        session.setOwner("owner");
+        session.start();
+        expect(session.canSwitchPlayer(2, "owner")).toBe(true);
+      });
+
+      test("should return true for active player owner during game", () => {
+        session.setOwner("owner");
+        session.claimPlayer(1, "client1");
+        session.start();
+        expect(session.canSwitchPlayer(2, "client1")).toBe(true);
+      });
+
+      test("should return false for non-active player during game", () => {
+        session.setOwner("owner");
+        session.claimPlayer(2, "client2");
+        session.start();
+        expect(session.activePlayer).toBe(1);
+        expect(session.canSwitchPlayer(3, "client2")).toBe(false);
+      });
+    });
+  });
+
+  describe("toJSON and fromState", () => {
+    test("toJSON should return serializable state", () => {
+      session.setOwner("owner");
+      session.claimPlayer(1, "client1");
+      const json = session.toJSON();
+
+      expect(json).toHaveProperty("id", "TEST01");
+      expect(json).toHaveProperty("players");
+      expect(json).toHaveProperty("activePlayer");
+      expect(json).toHaveProperty("status");
+      expect(json).toHaveProperty("createdAt");
+      expect(json).toHaveProperty("lastActivity");
+      expect(json).toHaveProperty("settings");
+      expect(json).toHaveProperty("ownerId", "owner");
+
+      // Should be JSON serializable
+      expect(() => JSON.stringify(json)).not.toThrow();
+    });
+
+    test("fromState should restore session state", () => {
+      session.setOwner("owner");
+      session.claimPlayer(1, "client1");
+      session.updatePlayer(1, { name: "Alice" });
+
+      const json = session.toJSON();
+      const restored = GameSession.fromState(json);
+
+      expect(restored.id).toBe(session.id);
+      expect(restored.ownerId).toBe("owner");
+      expect(restored.players[0].name).toBe("Alice");
+      expect(restored.players[0].claimedBy).toBe("client1");
+      expect(restored.settings).toEqual(session.settings);
+
+      restored.cleanup();
+    });
+
+    test("fromState should pause running games", () => {
+      session.start();
+      expect(session.status).toBe("running");
+
+      const json = session.toJSON();
+      json.status = "running"; // Simulate running state in persisted data
+
+      const restored = GameSession.fromState(json);
+      expect(restored.status).toBe("paused");
+
+      restored.cleanup();
+    });
+
+    test("fromState should preserve waiting and paused status", () => {
+      const waitingJson = session.toJSON();
+      const restoredWaiting = GameSession.fromState(waitingJson);
+      expect(restoredWaiting.status).toBe("waiting");
+      restoredWaiting.cleanup();
+
+      session.start();
+      session.pause();
+      const pausedJson = session.toJSON();
+      const restoredPaused = GameSession.fromState(pausedJson);
+      expect(restoredPaused.status).toBe("paused");
+      restoredPaused.cleanup();
     });
   });
 
