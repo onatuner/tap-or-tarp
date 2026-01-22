@@ -16,10 +16,21 @@ const { createStorage, isAsyncStorage } = require("./lib/storage");
 const { logger } = require("./lib/logger");
 const metrics = require("./lib/metrics");
 const { withGameLock, getLockStats } = require("./lib/lock");
+const { RateLimiter, ConnectionRateLimiter, getClientIP } = require("./lib/rate-limiter");
 const AsyncLock = require("async-lock");
 
 // Separate lock for game creation to prevent ID collisions
 const createGameLock = new AsyncLock({ timeout: 5000 });
+
+// IP-based rate limiters
+const messageRateLimiter = new RateLimiter({
+  windowMs: 1000,
+  maxRequests: 30, // 30 messages per second per IP
+});
+const connectionRateLimiter = new ConnectionRateLimiter({
+  windowMs: 60000,
+  maxConnections: 20, // 20 connections per minute per IP
+});
 const Sentry = require("@sentry/node");
 const crypto = require("crypto");
 
@@ -52,8 +63,12 @@ const HOST = "0.0.0.0";
 const STORAGE_TYPE = process.env.STORAGE_TYPE || "sqlite";
 const DB_PATH = process.env.DB_PATH || "./data/sessions.db";
 const REDIS_URL = process.env.REDIS_URL || null;
-const PERSISTENCE_INTERVAL = 10000; // Save active games every 10 seconds
+const PERSISTENCE_INTERVAL = 5000; // Save active games every 5 seconds (reduced from 10s)
 const HEARTBEAT_INTERVAL = 30000; // Instance heartbeat every 30 seconds
+
+// WebSocket backpressure configuration
+const MAX_BUFFER_SIZE = 1024 * 1024; // 1MB max buffer before dropping messages
+const BUFFER_WARNING_SIZE = 512 * 1024; // 512KB warning threshold
 
 // Generate unique instance ID for horizontal scaling
 const INSTANCE_ID =
@@ -115,6 +130,18 @@ const wss = new WebSocket.Server({
   server,
   maxPayload: 64 * 1024, // 64KB max message size
   verifyClient: ({ origin, req }, callback) => {
+    // IP-based connection rate limiting
+    const clientIP = getClientIP(req);
+    if (!connectionRateLimiter.isConnectionAllowed(clientIP)) {
+      logger.warn({ ip: clientIP }, "Connection rate limit exceeded");
+      metrics.recordRateLimitExceeded("connection");
+      callback(false, 429, "Too Many Requests: Connection rate limit exceeded");
+      return;
+    }
+
+    // Store IP on request for later use
+    req.clientIP = clientIP;
+
     // If no allowed origins configured, allow all (development mode)
     if (!ALLOWED_ORIGINS) {
       callback(true);
@@ -192,6 +219,12 @@ app.get("/health", async (req, res) => {
   // Add lock stats for monitoring
   healthData.locks = getLockStats();
 
+  // Add rate limiter stats
+  healthData.rateLimiter = {
+    messages: messageRateLimiter.getStats(),
+    connections: connectionRateLimiter.getStats(),
+  };
+
   res.status(200).json(healthData);
 });
 
@@ -213,17 +246,75 @@ app.get("/metrics", async (req, res) => {
 const gameSessions = new Map();
 
 /**
- * Broadcast a message to all local clients in a game
+ * Safely send a message to a WebSocket client with backpressure handling
+ * @param {WebSocket} client - WebSocket client
+ * @param {string} message - JSON string message to send
+ * @returns {boolean} True if message was sent, false if dropped/client disconnected
+ */
+function safeSend(client, message) {
+  if (client.readyState !== WebSocket.OPEN) {
+    return false;
+  }
+
+  // Check for buffer overflow (backpressure)
+  if (client.bufferedAmount > MAX_BUFFER_SIZE) {
+    logger.warn(
+      {
+        clientId: client.clientId,
+        gameId: client.gameId,
+        bufferedAmount: client.bufferedAmount,
+      },
+      "Client buffer overflow, closing connection"
+    );
+    metrics.recordBufferOverflow();
+    client.close(1008, "Buffer overflow");
+    return false;
+  }
+
+  // Warn if buffer is getting high
+  if (client.bufferedAmount > BUFFER_WARNING_SIZE && !client._bufferWarned) {
+    logger.debug(
+      {
+        clientId: client.clientId,
+        bufferedAmount: client.bufferedAmount,
+      },
+      "Client buffer high"
+    );
+    client._bufferWarned = true;
+  } else if (client.bufferedAmount < BUFFER_WARNING_SIZE / 2) {
+    client._bufferWarned = false;
+  }
+
+  try {
+    client.send(message);
+    return true;
+  } catch (error) {
+    logger.error({ clientId: client.clientId, error: error.message }, "Failed to send message");
+    metrics.recordMessageDropped();
+    return false;
+  }
+}
+
+/**
+ * Broadcast a message to all local clients in a game with backpressure handling
  * @param {string} gameId - Game session ID
  * @param {string} type - Message type
  * @param {object} data - Message data
+ * @returns {number} Number of clients message was sent to
  */
 function broadcastToLocalClients(gameId, type, data) {
+  const message = JSON.stringify({ type, data });
+  let sentCount = 0;
+
   wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN && client.gameId === gameId) {
-      client.send(JSON.stringify({ type, data }));
+    if (client.gameId === gameId) {
+      if (safeSend(client, message)) {
+        sentCount++;
+      }
     }
   });
+
+  return sentCount;
 }
 
 /**
@@ -264,13 +355,14 @@ function generateClientId() {
   return `client_${Date.now()}_${++clientIdCounter}`;
 }
 
-wss.on("connection", ws => {
+wss.on("connection", (ws, req) => {
   ws.clientId = generateClientId();
+  ws.clientIP = req.clientIP || getClientIP(req);
   ws.messageTimestamps = [];
 
   // Record new connection
   metrics.recordNewConnection();
-  logger.debug({ clientId: ws.clientId }, "New WebSocket connection");
+  logger.debug({ clientId: ws.clientId, ip: ws.clientIP }, "New WebSocket connection");
 
   // Sentry: Add breadcrumb for new connection
   if (process.env.SENTRY_DSN) {
@@ -278,27 +370,36 @@ wss.on("connection", ws => {
       category: "websocket",
       message: "New WebSocket connection",
       level: "info",
-      data: { clientId: ws.clientId },
+      data: { clientId: ws.clientId, ip: ws.clientIP },
     });
   }
 
   // Send the client their ID
-  ws.send(JSON.stringify({ type: "clientId", data: { clientId: ws.clientId } }));
+  safeSend(ws, JSON.stringify({ type: "clientId", data: { clientId: ws.clientId } }));
   metrics.recordMessageSent("clientId");
 
   ws.on("message", async message => {
-    // Rate limiting
+    // Per-connection rate limiting (fast, local check)
     const now = Date.now();
     ws.messageTimestamps = ws.messageTimestamps.filter(
       ts => now - ts < CONSTANTS.RATE_LIMIT_WINDOW
     );
 
     if (ws.messageTimestamps.length >= CONSTANTS.RATE_LIMIT_MAX_MESSAGES) {
-      ws.send(JSON.stringify({ type: "error", data: { message: "Rate limit exceeded" } }));
-      metrics.recordRateLimitExceeded();
-      logger.warn({ clientId: ws.clientId }, "Rate limit exceeded");
+      safeSend(ws, JSON.stringify({ type: "error", data: { message: "Rate limit exceeded" } }));
+      metrics.recordRateLimitExceeded("connection");
+      logger.warn({ clientId: ws.clientId, ip: ws.clientIP }, "Per-connection rate limit exceeded");
       return;
     }
+
+    // IP-based rate limiting (prevents bypass via multiple connections)
+    if (!messageRateLimiter.isAllowed(ws.clientIP)) {
+      safeSend(ws, JSON.stringify({ type: "error", data: { message: "Rate limit exceeded" } }));
+      metrics.recordRateLimitExceeded("ip");
+      logger.warn({ clientId: ws.clientId, ip: ws.clientIP }, "IP-based rate limit exceeded");
+      return;
+    }
+
     ws.messageTimestamps.push(now);
 
     try {
@@ -307,7 +408,7 @@ wss.on("connection", ws => {
       const data = parsed.data || {};
 
       if (!type || typeof type !== "string") {
-        ws.send(JSON.stringify({ type: "error", data: { message: "Invalid message type" } }));
+        safeSend(ws, JSON.stringify({ type: "error", data: { message: "Invalid message type" } }));
         metrics.recordError("invalid_message_type");
         return;
       }
@@ -333,7 +434,7 @@ wss.on("connection", ws => {
       switch (type) {
         case "create": {
           if (!validateSettings(data.settings)) {
-            ws.send(JSON.stringify({ type: "error", data: { message: "Invalid settings" } }));
+            safeSend(ws, JSON.stringify({ type: "error", data: { message: "Invalid settings" } }));
             metrics.recordError("invalid_settings");
             break;
           }
@@ -382,7 +483,15 @@ wss.on("connection", ws => {
               );
             });
 
-            ws.send(JSON.stringify({ type: "state", data: gameId.session.getState() }));
+            // Immediately persist the new game to prevent data loss
+            persistGameImmediately(gameId.id).catch(error => {
+              logger.error(
+                { error: error.message, gameId: gameId.id },
+                "Failed to persist new game"
+              );
+            });
+
+            safeSend(ws, JSON.stringify({ type: "state", data: gameId.session.getState() }));
             metrics.recordNewSession();
             metrics.recordMessageSent("state");
             logger.info(
@@ -395,7 +504,7 @@ wss.on("connection", ws => {
               "Game created"
             );
           } catch (error) {
-            ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+            safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
             metrics.recordError("create_failed");
             logger.error({ error: error.message, clientId: ws.clientId }, "Failed to create game");
           }
@@ -404,7 +513,7 @@ wss.on("connection", ws => {
         case "join": {
           const session = gameSessions.get(data.gameId);
           if (!session) {
-            ws.send(JSON.stringify({ type: "error", data: { message: "Game not found" } }));
+            safeSend(ws, JSON.stringify({ type: "error", data: { message: "Game not found" } }));
             metrics.recordError("game_not_found");
             logger.debug(
               { gameId: data.gameId, clientId: ws.clientId },
@@ -422,11 +531,11 @@ wss.on("connection", ws => {
                 session.setOwner(ws.clientId);
               }
             });
-            ws.send(JSON.stringify({ type: "state", data: session.getState() }));
+            safeSend(ws, JSON.stringify({ type: "state", data: session.getState() }));
             metrics.recordMessageSent("state");
             logger.info({ gameId: data.gameId, clientId: ws.clientId }, "Client joined game");
           } catch (error) {
-            ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+            safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
             metrics.recordError("join_lock_error");
           }
           break;
@@ -456,7 +565,7 @@ wss.on("connection", ws => {
                 logger.info({ gameId: ws.gameId }, "Game started");
               });
             } catch (error) {
-              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
               metrics.recordError("start_lock_error");
             }
           }
@@ -488,7 +597,7 @@ wss.on("connection", ws => {
                 }
               });
             } catch (error) {
-              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
               metrics.recordError("pause_lock_error");
             }
           }
@@ -515,7 +624,7 @@ wss.on("connection", ws => {
                 logger.info({ gameId: ws.gameId }, "Game reset");
               });
             } catch (error) {
-              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
               metrics.recordError("reset_lock_error");
             }
           }
@@ -548,7 +657,7 @@ wss.on("connection", ws => {
                 session.switchPlayer(data.playerId);
               });
             } catch (error) {
-              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
               metrics.recordError("switch_lock_error");
             }
           }
@@ -586,7 +695,7 @@ wss.on("connection", ws => {
                 session.updatePlayer(data.playerId, data);
               });
             } catch (error) {
-              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
               metrics.recordError("updatePlayer_lock_error");
             }
           }
@@ -620,7 +729,7 @@ wss.on("connection", ws => {
                 logger.debug({ gameId: ws.gameId, playerId: data.playerId }, "Penalty added");
               });
             } catch (error) {
-              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
               metrics.recordError("addPenalty_lock_error");
             }
           }
@@ -654,7 +763,7 @@ wss.on("connection", ws => {
                 logger.info({ gameId: ws.gameId, playerId: data.playerId }, "Player eliminated");
               });
             } catch (error) {
-              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
               metrics.recordError("eliminate_lock_error");
             }
           }
@@ -694,7 +803,7 @@ wss.on("connection", ws => {
                 }
               });
             } catch (error) {
-              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
               metrics.recordError("updateSettings_lock_error");
             }
           }
@@ -742,7 +851,7 @@ wss.on("connection", ws => {
                 }
               });
             } catch (error) {
-              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
               metrics.recordError("claim_lock_error");
             }
           }
@@ -752,7 +861,7 @@ wss.on("connection", ws => {
           // Attempt to reclaim a player slot using a reconnection token
           const session = gameSessions.get(data.gameId);
           if (!session) {
-            ws.send(JSON.stringify({ type: "error", data: { message: "Game not found" } }));
+            safeSend(ws, JSON.stringify({ type: "error", data: { message: "Game not found" } }));
             metrics.recordError("reconnect_game_not_found");
             break;
           }
@@ -761,12 +870,12 @@ wss.on("connection", ws => {
             data.playerId < 1 ||
             data.playerId > CONSTANTS.MAX_PLAYERS
           ) {
-            ws.send(JSON.stringify({ type: "error", data: { message: "Invalid player ID" } }));
+            safeSend(ws, JSON.stringify({ type: "error", data: { message: "Invalid player ID" } }));
             metrics.recordError("reconnect_invalid_player");
             break;
           }
           if (!data.token || typeof data.token !== "string") {
-            ws.send(JSON.stringify({ type: "error", data: { message: "Invalid token" } }));
+            safeSend(ws, JSON.stringify({ type: "error", data: { message: "Invalid token" } }));
             metrics.recordError("reconnect_invalid_token");
             break;
           }
@@ -799,7 +908,7 @@ wss.on("connection", ws => {
                     },
                   })
                 );
-                ws.send(JSON.stringify({ type: "state", data: session.getState() }));
+                safeSend(ws, JSON.stringify({ type: "state", data: session.getState() }));
                 metrics.recordMessageSent("reconnected");
                 metrics.recordMessageSent("state");
                 logger.info(
@@ -809,7 +918,7 @@ wss.on("connection", ws => {
               }
             });
           } catch (error) {
-            ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+            safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
             metrics.recordError("reconnect_lock_error");
           }
           break;
@@ -823,7 +932,7 @@ wss.on("connection", ws => {
                 session.unclaimPlayer(ws.clientId);
               });
             } catch (error) {
-              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
               metrics.recordError("unclaim_lock_error");
             }
           }
@@ -965,6 +1074,31 @@ async function persistSessions() {
   endTimer();
   if (savedCount > 0 || errorCount > 0) {
     logger.debug({ savedCount, errorCount }, "Persistence cycle completed");
+  }
+}
+
+/**
+ * Immediately persist a single game session (for critical operations)
+ * Use this after game creation or other critical state changes
+ * @param {string} gameId - Game session ID to persist
+ */
+async function persistGameImmediately(gameId) {
+  if (!storage || isShuttingDown) return;
+
+  const session = gameSessions.get(gameId);
+  if (!session) return;
+
+  try {
+    if (isAsyncStorageMode) {
+      await storage.save(gameId, session.toJSON());
+    } else {
+      storage.save(gameId, session.toJSON());
+    }
+    metrics.recordStorageOperation("save_immediate", "success");
+    logger.debug({ gameId }, "Game persisted immediately");
+  } catch (error) {
+    logger.error({ gameId, error: error.message }, "Immediate persistence failed");
+    metrics.recordStorageOperation("save_immediate", "error");
   }
 }
 
@@ -1115,6 +1249,10 @@ async function gracefulShutdown(signal, exitCode = 0) {
   if (persistenceTimer) clearInterval(persistenceTimer);
   if (cleanupTimer) clearInterval(cleanupTimer);
   if (heartbeatTimer) clearInterval(heartbeatTimer);
+
+  // Close rate limiters
+  messageRateLimiter.close();
+  connectionRateLimiter.close();
 
   // Persist all sessions before shutdown
   logger.info("Persisting sessions before shutdown");
