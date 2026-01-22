@@ -15,6 +15,11 @@ const {
 const { createStorage, isAsyncStorage } = require("./lib/storage");
 const { logger } = require("./lib/logger");
 const metrics = require("./lib/metrics");
+const { withGameLock, getLockStats } = require("./lib/lock");
+const AsyncLock = require("async-lock");
+
+// Separate lock for game creation to prevent ID collisions
+const createGameLock = new AsyncLock({ timeout: 5000 });
 const Sentry = require("@sentry/node");
 const crypto = require("crypto");
 
@@ -184,6 +189,9 @@ app.get("/health", async (req, res) => {
     healthData.redis = redisHealth;
   }
 
+  // Add lock stats for monitoring
+  healthData.locks = getLockStats();
+
   res.status(200).json(healthData);
 });
 
@@ -278,7 +286,7 @@ wss.on("connection", ws => {
   ws.send(JSON.stringify({ type: "clientId", data: { clientId: ws.clientId } }));
   metrics.recordMessageSent("clientId");
 
-  ws.on("message", message => {
+  ws.on("message", async message => {
     // Rate limiting
     const now = Date.now();
     ws.messageTimestamps = ws.messageTimestamps.filter(
@@ -329,29 +337,68 @@ wss.on("connection", ws => {
             metrics.recordError("invalid_settings");
             break;
           }
-          const gameId = generateGameId(new Set(gameSessions.keys()));
-          const session = new GameSession(gameId, data.settings || {});
-          session.setOwner(ws.clientId); // Set creator as owner
-          gameSessions.set(gameId, session);
-          ws.gameId = gameId;
 
-          // Subscribe to Redis channel for cross-instance messaging
-          subscribeToGameChannel(gameId).catch(error => {
-            logger.error({ error: error.message, gameId }, "Failed to subscribe to game channel");
-          });
+          // Use lock to prevent race condition in ID generation
+          try {
+            const gameId = await createGameLock.acquire("create", async () => {
+              // Generate unique ID while holding lock
+              let id;
+              let attempts = 0;
+              const maxAttempts = 10;
 
-          ws.send(JSON.stringify({ type: "state", data: session.getState() }));
-          metrics.recordNewSession();
-          metrics.recordMessageSent("state");
-          logger.info(
-            {
-              gameId,
-              clientId: ws.clientId,
-              playerCount: session.settings.playerCount,
-              instanceId: INSTANCE_ID,
-            },
-            "Game created"
-          );
+              while (attempts < maxAttempts) {
+                id = generateGameId(new Set(gameSessions.keys()));
+
+                // For Redis mode, also check/reserve in Redis
+                if (isAsyncStorageMode && storage && storage.reserveGameId) {
+                  const reserved = await storage.reserveGameId(id);
+                  if (reserved) break;
+                } else {
+                  // For SQLite/memory mode, just check local map
+                  if (!gameSessions.has(id)) break;
+                }
+                attempts++;
+              }
+
+              if (attempts >= maxAttempts) {
+                throw new Error("Failed to generate unique game ID");
+              }
+
+              // Create and register session while still holding lock
+              const session = new GameSession(id, data.settings || {});
+              session.setOwner(ws.clientId);
+              gameSessions.set(id, session);
+
+              return { id, session };
+            });
+
+            ws.gameId = gameId.id;
+
+            // Subscribe to Redis channel for cross-instance messaging
+            subscribeToGameChannel(gameId.id).catch(error => {
+              logger.error(
+                { error: error.message, gameId: gameId.id },
+                "Failed to subscribe to game channel"
+              );
+            });
+
+            ws.send(JSON.stringify({ type: "state", data: gameId.session.getState() }));
+            metrics.recordNewSession();
+            metrics.recordMessageSent("state");
+            logger.info(
+              {
+                gameId: gameId.id,
+                clientId: ws.clientId,
+                playerCount: gameId.session.settings.playerCount,
+                instanceId: INSTANCE_ID,
+              },
+              "Game created"
+            );
+          } catch (error) {
+            ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+            metrics.recordError("create_failed");
+            logger.error({ error: error.message, clientId: ws.clientId }, "Failed to create game");
+          }
           break;
         }
         case "join": {
@@ -365,59 +412,84 @@ wss.on("connection", ws => {
             );
             break;
           }
-          ws.gameId = data.gameId;
-          session.lastActivity = Date.now();
-          // Set owner if not already set (for restored sessions)
-          if (!session.ownerId) {
-            session.setOwner(ws.clientId);
+
+          try {
+            await withGameLock(data.gameId, async () => {
+              ws.gameId = data.gameId;
+              session.lastActivity = Date.now();
+              // Set owner if not already set (for restored sessions)
+              if (!session.ownerId) {
+                session.setOwner(ws.clientId);
+              }
+            });
+            ws.send(JSON.stringify({ type: "state", data: session.getState() }));
+            metrics.recordMessageSent("state");
+            logger.info({ gameId: data.gameId, clientId: ws.clientId }, "Client joined game");
+          } catch (error) {
+            ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+            metrics.recordError("join_lock_error");
           }
-          ws.send(JSON.stringify({ type: "state", data: session.getState() }));
-          metrics.recordMessageSent("state");
-          logger.info({ gameId: data.gameId, clientId: ws.clientId }, "Client joined game");
           break;
         }
         case "start": {
           const session = gameSessions.get(ws.gameId);
           if (session) {
-            // Authorization: owner or claimed player can start
-            if (!session.canControlGame(ws.clientId)) {
-              ws.send(
-                JSON.stringify({ type: "error", data: { message: "Not authorized to start game" } })
-              );
-              metrics.recordAuthDenied("start");
-              logger.warn(
-                { gameId: ws.gameId, clientId: ws.clientId },
-                "Unauthorized start attempt"
-              );
-              break;
+            try {
+              await withGameLock(ws.gameId, async () => {
+                // Authorization: owner or claimed player can start
+                if (!session.canControlGame(ws.clientId)) {
+                  ws.send(
+                    JSON.stringify({
+                      type: "error",
+                      data: { message: "Not authorized to start game" },
+                    })
+                  );
+                  metrics.recordAuthDenied("start");
+                  logger.warn(
+                    { gameId: ws.gameId, clientId: ws.clientId },
+                    "Unauthorized start attempt"
+                  );
+                  return;
+                }
+                session.lastActivity = Date.now();
+                session.start();
+                logger.info({ gameId: ws.gameId }, "Game started");
+              });
+            } catch (error) {
+              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              metrics.recordError("start_lock_error");
             }
-            session.lastActivity = Date.now();
-            session.start();
-            logger.info({ gameId: ws.gameId }, "Game started");
           }
           break;
         }
         case "pause": {
           const session = gameSessions.get(ws.gameId);
           if (session) {
-            // Authorization: owner or claimed player can pause/resume
-            if (!session.canControlGame(ws.clientId)) {
-              ws.send(
-                JSON.stringify({
-                  type: "error",
-                  data: { message: "Not authorized to pause/resume" },
-                })
-              );
-              metrics.recordAuthDenied("pause");
-              break;
-            }
-            session.lastActivity = Date.now();
-            if (session.status === "running") {
-              session.pause();
-              logger.debug({ gameId: ws.gameId }, "Game paused");
-            } else if (session.status === "paused") {
-              session.resume();
-              logger.debug({ gameId: ws.gameId }, "Game resumed");
+            try {
+              await withGameLock(ws.gameId, async () => {
+                // Authorization: owner or claimed player can pause/resume
+                if (!session.canControlGame(ws.clientId)) {
+                  ws.send(
+                    JSON.stringify({
+                      type: "error",
+                      data: { message: "Not authorized to pause/resume" },
+                    })
+                  );
+                  metrics.recordAuthDenied("pause");
+                  return;
+                }
+                session.lastActivity = Date.now();
+                if (session.status === "running") {
+                  session.pause();
+                  logger.debug({ gameId: ws.gameId }, "Game paused");
+                } else if (session.status === "paused") {
+                  session.resume();
+                  logger.debug({ gameId: ws.gameId }, "Game resumed");
+                }
+              });
+            } catch (error) {
+              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              metrics.recordError("pause_lock_error");
             }
           }
           break;
@@ -425,20 +497,27 @@ wss.on("connection", ws => {
         case "reset": {
           const session = gameSessions.get(ws.gameId);
           if (session) {
-            // Authorization: only owner can reset
-            if (!session.isOwner(ws.clientId)) {
-              ws.send(
-                JSON.stringify({
-                  type: "error",
-                  data: { message: "Only the game owner can reset" },
-                })
-              );
-              metrics.recordAuthDenied("reset");
-              break;
+            try {
+              await withGameLock(ws.gameId, async () => {
+                // Authorization: only owner can reset
+                if (!session.isOwner(ws.clientId)) {
+                  ws.send(
+                    JSON.stringify({
+                      type: "error",
+                      data: { message: "Only the game owner can reset" },
+                    })
+                  );
+                  metrics.recordAuthDenied("reset");
+                  return;
+                }
+                session.lastActivity = Date.now();
+                session.reset();
+                logger.info({ gameId: ws.gameId }, "Game reset");
+              });
+            } catch (error) {
+              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              metrics.recordError("reset_lock_error");
             }
-            session.lastActivity = Date.now();
-            session.reset();
-            logger.info({ gameId: ws.gameId }, "Game reset");
           }
           break;
         }
@@ -451,19 +530,27 @@ wss.on("connection", ws => {
               data.playerId > CONSTANTS.MAX_PLAYERS
             )
               break;
-            // Authorization: check switch permissions
-            if (!session.canSwitchPlayer(data.playerId, ws.clientId)) {
-              ws.send(
-                JSON.stringify({
-                  type: "error",
-                  data: { message: "Not authorized to switch players" },
-                })
-              );
-              metrics.recordAuthDenied("switch");
-              break;
+
+            try {
+              await withGameLock(ws.gameId, async () => {
+                // Authorization: check switch permissions
+                if (!session.canSwitchPlayer(data.playerId, ws.clientId)) {
+                  ws.send(
+                    JSON.stringify({
+                      type: "error",
+                      data: { message: "Not authorized to switch players" },
+                    })
+                  );
+                  metrics.recordAuthDenied("switch");
+                  return;
+                }
+                session.lastActivity = Date.now();
+                session.switchPlayer(data.playerId);
+              });
+            } catch (error) {
+              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              metrics.recordError("switch_lock_error");
             }
-            session.lastActivity = Date.now();
-            session.switchPlayer(data.playerId);
           }
           break;
         }
@@ -476,24 +563,32 @@ wss.on("connection", ws => {
               data.playerId > CONSTANTS.MAX_PLAYERS
             )
               break;
-            // Authorization: can only modify own player or if owner
-            if (!session.canModifyPlayer(data.playerId, ws.clientId)) {
-              ws.send(
-                JSON.stringify({
-                  type: "error",
-                  data: { message: "Not authorized to modify this player" },
-                })
-              );
-              metrics.recordAuthDenied("updatePlayer");
-              break;
-            }
             if (data.name !== undefined && !validatePlayerName(data.name)) break;
             if (data.time !== undefined && !validateTimeValue(data.time)) break;
             if (data.name !== undefined) {
               data.name = sanitizeString(data.name);
             }
-            session.lastActivity = Date.now();
-            session.updatePlayer(data.playerId, data);
+
+            try {
+              await withGameLock(ws.gameId, async () => {
+                // Authorization: can only modify own player or if owner
+                if (!session.canModifyPlayer(data.playerId, ws.clientId)) {
+                  ws.send(
+                    JSON.stringify({
+                      type: "error",
+                      data: { message: "Not authorized to modify this player" },
+                    })
+                  );
+                  metrics.recordAuthDenied("updatePlayer");
+                  return;
+                }
+                session.lastActivity = Date.now();
+                session.updatePlayer(data.playerId, data);
+              });
+            } catch (error) {
+              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              metrics.recordError("updatePlayer_lock_error");
+            }
           }
           break;
         }
@@ -506,20 +601,28 @@ wss.on("connection", ws => {
               data.playerId > CONSTANTS.MAX_PLAYERS
             )
               break;
-            // Authorization: only owner can add penalties
-            if (!session.isOwner(ws.clientId)) {
-              ws.send(
-                JSON.stringify({
-                  type: "error",
-                  data: { message: "Only the game owner can add penalties" },
-                })
-              );
-              metrics.recordAuthDenied("addPenalty");
-              break;
+
+            try {
+              await withGameLock(ws.gameId, async () => {
+                // Authorization: only owner can add penalties
+                if (!session.isOwner(ws.clientId)) {
+                  ws.send(
+                    JSON.stringify({
+                      type: "error",
+                      data: { message: "Only the game owner can add penalties" },
+                    })
+                  );
+                  metrics.recordAuthDenied("addPenalty");
+                  return;
+                }
+                session.lastActivity = Date.now();
+                session.addPenalty(data.playerId);
+                logger.debug({ gameId: ws.gameId, playerId: data.playerId }, "Penalty added");
+              });
+            } catch (error) {
+              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              metrics.recordError("addPenalty_lock_error");
             }
-            session.lastActivity = Date.now();
-            session.addPenalty(data.playerId);
-            logger.debug({ gameId: ws.gameId, playerId: data.playerId }, "Penalty added");
           }
           break;
         }
@@ -532,38 +635,34 @@ wss.on("connection", ws => {
               data.playerId > CONSTANTS.MAX_PLAYERS
             )
               break;
-            // Authorization: only owner can eliminate
-            if (!session.isOwner(ws.clientId)) {
-              ws.send(
-                JSON.stringify({
-                  type: "error",
-                  data: { message: "Only the game owner can eliminate players" },
-                })
-              );
-              metrics.recordAuthDenied("eliminate");
-              break;
+
+            try {
+              await withGameLock(ws.gameId, async () => {
+                // Authorization: only owner can eliminate
+                if (!session.isOwner(ws.clientId)) {
+                  ws.send(
+                    JSON.stringify({
+                      type: "error",
+                      data: { message: "Only the game owner can eliminate players" },
+                    })
+                  );
+                  metrics.recordAuthDenied("eliminate");
+                  return;
+                }
+                session.lastActivity = Date.now();
+                session.eliminate(data.playerId);
+                logger.info({ gameId: ws.gameId, playerId: data.playerId }, "Player eliminated");
+              });
+            } catch (error) {
+              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              metrics.recordError("eliminate_lock_error");
             }
-            session.lastActivity = Date.now();
-            session.eliminate(data.playerId);
-            logger.info({ gameId: ws.gameId, playerId: data.playerId }, "Player eliminated");
           }
           break;
         }
         case "updateSettings": {
           const session = gameSessions.get(ws.gameId);
           if (session) {
-            // Authorization: only owner can update settings
-            if (!session.isOwner(ws.clientId)) {
-              ws.send(
-                JSON.stringify({
-                  type: "error",
-                  data: { message: "Only the game owner can change settings" },
-                })
-              );
-              metrics.recordAuthDenied("updateSettings");
-              break;
-            }
-            session.lastActivity = Date.now();
             if (data.warningThresholds !== undefined) {
               if (!validateWarningThresholds(data.warningThresholds)) {
                 ws.send(
@@ -572,9 +671,31 @@ wss.on("connection", ws => {
                 metrics.recordError("invalid_warning_thresholds");
                 break;
               }
-              session.settings.warningThresholds = data.warningThresholds;
-              session.broadcastState();
-              logger.debug({ gameId: ws.gameId }, "Settings updated");
+            }
+
+            try {
+              await withGameLock(ws.gameId, async () => {
+                // Authorization: only owner can update settings
+                if (!session.isOwner(ws.clientId)) {
+                  ws.send(
+                    JSON.stringify({
+                      type: "error",
+                      data: { message: "Only the game owner can change settings" },
+                    })
+                  );
+                  metrics.recordAuthDenied("updateSettings");
+                  return;
+                }
+                session.lastActivity = Date.now();
+                if (data.warningThresholds !== undefined) {
+                  session.settings.warningThresholds = data.warningThresholds;
+                  session.broadcastState();
+                  logger.debug({ gameId: ws.gameId }, "Settings updated");
+                }
+              });
+            } catch (error) {
+              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              metrics.recordError("updateSettings_lock_error");
             }
           }
           break;
@@ -588,33 +709,41 @@ wss.on("connection", ws => {
               data.playerId > CONSTANTS.MAX_PLAYERS
             )
               break;
-            session.lastActivity = Date.now();
-            const result = session.claimPlayer(data.playerId, ws.clientId);
-            if (!result.success) {
-              ws.send(
-                JSON.stringify({
-                  type: "error",
-                  data: { message: result.reason || "Cannot claim this player" },
-                })
-              );
-              metrics.recordError("claim_failed");
-            } else {
-              // Send the reconnection token to the client (private message)
-              ws.send(
-                JSON.stringify({
-                  type: "claimed",
-                  data: {
-                    playerId: data.playerId,
-                    token: result.token,
-                    gameId: ws.gameId,
-                  },
-                })
-              );
-              metrics.recordMessageSent("claimed");
-              logger.debug(
-                { gameId: ws.gameId, playerId: data.playerId, clientId: ws.clientId },
-                "Player claimed with reconnection token"
-              );
+
+            try {
+              await withGameLock(ws.gameId, async () => {
+                session.lastActivity = Date.now();
+                const result = session.claimPlayer(data.playerId, ws.clientId);
+                if (!result.success) {
+                  ws.send(
+                    JSON.stringify({
+                      type: "error",
+                      data: { message: result.reason || "Cannot claim this player" },
+                    })
+                  );
+                  metrics.recordError("claim_failed");
+                } else {
+                  // Send the reconnection token to the client (private message)
+                  ws.send(
+                    JSON.stringify({
+                      type: "claimed",
+                      data: {
+                        playerId: data.playerId,
+                        token: result.token,
+                        gameId: ws.gameId,
+                      },
+                    })
+                  );
+                  metrics.recordMessageSent("claimed");
+                  logger.debug(
+                    { gameId: ws.gameId, playerId: data.playerId, clientId: ws.clientId },
+                    "Player claimed with reconnection token"
+                  );
+                }
+              });
+            } catch (error) {
+              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              metrics.recordError("claim_lock_error");
             }
           }
           break;
@@ -642,47 +771,61 @@ wss.on("connection", ws => {
             break;
           }
 
-          const result = session.reconnectPlayer(data.playerId, data.token, ws.clientId);
-          if (!result.success) {
-            ws.send(
-              JSON.stringify({
-                type: "error",
-                data: { message: result.reason || "Reconnection failed" },
-              })
-            );
-            metrics.recordError("reconnect_failed");
-            logger.debug(
-              { gameId: data.gameId, playerId: data.playerId, reason: result.reason },
-              "Reconnection failed"
-            );
-          } else {
-            ws.gameId = data.gameId;
-            // Send new token and current state
-            ws.send(
-              JSON.stringify({
-                type: "reconnected",
-                data: {
-                  playerId: data.playerId,
-                  token: result.token,
-                  gameId: data.gameId,
-                },
-              })
-            );
-            ws.send(JSON.stringify({ type: "state", data: session.getState() }));
-            metrics.recordMessageSent("reconnected");
-            metrics.recordMessageSent("state");
-            logger.info(
-              { gameId: data.gameId, playerId: data.playerId, clientId: ws.clientId },
-              "Player reconnected successfully"
-            );
+          try {
+            await withGameLock(data.gameId, async () => {
+              const result = session.reconnectPlayer(data.playerId, data.token, ws.clientId);
+              if (!result.success) {
+                ws.send(
+                  JSON.stringify({
+                    type: "error",
+                    data: { message: result.reason || "Reconnection failed" },
+                  })
+                );
+                metrics.recordError("reconnect_failed");
+                logger.debug(
+                  { gameId: data.gameId, playerId: data.playerId, reason: result.reason },
+                  "Reconnection failed"
+                );
+              } else {
+                ws.gameId = data.gameId;
+                // Send new token and current state
+                ws.send(
+                  JSON.stringify({
+                    type: "reconnected",
+                    data: {
+                      playerId: data.playerId,
+                      token: result.token,
+                      gameId: data.gameId,
+                    },
+                  })
+                );
+                ws.send(JSON.stringify({ type: "state", data: session.getState() }));
+                metrics.recordMessageSent("reconnected");
+                metrics.recordMessageSent("state");
+                logger.info(
+                  { gameId: data.gameId, playerId: data.playerId, clientId: ws.clientId },
+                  "Player reconnected successfully"
+                );
+              }
+            });
+          } catch (error) {
+            ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+            metrics.recordError("reconnect_lock_error");
           }
           break;
         }
         case "unclaim": {
           const session = gameSessions.get(ws.gameId);
           if (session) {
-            session.lastActivity = Date.now();
-            session.unclaimPlayer(ws.clientId);
+            try {
+              await withGameLock(ws.gameId, async () => {
+                session.lastActivity = Date.now();
+                session.unclaimPlayer(ws.clientId);
+              });
+            } catch (error) {
+              ws.send(JSON.stringify({ type: "error", data: { message: error.message } }));
+              metrics.recordError("unclaim_lock_error");
+            }
           }
           break;
         }
@@ -745,6 +888,7 @@ wss.on("connection", ws => {
 
 /**
  * Save all active sessions to storage (supports both sync and async storage)
+ * Uses batch transactions for SQLite to ensure atomicity and performance
  */
 async function persistSessions() {
   if (!storage || isShuttingDown) return;
@@ -753,20 +897,69 @@ async function persistSessions() {
   let savedCount = 0;
   let errorCount = 0;
 
-  for (const [gameId, session] of gameSessions.entries()) {
-    try {
-      if (isAsyncStorageMode) {
-        await storage.save(gameId, session.toJSON());
-      } else {
-        storage.save(gameId, session.toJSON());
+  try {
+    if (isAsyncStorageMode) {
+      // Redis: save individually (each operation is already atomic)
+      for (const [gameId, session] of gameSessions.entries()) {
+        try {
+          await storage.save(gameId, session.toJSON());
+          metrics.recordStorageOperation("save", "success");
+          savedCount++;
+        } catch (error) {
+          logger.error({ gameId, error: error.message }, "Failed to persist session");
+          metrics.recordStorageOperation("save", "error");
+          errorCount++;
+        }
       }
-      metrics.recordStorageOperation("save", "success");
-      savedCount++;
-    } catch (error) {
-      logger.error({ gameId, error: error.message }, "Failed to persist session");
-      metrics.recordStorageOperation("save", "error");
-      errorCount++;
+    } else if (storage.saveBatch) {
+      // SQLite/Memory: use batch save for atomic transaction
+      const sessions = Array.from(gameSessions.entries()).map(([id, session]) => ({
+        id,
+        state: session.toJSON(),
+      }));
+
+      if (sessions.length > 0) {
+        const count = storage.saveBatch(sessions);
+        if (count === sessions.length) {
+          savedCount = count;
+          metrics.recordStorageOperation("save_batch", "success");
+        } else {
+          // Partial save or failure - fall back to individual saves
+          logger.warn(
+            { expected: sessions.length, actual: count },
+            "Batch save incomplete, retrying individually"
+          );
+          for (const { id, state } of sessions) {
+            try {
+              storage.save(id, state);
+              metrics.recordStorageOperation("save", "success");
+              savedCount++;
+            } catch (error) {
+              logger.error({ gameId: id, error: error.message }, "Failed to persist session");
+              metrics.recordStorageOperation("save", "error");
+              errorCount++;
+            }
+          }
+        }
+      }
+    } else {
+      // Fallback: save individually
+      for (const [gameId, session] of gameSessions.entries()) {
+        try {
+          storage.save(gameId, session.toJSON());
+          metrics.recordStorageOperation("save", "success");
+          savedCount++;
+        } catch (error) {
+          logger.error({ gameId, error: error.message }, "Failed to persist session");
+          metrics.recordStorageOperation("save", "error");
+          errorCount++;
+        }
+      }
     }
+  } catch (error) {
+    logger.error({ error: error.message }, "Persistence cycle failed");
+    metrics.recordStorageOperation("save_batch", "error");
+    errorCount = gameSessions.size;
   }
 
   endTimer();

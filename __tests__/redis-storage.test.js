@@ -8,9 +8,12 @@ jest.mock("ioredis", () => {
   const mockRedis = {
     on: jest.fn(),
     setex: jest.fn().mockResolvedValue("OK"),
+    set: jest.fn().mockResolvedValue("OK"),
     get: jest.fn().mockResolvedValue(null),
     del: jest.fn().mockResolvedValue(1),
     keys: jest.fn().mockResolvedValue([]),
+    // SCAN returns [cursor, keys] - cursor "0" means done
+    scan: jest.fn().mockResolvedValue(["0", []]),
     ping: jest.fn().mockResolvedValue("PONG"),
     info: jest.fn().mockResolvedValue("redis_version:7.0.0"),
     sadd: jest.fn().mockResolvedValue(1),
@@ -150,7 +153,8 @@ describe("RedisStorage", () => {
     });
 
     test("should return empty array when no sessions exist", async () => {
-      storage.redis.keys.mockResolvedValueOnce([]);
+      // SCAN returns [cursor, keys] - "0" cursor means end of iteration
+      storage.redis.scan.mockResolvedValueOnce(["0", []]);
 
       const result = await storage.loadAll();
       expect(result).toEqual([]);
@@ -160,7 +164,8 @@ describe("RedisStorage", () => {
       const session1 = { id: "TEST01", status: "waiting" };
       const session2 = { id: "TEST02", status: "running" };
 
-      storage.redis.keys.mockResolvedValueOnce(["session:TEST01", "session:TEST02"]);
+      // SCAN returns all keys in one iteration (cursor "0" means done)
+      storage.redis.scan.mockResolvedValueOnce(["0", ["session:TEST01", "session:TEST02"]]);
       storage.redis.get
         .mockResolvedValueOnce(JSON.stringify({ state: session1 }))
         .mockResolvedValueOnce(JSON.stringify({ state: session2 }));
@@ -169,6 +174,39 @@ describe("RedisStorage", () => {
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({ id: "TEST01", state: session1 });
       expect(result[1]).toEqual({ id: "TEST02", state: session2 });
+    });
+
+    test("should filter out reserved keys", async () => {
+      const session1 = { id: "TEST01", status: "waiting" };
+
+      // Include a reserved key that should be filtered out
+      storage.redis.scan.mockResolvedValueOnce([
+        "0",
+        ["session:TEST01", "session:TEST02:reserved"],
+      ]);
+      storage.redis.get.mockResolvedValueOnce(JSON.stringify({ state: session1 }));
+
+      const result = await storage.loadAll();
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({ id: "TEST01", state: session1 });
+    });
+
+    test("should handle multiple SCAN iterations", async () => {
+      const session1 = { id: "TEST01", status: "waiting" };
+      const session2 = { id: "TEST02", status: "running" };
+
+      // First SCAN call returns cursor "5" (not done) and first key
+      // Second SCAN call returns cursor "0" (done) and second key
+      storage.redis.scan
+        .mockResolvedValueOnce(["5", ["session:TEST01"]])
+        .mockResolvedValueOnce(["0", ["session:TEST02"]]);
+      storage.redis.get
+        .mockResolvedValueOnce(JSON.stringify({ state: session1 }))
+        .mockResolvedValueOnce(JSON.stringify({ state: session2 }));
+
+      const result = await storage.loadAll();
+      expect(result).toHaveLength(2);
+      expect(storage.redis.scan).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -189,10 +227,89 @@ describe("RedisStorage", () => {
     });
 
     test("should return session count", async () => {
-      storage.redis.keys.mockResolvedValueOnce(["session:A", "session:B", "session:C"]);
+      // SCAN returns all keys in one iteration
+      storage.redis.scan.mockResolvedValueOnce(["0", ["session:A", "session:B", "session:C"]]);
 
       const count = await storage.count();
       expect(count).toBe(3);
+    });
+
+    test("should filter out reserved keys from count", async () => {
+      storage.redis.scan.mockResolvedValueOnce([
+        "0",
+        ["session:A", "session:B", "session:C:reserved"],
+      ]);
+
+      const count = await storage.count();
+      expect(count).toBe(2);
+    });
+
+    test("should handle multiple SCAN iterations", async () => {
+      storage.redis.scan
+        .mockResolvedValueOnce(["5", ["session:A", "session:B"]])
+        .mockResolvedValueOnce(["0", ["session:C"]]);
+
+      const count = await storage.count();
+      expect(count).toBe(3);
+      expect(storage.redis.scan).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("reserveGameId", () => {
+    beforeEach(() => {
+      storage.initialize();
+    });
+
+    test("should reserve game ID successfully", async () => {
+      storage.redis.set.mockResolvedValueOnce("OK");
+
+      const result = await storage.reserveGameId("GAME01");
+      expect(result).toBe(true);
+      expect(storage.redis.set).toHaveBeenCalledWith(
+        "session:GAME01:reserved",
+        "1",
+        "EX",
+        3600,
+        "NX"
+      );
+    });
+
+    test("should return false when ID already reserved", async () => {
+      storage.redis.set.mockResolvedValueOnce(null);
+
+      const result = await storage.reserveGameId("GAME01");
+      expect(result).toBe(false);
+    });
+
+    test("should accept custom TTL", async () => {
+      storage.redis.set.mockResolvedValueOnce("OK");
+
+      await storage.reserveGameId("GAME01", 7200);
+      expect(storage.redis.set).toHaveBeenCalledWith(
+        "session:GAME01:reserved",
+        "1",
+        "EX",
+        7200,
+        "NX"
+      );
+    });
+
+    test("should handle errors gracefully", async () => {
+      storage.redis.set.mockRejectedValueOnce(new Error("Redis error"));
+
+      const result = await storage.reserveGameId("GAME01");
+      expect(result).toBe(false);
+    });
+  });
+
+  describe("releaseGameId", () => {
+    beforeEach(() => {
+      storage.initialize();
+    });
+
+    test("should release reserved game ID", async () => {
+      await storage.releaseGameId("GAME01");
+      expect(storage.redis.del).toHaveBeenCalledWith("session:GAME01:reserved");
     });
   });
 
