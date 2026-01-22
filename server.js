@@ -17,6 +17,7 @@ const { logger } = require("./lib/logger");
 const metrics = require("./lib/metrics");
 const { withGameLock, getLockStats } = require("./lib/lock");
 const { RateLimiter, ConnectionRateLimiter, getClientIP } = require("./lib/rate-limiter");
+const { createGameStateAdapter } = require("./lib/game-state-adapter");
 const AsyncLock = require("async-lock");
 
 // Separate lock for game creation to prevent ID collisions
@@ -63,8 +64,10 @@ const HOST = "0.0.0.0";
 const STORAGE_TYPE = process.env.STORAGE_TYPE || "sqlite";
 const DB_PATH = process.env.DB_PATH || "./data/sessions.db";
 const REDIS_URL = process.env.REDIS_URL || null;
+const REDIS_PRIMARY = process.env.REDIS_PRIMARY === "true"; // Use Redis as primary store
 const PERSISTENCE_INTERVAL = 5000; // Save active games every 5 seconds (reduced from 10s)
 const HEARTBEAT_INTERVAL = 30000; // Instance heartbeat every 30 seconds
+const CONNECTION_DRAIN_TIMEOUT = 30000; // 30 seconds to drain connections on shutdown
 
 // WebSocket backpressure configuration
 const MAX_BUFFER_SIZE = 1024 * 1024; // 1MB max buffer before dropping messages
@@ -86,6 +89,8 @@ let persistenceTimer = null;
 let cleanupTimer = null;
 let heartbeatTimer = null;
 let isAsyncStorageMode = false;
+let isRedisPrimaryMode = false;
+let gameStateAdapter = null;
 
 const app = express();
 const server = http.createServer(app);
@@ -209,6 +214,7 @@ app.get("/health", async (req, res) => {
     activeSessions: gameSessions.size,
     activeConnections: wss.clients.size,
     storageType: STORAGE_TYPE,
+    redisPrimaryMode: isRedisPrimaryMode,
     persistedSessions,
   };
 
@@ -244,6 +250,50 @@ app.get("/metrics", async (req, res) => {
 });
 
 const gameSessions = new Map();
+
+// Helper to sync game state to Redis immediately (for Redis-primary mode)
+async function syncGameToRedis(gameId) {
+  if (!isRedisPrimaryMode || !storage || isShuttingDown) return;
+
+  const session = gameSessions.get(gameId);
+  if (!session) return;
+
+  try {
+    await storage.save(gameId, session.toJSON());
+    logger.debug({ gameId }, "Game synced to Redis");
+  } catch (error) {
+    logger.error({ gameId, error: error.message }, "Failed to sync game to Redis");
+  }
+}
+
+// Helper to load game from Redis if not in local cache (for Redis-primary mode)
+async function ensureGameLoaded(gameId) {
+  if (!isRedisPrimaryMode || !storage) return gameSessions.get(gameId);
+
+  // Check local cache first
+  if (gameSessions.has(gameId)) {
+    return gameSessions.get(gameId);
+  }
+
+  // Try to load from Redis
+  try {
+    const state = await storage.load(gameId);
+    if (state) {
+      const session = BaseGameSession.fromState(state, (type, data) => {
+        broadcastToGame(gameId, type, data).catch(error => {
+          logger.error({ error: error.message, gameId }, "Broadcast failed");
+        });
+      });
+      gameSessions.set(gameId, session);
+      logger.debug({ gameId }, "Game loaded from Redis into cache");
+      return session;
+    }
+  } catch (error) {
+    logger.error({ gameId, error: error.message }, "Failed to load game from Redis");
+  }
+
+  return null;
+}
 
 /**
  * Safely send a message to a WebSocket client with backpressure handling
@@ -484,12 +534,16 @@ wss.on("connection", (ws, req) => {
             });
 
             // Immediately persist the new game to prevent data loss
-            persistGameImmediately(gameId.id).catch(error => {
-              logger.error(
-                { error: error.message, gameId: gameId.id },
-                "Failed to persist new game"
-              );
-            });
+            if (isRedisPrimaryMode) {
+              await syncGameToRedis(gameId.id);
+            } else {
+              persistGameImmediately(gameId.id).catch(error => {
+                logger.error(
+                  { error: error.message, gameId: gameId.id },
+                  "Failed to persist new game"
+                );
+              });
+            }
 
             safeSend(ws, JSON.stringify({ type: "state", data: gameId.session.getState() }));
             metrics.recordNewSession();
@@ -511,7 +565,11 @@ wss.on("connection", (ws, req) => {
           break;
         }
         case "join": {
-          const session = gameSessions.get(data.gameId);
+          // In Redis-primary mode, try to load from Redis if not in local cache
+          const session = isRedisPrimaryMode
+            ? await ensureGameLoaded(data.gameId)
+            : gameSessions.get(data.gameId);
+
           if (!session) {
             safeSend(ws, JSON.stringify({ type: "error", data: { message: "Game not found" } }));
             metrics.recordError("game_not_found");
@@ -530,6 +588,16 @@ wss.on("connection", (ws, req) => {
               if (!session.ownerId) {
                 session.setOwner(ws.clientId);
               }
+
+              // Subscribe to game channel for cross-instance messaging
+              if (isRedisPrimaryMode) {
+                subscribeToGameChannel(data.gameId).catch(error => {
+                  logger.error(
+                    { error: error.message, gameId: data.gameId },
+                    "Failed to subscribe to game channel"
+                  );
+                });
+              }
             });
             safeSend(ws, JSON.stringify({ type: "state", data: session.getState() }));
             metrics.recordMessageSent("state");
@@ -541,7 +609,9 @@ wss.on("connection", (ws, req) => {
           break;
         }
         case "start": {
-          const session = gameSessions.get(ws.gameId);
+          const session = isRedisPrimaryMode
+            ? await ensureGameLoaded(ws.gameId)
+            : gameSessions.get(ws.gameId);
           if (session) {
             try {
               await withGameLock(ws.gameId, async () => {
@@ -562,6 +632,7 @@ wss.on("connection", (ws, req) => {
                 }
                 session.lastActivity = Date.now();
                 session.start();
+                if (isRedisPrimaryMode) await syncGameToRedis(ws.gameId);
                 logger.info({ gameId: ws.gameId }, "Game started");
               });
             } catch (error) {
@@ -572,7 +643,9 @@ wss.on("connection", (ws, req) => {
           break;
         }
         case "pause": {
-          const session = gameSessions.get(ws.gameId);
+          const session = isRedisPrimaryMode
+            ? await ensureGameLoaded(ws.gameId)
+            : gameSessions.get(ws.gameId);
           if (session) {
             try {
               await withGameLock(ws.gameId, async () => {
@@ -590,9 +663,11 @@ wss.on("connection", (ws, req) => {
                 session.lastActivity = Date.now();
                 if (session.status === "running") {
                   session.pause();
+                  if (isRedisPrimaryMode) await syncGameToRedis(ws.gameId);
                   logger.debug({ gameId: ws.gameId }, "Game paused");
                 } else if (session.status === "paused") {
                   session.resume();
+                  if (isRedisPrimaryMode) await syncGameToRedis(ws.gameId);
                   logger.debug({ gameId: ws.gameId }, "Game resumed");
                 }
               });
@@ -604,7 +679,9 @@ wss.on("connection", (ws, req) => {
           break;
         }
         case "reset": {
-          const session = gameSessions.get(ws.gameId);
+          const session = isRedisPrimaryMode
+            ? await ensureGameLoaded(ws.gameId)
+            : gameSessions.get(ws.gameId);
           if (session) {
             try {
               await withGameLock(ws.gameId, async () => {
@@ -621,6 +698,7 @@ wss.on("connection", (ws, req) => {
                 }
                 session.lastActivity = Date.now();
                 session.reset();
+                if (isRedisPrimaryMode) await syncGameToRedis(ws.gameId);
                 logger.info({ gameId: ws.gameId }, "Game reset");
               });
             } catch (error) {
@@ -631,7 +709,9 @@ wss.on("connection", (ws, req) => {
           break;
         }
         case "switch": {
-          const session = gameSessions.get(ws.gameId);
+          const session = isRedisPrimaryMode
+            ? await ensureGameLoaded(ws.gameId)
+            : gameSessions.get(ws.gameId);
           if (session) {
             if (
               data.playerId === undefined ||
@@ -655,6 +735,8 @@ wss.on("connection", (ws, req) => {
                 }
                 session.lastActivity = Date.now();
                 session.switchPlayer(data.playerId);
+                // Note: Not syncing switch to Redis immediately for performance
+                // Timer ticks are frequent - sync happens via periodic persistence
               });
             } catch (error) {
               safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
@@ -664,7 +746,9 @@ wss.on("connection", (ws, req) => {
           break;
         }
         case "updatePlayer": {
-          const session = gameSessions.get(ws.gameId);
+          const session = isRedisPrimaryMode
+            ? await ensureGameLoaded(ws.gameId)
+            : gameSessions.get(ws.gameId);
           if (session) {
             if (
               data.playerId === undefined ||
@@ -693,6 +777,7 @@ wss.on("connection", (ws, req) => {
                 }
                 session.lastActivity = Date.now();
                 session.updatePlayer(data.playerId, data);
+                if (isRedisPrimaryMode) await syncGameToRedis(ws.gameId);
               });
             } catch (error) {
               safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
@@ -702,7 +787,9 @@ wss.on("connection", (ws, req) => {
           break;
         }
         case "addPenalty": {
-          const session = gameSessions.get(ws.gameId);
+          const session = isRedisPrimaryMode
+            ? await ensureGameLoaded(ws.gameId)
+            : gameSessions.get(ws.gameId);
           if (session) {
             if (
               data.playerId === undefined ||
@@ -726,6 +813,7 @@ wss.on("connection", (ws, req) => {
                 }
                 session.lastActivity = Date.now();
                 session.addPenalty(data.playerId);
+                if (isRedisPrimaryMode) await syncGameToRedis(ws.gameId);
                 logger.debug({ gameId: ws.gameId, playerId: data.playerId }, "Penalty added");
               });
             } catch (error) {
@@ -736,7 +824,9 @@ wss.on("connection", (ws, req) => {
           break;
         }
         case "eliminate": {
-          const session = gameSessions.get(ws.gameId);
+          const session = isRedisPrimaryMode
+            ? await ensureGameLoaded(ws.gameId)
+            : gameSessions.get(ws.gameId);
           if (session) {
             if (
               data.playerId === undefined ||
@@ -760,6 +850,7 @@ wss.on("connection", (ws, req) => {
                 }
                 session.lastActivity = Date.now();
                 session.eliminate(data.playerId);
+                if (isRedisPrimaryMode) await syncGameToRedis(ws.gameId);
                 logger.info({ gameId: ws.gameId, playerId: data.playerId }, "Player eliminated");
               });
             } catch (error) {
@@ -770,7 +861,9 @@ wss.on("connection", (ws, req) => {
           break;
         }
         case "updateSettings": {
-          const session = gameSessions.get(ws.gameId);
+          const session = isRedisPrimaryMode
+            ? await ensureGameLoaded(ws.gameId)
+            : gameSessions.get(ws.gameId);
           if (session) {
             if (data.warningThresholds !== undefined) {
               if (!validateWarningThresholds(data.warningThresholds)) {
@@ -799,6 +892,7 @@ wss.on("connection", (ws, req) => {
                 if (data.warningThresholds !== undefined) {
                   session.settings.warningThresholds = data.warningThresholds;
                   session.broadcastState();
+                  if (isRedisPrimaryMode) await syncGameToRedis(ws.gameId);
                   logger.debug({ gameId: ws.gameId }, "Settings updated");
                 }
               });
@@ -810,7 +904,9 @@ wss.on("connection", (ws, req) => {
           break;
         }
         case "claim": {
-          const session = gameSessions.get(ws.gameId);
+          const session = isRedisPrimaryMode
+            ? await ensureGameLoaded(ws.gameId)
+            : gameSessions.get(ws.gameId);
           if (session) {
             if (
               data.playerId === undefined ||
@@ -832,6 +928,7 @@ wss.on("connection", (ws, req) => {
                   );
                   metrics.recordError("claim_failed");
                 } else {
+                  if (isRedisPrimaryMode) await syncGameToRedis(ws.gameId);
                   // Send the reconnection token to the client (private message)
                   ws.send(
                     JSON.stringify({
@@ -859,7 +956,9 @@ wss.on("connection", (ws, req) => {
         }
         case "reconnect": {
           // Attempt to reclaim a player slot using a reconnection token
-          const session = gameSessions.get(data.gameId);
+          const session = isRedisPrimaryMode
+            ? await ensureGameLoaded(data.gameId)
+            : gameSessions.get(data.gameId);
           if (!session) {
             safeSend(ws, JSON.stringify({ type: "error", data: { message: "Game not found" } }));
             metrics.recordError("reconnect_game_not_found");
@@ -896,6 +995,7 @@ wss.on("connection", (ws, req) => {
                   "Reconnection failed"
                 );
               } else {
+                if (isRedisPrimaryMode) await syncGameToRedis(data.gameId);
                 ws.gameId = data.gameId;
                 // Send new token and current state
                 ws.send(
@@ -924,12 +1024,15 @@ wss.on("connection", (ws, req) => {
           break;
         }
         case "unclaim": {
-          const session = gameSessions.get(ws.gameId);
+          const session = isRedisPrimaryMode
+            ? await ensureGameLoaded(ws.gameId)
+            : gameSessions.get(ws.gameId);
           if (session) {
             try {
               await withGameLock(ws.gameId, async () => {
                 session.lastActivity = Date.now();
                 session.unclaimPlayer(ws.clientId);
+                if (isRedisPrimaryMode) await syncGameToRedis(ws.gameId);
               });
             } catch (error) {
               safeSend(ws, JSON.stringify({ type: "error", data: { message: error.message } }));
@@ -1235,7 +1338,7 @@ async function cleanupSessions() {
 // ============================================================================
 
 /**
- * Gracefully shutdown the server
+ * Gracefully shutdown the server with connection draining
  * @param {string} signal - Signal that triggered shutdown
  * @param {number} exitCode - Exit code (default 0)
  */
@@ -1254,6 +1357,78 @@ async function gracefulShutdown(signal, exitCode = 0) {
   messageRateLimiter.close();
   connectionRateLimiter.close();
 
+  // Stop accepting new HTTP connections
+  logger.info("Stopping HTTP server from accepting new connections");
+  server.close(() => {
+    logger.info("HTTP server stopped accepting connections");
+  });
+
+  // Notify connected clients of impending shutdown
+  const initialClientCount = wss.clients.size;
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      try {
+        safeSend(
+          client,
+          JSON.stringify({
+            type: "shutdown_warning",
+            data: {
+              message: "Server is shutting down. Please save your game state.",
+              timeout: CONNECTION_DRAIN_TIMEOUT,
+            },
+          })
+        );
+      } catch (e) {
+        // Ignore errors
+      }
+    }
+  });
+  logger.info({ clientCount: initialClientCount }, "Notified clients of impending shutdown");
+
+  // Connection draining phase: wait for clients to disconnect gracefully
+  logger.info({ timeout: CONNECTION_DRAIN_TIMEOUT }, "Starting connection drain");
+  const drainStart = Date.now();
+
+  while (wss.clients.size > 0 && Date.now() - drainStart < CONNECTION_DRAIN_TIMEOUT) {
+    const remaining = wss.clients.size;
+    const elapsed = Date.now() - drainStart;
+    const timeLeft = Math.ceil((CONNECTION_DRAIN_TIMEOUT - elapsed) / 1000);
+
+    logger.info(
+      {
+        remaining,
+        timeLeft: `${timeLeft}s`,
+        elapsed: `${Math.floor(elapsed / 1000)}s`,
+      },
+      "Draining connections"
+    );
+
+    // Wait 1 second between checks
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
+  // If clients still connected after drain timeout, force close them
+  if (wss.clients.size > 0) {
+    logger.warn(
+      { remaining: wss.clients.size },
+      "Drain timeout reached, forcing client disconnection"
+    );
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        try {
+          client.send(
+            JSON.stringify({ type: "error", data: { message: "Server is shutting down" } })
+          );
+          client.close(1001, "Server shutting down");
+        } catch (e) {
+          // Ignore errors during shutdown
+        }
+      }
+    });
+  } else {
+    logger.info("All clients disconnected gracefully");
+  }
+
   // Persist all sessions before shutdown
   logger.info("Persisting sessions before shutdown");
   try {
@@ -1262,27 +1437,11 @@ async function gracefulShutdown(signal, exitCode = 0) {
     logger.error({ error: error.message }, "Error during final persistence");
   }
 
-  // Close WebSocket server (stop accepting new connections)
+  // Close WebSocket server
   logger.info("Closing WebSocket server");
   wss.close(() => {
     logger.info("WebSocket server closed");
   });
-
-  // Notify connected clients
-  const clientCount = wss.clients.size;
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      try {
-        client.send(
-          JSON.stringify({ type: "error", data: { message: "Server is shutting down" } })
-        );
-        client.close(1001, "Server shutting down");
-      } catch (e) {
-        // Ignore errors during shutdown
-      }
-    }
-  });
-  logger.info({ clientCount }, "Notified clients of shutdown");
 
   // Cleanup all sessions
   for (const [, session] of gameSessions.entries()) {
@@ -1303,19 +1462,8 @@ async function gracefulShutdown(signal, exitCode = 0) {
     }
   }
 
-  // Close HTTP server
-  logger.info("Closing HTTP server");
-  server.close(() => {
-    logger.info("HTTP server closed");
-    logger.info("Graceful shutdown complete");
-    process.exit(exitCode);
-  });
-
-  // Force exit after timeout
-  setTimeout(() => {
-    logger.error("Forced shutdown after timeout");
-    process.exit(exitCode);
-  }, 10000);
+  logger.info("Graceful shutdown complete");
+  process.exit(exitCode);
 }
 
 // ============================================================================
@@ -1359,7 +1507,15 @@ async function startServer() {
         instanceId: INSTANCE_ID,
       });
       isAsyncStorageMode = true;
-      logger.info({ storageType: "redis", instanceId: INSTANCE_ID }, "Redis storage initialized");
+      isRedisPrimaryMode = REDIS_PRIMARY;
+      logger.info(
+        {
+          storageType: "redis",
+          instanceId: INSTANCE_ID,
+          redisPrimary: isRedisPrimaryMode,
+        },
+        "Redis storage initialized"
+      );
 
       // Subscribe to global events channel
       if (storage.subscribe) {

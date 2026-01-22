@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "NODE_ENV=production node server.js",
+    "start:cluster": "NODE_ENV=production node cluster.js",
     "dev": "node server.js | npx pino-pretty",
     "dev:raw": "node server.js",
     "lint": "eslint server.js public/client.js",
