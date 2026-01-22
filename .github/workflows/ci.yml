@@ -20,8 +20,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -30,6 +30,12 @@ jobs:
         run: |
           node --check server.js
           node --check public/client.js
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
 
       - name: Validate Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
