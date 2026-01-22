@@ -6,6 +6,7 @@ let reconnectAttempts = 0;
 let reconnectTimeout = null;
 const volume = 0.5;
 let myClientId = null;
+let pendingReconnect = null; // Track pending reconnection attempt for token cleanup on failure
 
 const CONSTANTS = {
   RECONNECT_INITIAL_DELAY: 1000,
@@ -85,19 +86,42 @@ function getAllReconnectTokens() {
 }
 
 /**
- * Clear a reconnection token
- * Available for future use when explicit game leave is implemented
+ * Clear a reconnection token for a specific game/player
  * @param {string} gameId - Game session ID
  * @param {number} playerId - Player ID
  */
-// eslint-disable-next-line no-unused-vars
 function clearReconnectToken(gameId, playerId) {
   try {
     const tokens = JSON.parse(localStorage.getItem(CONSTANTS.TOKEN_STORAGE_KEY) || "{}");
     delete tokens[`${gameId}-${playerId}`];
     localStorage.setItem(CONSTANTS.TOKEN_STORAGE_KEY, JSON.stringify(tokens));
+    console.log(`Cleared reconnect token for game ${gameId}, player ${playerId}`);
   } catch (e) {
     console.error("Failed to clear reconnect token:", e);
+  }
+}
+
+/**
+ * Clear all reconnection tokens for a specific game
+ * Used when leaving a game entirely
+ * @param {string} gameId - Game session ID
+ */
+function clearGameTokens(gameId) {
+  try {
+    const tokens = JSON.parse(localStorage.getItem(CONSTANTS.TOKEN_STORAGE_KEY) || "{}");
+    let cleared = 0;
+    for (const key of Object.keys(tokens)) {
+      if (tokens[key].gameId === gameId) {
+        delete tokens[key];
+        cleared++;
+      }
+    }
+    localStorage.setItem(CONSTANTS.TOKEN_STORAGE_KEY, JSON.stringify(tokens));
+    if (cleared > 0) {
+      console.log(`Cleared ${cleared} reconnect token(s) for game ${gameId}`);
+    }
+  } catch (e) {
+    console.error("Failed to clear game tokens:", e);
   }
 }
 
@@ -287,6 +311,14 @@ function handleMessage(message) {
       attemptStoredReconnection();
       break;
     case "error":
+      // If this error is from a failed reconnection attempt, clear the invalid token
+      if (pendingReconnect) {
+        console.log(
+          `Reconnection failed for game ${pendingReconnect.gameId}, player ${pendingReconnect.playerId}: ${message.data.message}`
+        );
+        clearReconnectToken(pendingReconnect.gameId, pendingReconnect.playerId);
+        pendingReconnect = null;
+      }
       alert(message.data.message);
       break;
     case "state":
@@ -326,6 +358,8 @@ function handleMessage(message) {
       console.log(`Reconnection token saved for player ${message.data.playerId}`);
       break;
     case "reconnected":
+      // Clear pending reconnect tracker
+      pendingReconnect = null;
       // Update stored token with new one
       saveReconnectToken(message.data.gameId, message.data.playerId, message.data.token);
       console.log(`Reconnected to game ${message.data.gameId} as player ${message.data.playerId}`);
@@ -349,6 +383,12 @@ function attemptStoredReconnection() {
   console.log(
     `Attempting reconnection to game ${mostRecent.gameId} as player ${mostRecent.playerId}`
   );
+
+  // Track the pending reconnection so we can clear the token if it fails
+  pendingReconnect = {
+    gameId: mostRecent.gameId,
+    playerId: mostRecent.playerId,
+  };
 
   ws.send(
     JSON.stringify({
@@ -789,6 +829,13 @@ function sendClaim(playerId) {
 }
 
 function sendUnclaim() {
+  // Clear the reconnection token for the player we're unclaiming
+  if (gameState && myClientId) {
+    const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+    if (myPlayer) {
+      clearReconnectToken(gameState.id, myPlayer.id);
+    }
+  }
   safeSend({ type: "unclaim", data: {} });
 }
 
@@ -823,6 +870,10 @@ function showScreen(screenName) {
 }
 
 function backToMenu() {
+  // Clear reconnection tokens for the game we're leaving
+  if (gameState && gameState.id) {
+    clearGameTokens(gameState.id);
+  }
   showScreen("mainMenu");
   gameState = null;
   setupForm.joinGame.value = "";
