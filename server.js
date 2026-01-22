@@ -17,7 +17,7 @@ const { logger } = require("./lib/logger");
 const metrics = require("./lib/metrics");
 const { withGameLock, getLockStats } = require("./lib/lock");
 const { RateLimiter, ConnectionRateLimiter, getClientIP } = require("./lib/rate-limiter");
-const { createGameStateAdapter } = require("./lib/game-state-adapter");
+// Note: game-state-adapter is available for future Redis-primary mode enhancements
 const AsyncLock = require("async-lock");
 
 // Separate lock for game creation to prevent ID collisions
@@ -90,7 +90,6 @@ let cleanupTimer = null;
 let heartbeatTimer = null;
 let isAsyncStorageMode = false;
 let isRedisPrimaryMode = false;
-let gameStateAdapter = null;
 
 const app = express();
 const server = http.createServer(app);

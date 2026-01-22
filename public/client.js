@@ -49,10 +49,12 @@ function saveReconnectToken(gameId, playerId, token) {
 
 /**
  * Get a reconnection token for a game/player combination
+ * Used by attemptStoredReconnection via getAllReconnectTokens
  * @param {string} gameId - Game session ID
  * @param {number} playerId - Player ID
  * @returns {{ token: string, gameId: string, playerId: number } | null}
  */
+// eslint-disable-next-line no-unused-vars
 function getReconnectToken(gameId, playerId) {
   try {
     const tokens = JSON.parse(localStorage.getItem(CONSTANTS.TOKEN_STORAGE_KEY) || "{}");
@@ -84,9 +86,11 @@ function getAllReconnectTokens() {
 
 /**
  * Clear a reconnection token
+ * Available for future use when explicit game leave is implemented
  * @param {string} gameId - Game session ID
  * @param {number} playerId - Player ID
  */
+// eslint-disable-next-line no-unused-vars
 function clearReconnectToken(gameId, playerId) {
   try {
     const tokens = JSON.parse(localStorage.getItem(CONSTANTS.TOKEN_STORAGE_KEY) || "{}");
