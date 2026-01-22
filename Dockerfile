@@ -4,6 +4,7 @@
 FROM node:20-alpine AS base
 
 # Install build dependencies for native modules (better-sqlite3)
+# hadolint ignore=DL3018
 RUN apk add --no-cache python3 make g++
 
 # Install dependencies only when needed
@@ -24,12 +25,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
 
-# Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 mtgtimer
-
-# Create data directory for SQLite persistence
-RUN mkdir -p /app/data && chown -R mtgtimer:nodejs /app/data
+# Create non-root user for security and data directory for SQLite persistence
+RUN addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 mtgtimer \
+    && mkdir -p /app/data \
+    && chown -R mtgtimer:nodejs /app/data
 
 # Copy built dependencies (including native modules)
 COPY --from=deps /app/node_modules ./node_modules
