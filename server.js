@@ -12,10 +12,11 @@ const {
   sanitizeString,
   generateGameId,
 } = require("./lib/game-logic");
-const { createStorage } = require("./lib/storage");
+const { createStorage, isAsyncStorage } = require("./lib/storage");
 const { logger } = require("./lib/logger");
 const metrics = require("./lib/metrics");
 const Sentry = require("@sentry/node");
+const crypto = require("crypto");
 
 // ============================================================================
 // SENTRY ERROR TRACKING (Optional)
@@ -45,7 +46,15 @@ const PORT = process.env.PORT || 3000;
 const HOST = "0.0.0.0";
 const STORAGE_TYPE = process.env.STORAGE_TYPE || "sqlite";
 const DB_PATH = process.env.DB_PATH || "./data/sessions.db";
+const REDIS_URL = process.env.REDIS_URL || null;
 const PERSISTENCE_INTERVAL = 10000; // Save active games every 10 seconds
+const HEARTBEAT_INTERVAL = 30000; // Instance heartbeat every 30 seconds
+
+// Generate unique instance ID for horizontal scaling
+const INSTANCE_ID =
+  process.env.FLY_ALLOC_ID ||
+  process.env.INSTANCE_ID ||
+  `instance_${crypto.randomBytes(8).toString("hex")}`;
 
 // ============================================================================
 // GLOBAL STATE
@@ -55,6 +64,8 @@ let isShuttingDown = false;
 let storage = null;
 let persistenceTimer = null;
 let cleanupTimer = null;
+let heartbeatTimer = null;
+let isAsyncStorageMode = false;
 
 const app = express();
 const server = http.createServer(app);
@@ -139,16 +150,41 @@ const wss = new WebSocket.Server({
 app.use(express.static(path.join(__dirname, "public")));
 
 // Health check endpoint for Fly.io
-app.get("/health", (req, res) => {
-  res.status(200).json({
+app.get("/health", async (req, res) => {
+  let persistedSessions = 0;
+  let redisHealth = null;
+
+  try {
+    if (storage) {
+      if (isAsyncStorageMode) {
+        persistedSessions = await storage.count();
+        if (storage.health) {
+          redisHealth = await storage.health();
+        }
+      } else {
+        persistedSessions = storage.count();
+      }
+    }
+  } catch (error) {
+    logger.error({ error: error.message }, "Health check storage error");
+  }
+
+  const healthData = {
     status: isShuttingDown ? "shutting_down" : "healthy",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+    instanceId: INSTANCE_ID,
     activeSessions: gameSessions.size,
     activeConnections: wss.clients.size,
     storageType: STORAGE_TYPE,
-    persistedSessions: storage ? storage.count() : 0,
-  });
+    persistedSessions,
+  };
+
+  if (redisHealth) {
+    healthData.redis = redisHealth;
+  }
+
+  res.status(200).json(healthData);
 });
 
 // Prometheus metrics endpoint
@@ -168,14 +204,47 @@ app.get("/metrics", async (req, res) => {
 
 const gameSessions = new Map();
 
+/**
+ * Broadcast a message to all local clients in a game
+ * @param {string} gameId - Game session ID
+ * @param {string} type - Message type
+ * @param {object} data - Message data
+ */
+function broadcastToLocalClients(gameId, type, data) {
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN && client.gameId === gameId) {
+      client.send(JSON.stringify({ type, data }));
+    }
+  });
+}
+
+/**
+ * Broadcast a message to all clients in a game (including cross-instance via Redis)
+ * @param {string} gameId - Game session ID
+ * @param {string} type - Message type
+ * @param {object} data - Message data
+ */
+async function broadcastToGame(gameId, type, data) {
+  // Always broadcast to local clients first
+  broadcastToLocalClients(gameId, type, data);
+
+  // If using Redis, also publish to cross-instance channel
+  if (isAsyncStorageMode && storage && storage.broadcast) {
+    try {
+      await storage.broadcast(gameId, type, data);
+    } catch (error) {
+      logger.error({ error: error.message, gameId }, "Failed to broadcast via Redis");
+    }
+  }
+}
+
 // Server-specific GameSession that uses WebSocket for broadcasting
 class GameSession extends BaseGameSession {
   constructor(id, settings) {
     super(id, settings, (type, data) => {
-      wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN && client.gameId === id) {
-          client.send(JSON.stringify({ type, data }));
-        }
+      // Use async broadcast for cross-instance support
+      broadcastToGame(id, type, data).catch(error => {
+        logger.error({ error: error.message, gameId: id }, "Broadcast failed");
       });
     });
   }
@@ -265,11 +334,22 @@ wss.on("connection", ws => {
           session.setOwner(ws.clientId); // Set creator as owner
           gameSessions.set(gameId, session);
           ws.gameId = gameId;
+
+          // Subscribe to Redis channel for cross-instance messaging
+          subscribeToGameChannel(gameId).catch(error => {
+            logger.error({ error: error.message, gameId }, "Failed to subscribe to game channel");
+          });
+
           ws.send(JSON.stringify({ type: "state", data: session.getState() }));
           metrics.recordNewSession();
           metrics.recordMessageSent("state");
           logger.info(
-            { gameId, clientId: ws.clientId, playerCount: session.settings.playerCount },
+            {
+              gameId,
+              clientId: ws.clientId,
+              playerCount: session.settings.playerCount,
+              instanceId: INSTANCE_ID,
+            },
             "Game created"
           );
           break;
@@ -664,9 +744,9 @@ wss.on("connection", ws => {
 // ============================================================================
 
 /**
- * Save all active sessions to storage
+ * Save all active sessions to storage (supports both sync and async storage)
  */
-function persistSessions() {
+async function persistSessions() {
   if (!storage || isShuttingDown) return;
 
   const endTimer = metrics.startStorageSaveTimer();
@@ -675,7 +755,11 @@ function persistSessions() {
 
   for (const [gameId, session] of gameSessions.entries()) {
     try {
-      storage.save(gameId, session.toJSON());
+      if (isAsyncStorageMode) {
+        await storage.save(gameId, session.toJSON());
+      } else {
+        storage.save(gameId, session.toJSON());
+      }
       metrics.recordStorageOperation("save", "success");
       savedCount++;
     } catch (error) {
@@ -692,33 +776,46 @@ function persistSessions() {
 }
 
 /**
- * Load sessions from storage on startup
+ * Load sessions from storage on startup (supports both sync and async storage)
  */
-function loadSessions() {
+async function loadSessions() {
   if (!storage) return;
 
   try {
-    const savedSessions = storage.loadAll();
+    let savedSessions;
+    if (isAsyncStorageMode) {
+      savedSessions = await storage.loadAll();
+    } else {
+      savedSessions = storage.loadAll();
+    }
     logger.info({ count: savedSessions.length }, "Found persisted sessions");
 
     for (const { id, state } of savedSessions) {
       try {
         const session = BaseGameSession.fromState(state, (type, data) => {
-          wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN && client.gameId === id) {
-              client.send(JSON.stringify({ type, data }));
-              metrics.recordMessageSent(type);
-            }
+          // Use async broadcast for cross-instance support
+          broadcastToGame(id, type, data).catch(error => {
+            logger.error({ error: error.message, gameId: id }, "Broadcast failed");
           });
         });
         gameSessions.set(id, session);
+
+        // Subscribe to Redis channel for this game if using Redis
+        if (isAsyncStorageMode && storage.subscribeToGame) {
+          await subscribeToGameChannel(id);
+        }
+
         metrics.recordRestoredSession();
         metrics.recordStorageOperation("load", "success");
         logger.info({ gameId: id, status: session.status }, "Restored session");
       } catch (error) {
         logger.error({ gameId: id, error: error.message }, "Failed to restore session");
         metrics.recordStorageOperation("load", "error");
-        storage.delete(id);
+        if (isAsyncStorageMode) {
+          await storage.delete(id);
+        } else {
+          storage.delete(id);
+        }
       }
     }
   } catch (error) {
@@ -728,9 +825,43 @@ function loadSessions() {
 }
 
 /**
- * Session cleanup routine
+ * Subscribe to a game's Redis channel for cross-instance messaging
+ * @param {string} gameId - Game session ID
  */
-function cleanupSessions() {
+async function subscribeToGameChannel(gameId) {
+  if (!isAsyncStorageMode || !storage || !storage.subscribeToGame) return;
+
+  try {
+    await storage.subscribeToGame(gameId, message => {
+      // Handle messages from other instances
+      handleCrossInstanceMessage(gameId, message);
+    });
+    logger.debug({ gameId }, "Subscribed to game channel");
+  } catch (error) {
+    logger.error({ error: error.message, gameId }, "Failed to subscribe to game channel");
+  }
+}
+
+/**
+ * Handle a message received from another instance via Redis
+ * @param {string} gameId - Game session ID
+ * @param {object} message - Message from Redis
+ */
+function handleCrossInstanceMessage(gameId, message) {
+  // Skip if this message originated from this instance
+  if (message.instanceId === INSTANCE_ID) return;
+
+  // Broadcast to local clients only (already handled by other instance locally)
+  if (message.type && message.data) {
+    broadcastToLocalClients(gameId, message.type, message.data);
+    logger.debug({ gameId, type: message.type }, "Relayed cross-instance message");
+  }
+}
+
+/**
+ * Session cleanup routine (supports both sync and async storage)
+ */
+async function cleanupSessions() {
   const now = Date.now();
   let cleanedCount = 0;
 
@@ -747,8 +878,20 @@ function cleanupSessions() {
       session.cleanup();
       gameSessions.delete(gameId);
       if (storage) {
-        storage.delete(gameId);
-        metrics.recordStorageOperation("delete", "success");
+        try {
+          if (isAsyncStorageMode) {
+            await storage.delete(gameId);
+            if (storage.unsubscribe) {
+              await storage.unsubscribe(`broadcast:${gameId}`);
+            }
+          } else {
+            storage.delete(gameId);
+          }
+          metrics.recordStorageOperation("delete", "success");
+        } catch (error) {
+          logger.error({ gameId, error: error.message }, "Failed to delete session from storage");
+          metrics.recordStorageOperation("delete", "error");
+        }
       }
       logger.info({ gameId }, "Session cleaned up");
       cleanedCount++;
@@ -773,15 +916,20 @@ async function gracefulShutdown(signal, exitCode = 0) {
   if (isShuttingDown) return;
   isShuttingDown = true;
 
-  logger.info({ signal }, "Starting graceful shutdown");
+  logger.info({ signal, instanceId: INSTANCE_ID }, "Starting graceful shutdown");
 
   // Clear timers
   if (persistenceTimer) clearInterval(persistenceTimer);
   if (cleanupTimer) clearInterval(cleanupTimer);
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
 
   // Persist all sessions before shutdown
   logger.info("Persisting sessions before shutdown");
-  persistSessions();
+  try {
+    await persistSessions();
+  } catch (error) {
+    logger.error({ error: error.message }, "Error during final persistence");
+  }
 
   // Close WebSocket server (stop accepting new connections)
   logger.info("Closing WebSocket server");
@@ -813,7 +961,15 @@ async function gracefulShutdown(signal, exitCode = 0) {
   // Close storage
   if (storage) {
     logger.info("Closing storage");
-    storage.close();
+    try {
+      if (isAsyncStorageMode) {
+        await storage.close();
+      } else {
+        storage.close();
+      }
+    } catch (error) {
+      logger.error({ error: error.message }, "Error closing storage");
+    }
   }
 
   // Close HTTP server
@@ -860,24 +1016,65 @@ process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 // SERVER STARTUP
 // ============================================================================
 
-function startServer() {
+async function startServer() {
+  logger.info({ instanceId: INSTANCE_ID }, "Starting server instance");
+
   // Initialize storage
   try {
-    storage = createStorage(STORAGE_TYPE, DB_PATH);
-    logger.info({ storageType: STORAGE_TYPE, dbPath: DB_PATH }, "Storage initialized");
+    // Determine storage configuration
+    if (STORAGE_TYPE === "redis" && REDIS_URL) {
+      storage = createStorage("redis", {
+        url: REDIS_URL,
+        instanceId: INSTANCE_ID,
+      });
+      isAsyncStorageMode = true;
+      logger.info({ storageType: "redis", instanceId: INSTANCE_ID }, "Redis storage initialized");
+
+      // Subscribe to global events channel
+      if (storage.subscribe) {
+        await storage.subscribe("global:events", message => {
+          logger.debug({ eventType: message.eventType }, "Received global event");
+        });
+      }
+
+      // Start heartbeat for instance registration
+      heartbeatTimer = setInterval(async () => {
+        if (storage && storage.heartbeat) {
+          await storage.heartbeat();
+        }
+      }, HEARTBEAT_INTERVAL);
+    } else {
+      storage = createStorage(STORAGE_TYPE, DB_PATH);
+      isAsyncStorageMode = isAsyncStorage(STORAGE_TYPE);
+      logger.info({ storageType: STORAGE_TYPE, dbPath: DB_PATH }, "Storage initialized");
+    }
   } catch (error) {
     logger.error({ error: error.message }, "Failed to initialize storage");
     logger.warn("Continuing with in-memory storage only");
+    storage = createStorage("memory");
+    isAsyncStorageMode = false;
   }
 
   // Load persisted sessions
-  loadSessions();
+  await loadSessions();
 
-  // Start persistence timer
-  persistenceTimer = setInterval(persistSessions, PERSISTENCE_INTERVAL);
+  // Start persistence timer (async-aware)
+  persistenceTimer = setInterval(async () => {
+    try {
+      await persistSessions();
+    } catch (error) {
+      logger.error({ error: error.message }, "Persistence timer error");
+    }
+  }, PERSISTENCE_INTERVAL);
 
-  // Start cleanup timer
-  cleanupTimer = setInterval(cleanupSessions, CONSTANTS.SESSION_CLEANUP_INTERVAL);
+  // Start cleanup timer (async-aware)
+  cleanupTimer = setInterval(async () => {
+    try {
+      await cleanupSessions();
+    } catch (error) {
+      logger.error({ error: error.message }, "Cleanup timer error");
+    }
+  }, CONSTANTS.SESSION_CLEANUP_INTERVAL);
 
   // Start HTTP server
   server.listen(PORT, HOST, () => {
@@ -886,6 +1083,8 @@ function startServer() {
         host: HOST,
         port: PORT,
         env: process.env.NODE_ENV || "development",
+        instanceId: INSTANCE_ID,
+        storageType: STORAGE_TYPE,
         activeSessions: gameSessions.size,
       },
       "Tap or Tarp server started"
@@ -894,4 +1093,7 @@ function startServer() {
 }
 
 // Start the server
-startServer();
+startServer().catch(error => {
+  logger.fatal({ error: error.message }, "Failed to start server");
+  process.exit(1);
+});

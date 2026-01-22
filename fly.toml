@@ -8,6 +8,11 @@ primary_region = 'ams'
 
 [build]
 
+[env]
+  # Storage configuration - use 'redis' for horizontal scaling
+  STORAGE_TYPE = "sqlite"
+  # STORAGE_TYPE = "redis"  # Uncomment for horizontal scaling
+
 [http_service]
   internal_port = 8080
   force_https = true
@@ -16,8 +21,51 @@ primary_region = 'ams'
   min_machines_running = 0
   processes = ['app']
 
+  # Concurrency settings for WebSocket connections
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 1000
+    soft_limit = 800
+
+# Health check configuration
+[[http_service.checks]]
+  grace_period = "10s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/health"
+
+# Sticky sessions for WebSocket connections
+# Ensures clients reconnect to the same instance when possible
+[[stickiness]]
+  cookie_name = "fly_instance"
+  ttl = "1h"
+
 [[vm]]
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
   memory_mb = 256
+
+# =============================================================================
+# HORIZONTAL SCALING WITH REDIS
+# =============================================================================
+# To enable horizontal scaling:
+#
+# 1. Create an Upstash Redis database:
+#    fly redis create
+#
+# 2. Set the REDIS_URL secret:
+#    fly secrets set REDIS_URL="redis://..."
+#
+# 3. Update STORAGE_TYPE in [env] above to "redis"
+#
+# 4. Scale to multiple instances:
+#    fly scale count 2
+#
+# 5. (Optional) Add more regions:
+#    fly regions add lhr fra
+#
+# Note: SQLite persistence works for single-instance deployments.
+# For multi-instance, Redis is required for shared state.
+# =============================================================================
