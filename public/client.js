@@ -16,7 +16,99 @@ const CONSTANTS = {
   WARNING_THRESHOLD_1MIN: 60000,
   CRITICAL_THRESHOLD: 60000,
   MINUTE_MS: 60000,
+  TOKEN_STORAGE_KEY: "tapOrTarpReconnectTokens",
+  TOKEN_MAX_AGE: 60 * 60 * 1000, // 1 hour
 };
+
+// ============================================================================
+// RECONNECTION TOKEN MANAGEMENT
+// ============================================================================
+
+/**
+ * Save a reconnection token for a game/player combination
+ * @param {string} gameId - Game session ID
+ * @param {number} playerId - Player ID
+ * @param {string} token - Reconnection token
+ */
+function saveReconnectToken(gameId, playerId, token) {
+  try {
+    const tokens = JSON.parse(localStorage.getItem(CONSTANTS.TOKEN_STORAGE_KEY) || "{}");
+    tokens[`${gameId}-${playerId}`] = {
+      token,
+      gameId,
+      playerId,
+      timestamp: Date.now(),
+    };
+    // Clean up expired tokens while we're here
+    cleanupExpiredTokens(tokens);
+    localStorage.setItem(CONSTANTS.TOKEN_STORAGE_KEY, JSON.stringify(tokens));
+  } catch (e) {
+    console.error("Failed to save reconnect token:", e);
+  }
+}
+
+/**
+ * Get a reconnection token for a game/player combination
+ * @param {string} gameId - Game session ID
+ * @param {number} playerId - Player ID
+ * @returns {{ token: string, gameId: string, playerId: number } | null}
+ */
+function getReconnectToken(gameId, playerId) {
+  try {
+    const tokens = JSON.parse(localStorage.getItem(CONSTANTS.TOKEN_STORAGE_KEY) || "{}");
+    const data = tokens[`${gameId}-${playerId}`];
+    if (data && Date.now() - data.timestamp < CONSTANTS.TOKEN_MAX_AGE) {
+      return data;
+    }
+    return null;
+  } catch (e) {
+    console.error("Failed to get reconnect token:", e);
+    return null;
+  }
+}
+
+/**
+ * Get all valid reconnection tokens (for attempting reconnection on page load)
+ * @returns {Array<{ token: string, gameId: string, playerId: number }>}
+ */
+function getAllReconnectTokens() {
+  try {
+    const tokens = JSON.parse(localStorage.getItem(CONSTANTS.TOKEN_STORAGE_KEY) || "{}");
+    const now = Date.now();
+    return Object.values(tokens).filter(data => now - data.timestamp < CONSTANTS.TOKEN_MAX_AGE);
+  } catch (e) {
+    console.error("Failed to get reconnect tokens:", e);
+    return [];
+  }
+}
+
+/**
+ * Clear a reconnection token
+ * @param {string} gameId - Game session ID
+ * @param {number} playerId - Player ID
+ */
+function clearReconnectToken(gameId, playerId) {
+  try {
+    const tokens = JSON.parse(localStorage.getItem(CONSTANTS.TOKEN_STORAGE_KEY) || "{}");
+    delete tokens[`${gameId}-${playerId}`];
+    localStorage.setItem(CONSTANTS.TOKEN_STORAGE_KEY, JSON.stringify(tokens));
+  } catch (e) {
+    console.error("Failed to clear reconnect token:", e);
+  }
+}
+
+/**
+ * Clean up expired tokens from storage
+ * @param {object} tokens - Token storage object
+ */
+function cleanupExpiredTokens(tokens) {
+  const now = Date.now();
+  for (const key of Object.keys(tokens)) {
+    if (now - tokens[key].timestamp >= CONSTANTS.TOKEN_MAX_AGE) {
+      delete tokens[key];
+    }
+  }
+}
 
 // Screen elements
 const screens = {
@@ -187,6 +279,8 @@ function handleMessage(message) {
   switch (message.type) {
     case "clientId":
       myClientId = message.data.clientId;
+      // Try to reconnect to any stored games
+      attemptStoredReconnection();
       break;
     case "error":
       alert(message.data.message);
@@ -222,7 +316,46 @@ function handleMessage(message) {
         }
       }
       break;
+    case "claimed":
+      // Store the reconnection token for this player
+      saveReconnectToken(message.data.gameId, message.data.playerId, message.data.token);
+      console.log(`Reconnection token saved for player ${message.data.playerId}`);
+      break;
+    case "reconnected":
+      // Update stored token with new one
+      saveReconnectToken(message.data.gameId, message.data.playerId, message.data.token);
+      console.log(`Reconnected to game ${message.data.gameId} as player ${message.data.playerId}`);
+      // Switch to game screen if not already there
+      showScreen("game");
+      break;
   }
+}
+
+/**
+ * Attempt to reconnect to any stored games on page load
+ */
+function attemptStoredReconnection() {
+  const tokens = getAllReconnectTokens();
+  if (tokens.length === 0) return;
+
+  // Try the most recent token first
+  const sortedTokens = tokens.sort((a, b) => b.timestamp - a.timestamp);
+  const mostRecent = sortedTokens[0];
+
+  console.log(
+    `Attempting reconnection to game ${mostRecent.gameId} as player ${mostRecent.playerId}`
+  );
+
+  ws.send(
+    JSON.stringify({
+      type: "reconnect",
+      data: {
+        gameId: mostRecent.gameId,
+        playerId: mostRecent.playerId,
+        token: mostRecent.token,
+      },
+    })
+  );
 }
 
 function formatTime(milliseconds) {

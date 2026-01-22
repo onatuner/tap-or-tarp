@@ -148,21 +148,57 @@ describe("validateTimeValue", () => {
 });
 
 describe("sanitizeString", () => {
-  test("should remove < and > characters", () => {
-    expect(sanitizeString('<script>alert("xss")</script>')).toBe('scriptalert("xss")/script');
-    expect(sanitizeString("Player <1>")).toBe("Player 1");
-    expect(sanitizeString("<<>>")).toBe("");
+  test("should HTML encode < and > characters", () => {
+    expect(sanitizeString('<script>alert("xss")</script>')).toBe(
+      "&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;"
+    );
+    expect(sanitizeString("Player <1>")).toBe("Player &lt;1&gt;");
+    expect(sanitizeString("<<>>")).toBe("&lt;&lt;&gt;&gt;");
   });
 
-  test("should return unchanged string without < or >", () => {
+  test("should encode quotes and ampersands", () => {
+    expect(sanitizeString('"quoted"')).toBe("&quot;quoted&quot;");
+    expect(sanitizeString("'single'")).toBe("&apos;single&apos;");
+    expect(sanitizeString("A & B")).toBe("A &amp; B");
+  });
+
+  test("should handle common XSS vectors", () => {
+    // Script injection
+    expect(sanitizeString('<img src=x onerror="alert(1)">')).toBe(
+      "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;"
+    );
+    // Event handler injection
+    expect(sanitizeString('"><script>alert(1)</script>')).toBe(
+      "&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;"
+    );
+    // JavaScript protocol
+    expect(sanitizeString("javascript:alert(1)")).toBe("javascript:alert(1)");
+    // SVG-based XSS
+    expect(sanitizeString('<svg onload="alert(1)">')).toBe(
+      "&lt;svg onload=&quot;alert(1)&quot;&gt;"
+    );
+  });
+
+  test("should return unchanged string without special characters", () => {
     expect(sanitizeString("Hello World")).toBe("Hello World");
     expect(sanitizeString("Player 1")).toBe("Player 1");
+    expect(sanitizeString("John Doe")).toBe("John Doe");
+  });
+
+  test("should handle unicode characters correctly", () => {
+    expect(sanitizeString("Player 日本語")).toBe("Player 日本語");
+    expect(sanitizeString("Émile")).toBe("Émile");
+    expect(sanitizeString("🎮 Gamer")).toBe("🎮 Gamer");
   });
 
   test("should return non-string values unchanged", () => {
     expect(sanitizeString(123)).toBe(123);
     expect(sanitizeString(null)).toBe(null);
     expect(sanitizeString(undefined)).toBe(undefined);
+  });
+
+  test("should handle empty string", () => {
+    expect(sanitizeString("")).toBe("");
   });
 });
 
@@ -249,29 +285,36 @@ describe("GameSession", () => {
   });
 
   describe("claimPlayer", () => {
-    test("should claim an unclaimed player", () => {
+    test("should claim an unclaimed player and return token", () => {
       const result = session.claimPlayer(1, "client1");
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.token).toBeDefined();
+      expect(result.token).toHaveLength(64); // 32 bytes = 64 hex chars
       expect(session.players[0].claimedBy).toBe("client1");
+      expect(session.players[0].reconnectToken).toBe(result.token);
+      expect(session.players[0].tokenExpiry).toBeGreaterThan(Date.now());
     });
 
     test("should not claim during non-waiting status", () => {
       session.start();
       const result = session.claimPlayer(1, "client1");
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe("Game already started");
     });
 
     test("should not claim already claimed player by different client", () => {
       session.claimPlayer(1, "client1");
       const result = session.claimPlayer(1, "client2");
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe("Player already claimed");
       expect(session.players[0].claimedBy).toBe("client1");
     });
 
-    test("should allow reclaiming by same client", () => {
-      session.claimPlayer(1, "client1");
-      const result = session.claimPlayer(1, "client1");
-      expect(result).toBe(true);
+    test("should allow reclaiming by same client with new token", () => {
+      const firstResult = session.claimPlayer(1, "client1");
+      const secondResult = session.claimPlayer(1, "client1");
+      expect(secondResult.success).toBe(true);
+      expect(secondResult.token).not.toBe(firstResult.token);
     });
 
     test("should unclaim previous player when claiming new one", () => {
@@ -281,17 +324,85 @@ describe("GameSession", () => {
       expect(session.players[1].claimedBy).toBe("client1");
     });
 
-    test("should return false for invalid player ID", () => {
-      expect(session.claimPlayer(99, "client1")).toBe(false);
-      expect(session.claimPlayer(0, "client1")).toBe(false);
+    test("should return failure for invalid player ID", () => {
+      const result1 = session.claimPlayer(99, "client1");
+      expect(result1.success).toBe(false);
+      expect(result1.reason).toBe("Player not found");
+
+      const result2 = session.claimPlayer(0, "client1");
+      expect(result2.success).toBe(false);
+      expect(result2.reason).toBe("Player not found");
+    });
+
+    test("should clear previous tokens when claiming new player", () => {
+      session.claimPlayer(1, "client1");
+      const firstToken = session.players[0].reconnectToken;
+      expect(firstToken).toBeDefined();
+
+      session.claimPlayer(2, "client1");
+      expect(session.players[0].reconnectToken).toBe(null);
+      expect(session.players[0].tokenExpiry).toBe(null);
+      expect(session.players[1].reconnectToken).toBeDefined();
+    });
+  });
+
+  describe("reconnectPlayer", () => {
+    test("should successfully reconnect with valid token", () => {
+      const claimResult = session.claimPlayer(1, "client1");
+      const token = claimResult.token;
+
+      // Simulate disconnect - player is still claimed but client is gone
+      const reconnectResult = session.reconnectPlayer(1, token, "client2");
+      expect(reconnectResult.success).toBe(true);
+      expect(reconnectResult.token).toBeDefined();
+      expect(reconnectResult.token).not.toBe(token); // New token issued
+      expect(session.players[0].claimedBy).toBe("client2");
+    });
+
+    test("should fail with invalid token", () => {
+      session.claimPlayer(1, "client1");
+
+      const result = session.reconnectPlayer(1, "invalid-token", "client2");
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe("Invalid token");
+      expect(session.players[0].claimedBy).toBe("client1"); // Unchanged
+    });
+
+    test("should fail with expired token", () => {
+      const claimResult = session.claimPlayer(1, "client1");
+      const token = claimResult.token;
+
+      // Manually expire the token
+      session.players[0].tokenExpiry = Date.now() - 1000;
+
+      const result = session.reconnectPlayer(1, token, "client2");
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe("Token expired");
+      expect(session.players[0].reconnectToken).toBe(null); // Cleared
+    });
+
+    test("should fail for player without token", () => {
+      const result = session.reconnectPlayer(1, "some-token", "client1");
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe("No reconnection token for this player");
+    });
+
+    test("should fail for non-existent player", () => {
+      const result = session.reconnectPlayer(99, "some-token", "client1");
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe("Player not found");
     });
   });
 
   describe("unclaimPlayer", () => {
-    test("should unclaim player", () => {
+    test("should unclaim player and clear tokens", () => {
       session.claimPlayer(1, "client1");
+      expect(session.players[0].reconnectToken).toBeDefined();
+
       session.unclaimPlayer("client1");
       expect(session.players[0].claimedBy).toBe(null);
+      expect(session.players[0].reconnectToken).toBe(null);
+      expect(session.players[0].tokenExpiry).toBe(null);
     });
 
     test("should only unclaim players claimed by specified client", () => {
