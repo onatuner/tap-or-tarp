@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 100" width="140" height="100">
+  <defs>
+    <!-- Camouflage pattern -->
+    <pattern id="camo" patternUnits="userSpaceOnUse" width="30" height="30">
+      <rect width="30" height="30" fill="#4a5d23"/>
+      <ellipse cx="5" cy="8" rx="8" ry="5" fill="#6b7c3f"/>
+      <ellipse cx="22" cy="20" rx="10" ry="6" fill="#3d4d1c"/>
+      <ellipse cx="12" cy="25" rx="7" ry="4" fill="#7a8b4a"/>
+      <ellipse cx="25" cy="5" rx="6" ry="4" fill="#5a6b2f"/>
+      <ellipse cx="0" cy="18" rx="5" ry="8" fill="#8a9b5a"/>
+    </pattern>
+    
+    <!-- Shadow/depth gradient -->
+    <linearGradient id="hammockShade" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6b7c3f;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2d3d16;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Rope/ties at top -->
+  <path d="M42 25 Q50 15, 62 8 L66 8 Q54 18, 48 28" fill="#5a5a4a" opacity="0.8"/>
+  <path d="M98 25 Q90 15, 78 8 L74 8 Q86 18, 92 28" fill="#5a5a4a" opacity="0.8"/>
+  
+  <!-- Knot at top -->
+  <ellipse cx="70" cy="10" rx="6" ry="4" fill="#4a4a3a"/>
+  
+  <!-- Main hammock body -->
+  <path d="M5 35 
+           Q0 45, 2 55 
+           Q15 80, 70 85 
+           Q125 80, 138 55 
+           Q140 45, 135 35 
+           Q110 32, 70 30 
+           Q30 32, 5 35 Z" 
+        fill="url(#camo)" 
+        stroke="#3d4d1c" 
+        stroke-width="2"/>
+  
+  <!-- Hammock rim/edge highlight -->
+  <path d="M5 35 Q30 32, 70 30 Q110 32, 135 35" 
+        fill="none" 
+        stroke="#8a9b5a" 
+        stroke-width="3"
+        stroke-linecap="round"/>
+  
+  <!-- Inner shadow for depth -->
+  <path d="M12 42 
+           Q30 65, 70 72 
+           Q110 65, 128 42" 
+        fill="none" 
+        stroke="#2d3d16" 
+        stroke-width="2"
+        opacity="0.4"/>
+  
+  <!-- Fabric fold lines -->
+  <path d="M40 38 Q45 55, 52 68" fill="none" stroke="#3d4d1c" stroke-width="1" opacity="0.5"/>
+  <path d="M100 38 Q95 55, 88 68" fill="none" stroke="#3d4d1c" stroke-width="1" opacity="0.5"/>
+  <path d="M70 32 Q70 50, 70 75" fill="none" stroke="#3d4d1c" stroke-width="1" opacity="0.3"/>
+</svg>
