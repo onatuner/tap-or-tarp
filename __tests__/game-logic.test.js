@@ -882,6 +882,7 @@ describe("GameSession", () => {
 
       expect(quickSession.players[0].timeRemaining).toBe(0);
       expect(quickSession.players[0].penalties).toBeGreaterThanOrEqual(1);
+      expect(quickSession.players[0].isEliminated).toBe(true);
       expect(quickSession.status).toBe("paused");
 
       quickSession.cleanup();

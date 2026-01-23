@@ -466,6 +466,10 @@ function createPlayerCard(player, isActive) {
 
   if (player.isEliminated) {
     card.classList.add("eliminated");
+    const deadBanner = document.createElement("div");
+    deadBanner.className = "dead-banner";
+    deadBanner.textContent = "DEAD";
+    card.appendChild(deadBanner);
   }
 
   if (isActive) {
