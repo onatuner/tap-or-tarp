@@ -917,7 +917,7 @@ function updateSettingsOwnerUI() {
 
   // Update hint text
   const formGroup = thresholdsContainer.closest(".form-group");
-  let hint = formGroup.querySelector(".form-hint");
+  const hint = formGroup.querySelector(".form-hint");
   if (hint) {
     hint.textContent = "Audio alerts when time remaining drops below these values";
   }
