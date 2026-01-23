@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" width="140" height="140">
+  <!-- Full background -->
+  <rect width="140" height="140" fill="#1a1a2e"/>
+  
+  <defs>
+    <!-- Camouflage pattern -->
+    <pattern id="camo" patternUnits="userSpaceOnUse" width="30" height="30">
+      <rect width="30" height="30" fill="#4a5d23"/>
+      <ellipse cx="5" cy="8" rx="8" ry="5" fill="#6b7c3f"/>
+      <ellipse cx="22" cy="20" rx="10" ry="6" fill="#3d4d1c"/>
+      <ellipse cx="12" cy="25" rx="7" ry="4" fill="#7a8b4a"/>
+      <ellipse cx="25" cy="5" rx="6" ry="4" fill="#5a6b2f"/>
+      <ellipse cx="0" cy="18" rx="5" ry="8" fill="#8a9b5a"/>
+    </pattern>
+  </defs>
+  
+  <!-- Rope/ties at top (shifted down by 20) -->
+  <path d="M42 45 Q50 35, 62 28 L66 28 Q54 38, 48 48" fill="#5a5a4a" opacity="0.8"/>
+  <path d="M98 45 Q90 35, 78 28 L74 28 Q86 38, 92 48" fill="#5a5a4a" opacity="0.8"/>
+  
+  <!-- Knot at top -->
+  <ellipse cx="70" cy="30" rx="6" ry="4" fill="#4a4a3a"/>
+  
+  <!-- Main hammock body -->
+  <path d="M5 55 
+           Q0 65, 2 75 
+           Q15 100, 70 105 
+           Q125 100, 138 75 
+           Q140 65, 135 55 
+           Q110 52, 70 50 
+           Q30 52, 5 55 Z" 
+        fill="url(#camo)" 
+        stroke="#3d4d1c" 
+        stroke-width="2"/>
+  
+  <!-- Hammock rim/edge highlight -->
+  <path d="M5 55 Q30 52, 70 50 Q110 52, 135 55" 
+        fill="none" 
+        stroke="#8a9b5a" 
+        stroke-width="3"
+        stroke-linecap="round"/>
+  
+  <!-- Inner shadow for depth -->
+  <path d="M12 62 
+           Q30 85, 70 92 
+           Q110 85, 128 62" 
+        fill="none" 
+        stroke="#2d3d16" 
+        stroke-width="2"
+        opacity="0.4"/>
+  
+  <!-- Fabric fold lines -->
+  <path d="M40 58 Q45 75, 52 88" fill="none" stroke="#3d4d1c" stroke-width="1" opacity="0.5"/>
+  <path d="M100 58 Q95 75, 88 88" fill="none" stroke="#3d4d1c" stroke-width="1" opacity="0.5"/>
+  <path d="M70 52 Q70 70, 70 95" fill="none" stroke="#3d4d1c" stroke-width="1" opacity="0.3"/>
+</svg>
