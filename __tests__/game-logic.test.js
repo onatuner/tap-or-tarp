@@ -569,6 +569,12 @@ describe("GameSession", () => {
       expect(session.players[0].drunkCounter).toBe(2);
       expect(session.players[0].genericCounter).toBe(4);
     });
+
+    test("should update player color", () => {
+      expect(session.players[0].color).toBeNull();
+      session.updatePlayer(1, { color: "blue" });
+      expect(session.players[0].color).toBe("blue");
+    });
   });
 
   describe("addPenalty", () => {

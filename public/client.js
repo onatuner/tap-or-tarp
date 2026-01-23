@@ -196,10 +196,36 @@ const controls = {
 
 const settingsModal = {
   modal: document.getElementById("settings-modal"),
-  thresholds: document.getElementById("warning-thresholds"),
+  thresholdsContainer: document.getElementById("thresholds-container"),
+  addThresholdBtn: document.getElementById("add-threshold-btn"),
+  playerColorsContainer: document.getElementById("player-colors-container"),
   save: document.getElementById("save-settings"),
   close: document.getElementById("close-settings"),
 };
+
+const colorPickerModal = {
+  modal: document.getElementById("color-picker-modal"),
+  options: document.getElementById("color-options"),
+  cancel: document.getElementById("cancel-color-picker"),
+};
+
+// Available player colors
+const PLAYER_COLORS = [
+  { id: "red", name: "Red", primary: "#dc3c3c", secondary: "#b42828" },
+  { id: "blue", name: "Blue", primary: "#3c78dc", secondary: "#2864c8" },
+  { id: "green", name: "Green", primary: "#32a032", secondary: "#1e821e" },
+  { id: "yellow", name: "Yellow", primary: "#e6d23c", secondary: "#c8b428" },
+  { id: "purple", name: "Purple", primary: "#8c3cc8", secondary: "#6e28aa" },
+  { id: "cyan", name: "Cyan", primary: "#3cbebe", secondary: "#28a0a0" },
+  { id: "orange", name: "Orange", primary: "#ff8228", secondary: "#dc6414" },
+  { id: "pink", name: "Pink", primary: "#e650a0", secondary: "#c83c82" },
+  { id: "lime", name: "Lime", primary: "#96dc32", secondary: "#78be14" },
+  { id: "teal", name: "Teal", primary: "#32a096", secondary: "#1e8278" },
+  { id: "indigo", name: "Indigo", primary: "#5050dc", secondary: "#3c3cc8" },
+  { id: "amber", name: "Amber", primary: "#ffc814", secondary: "#e6aa00" },
+];
+
+let selectedPlayerForColor = null;
 
 const timeoutModal = {
   modal: document.getElementById("timeout-modal"),
@@ -431,6 +457,12 @@ function createPlayerCard(player, isActive) {
   const isMyPlayer = player.claimedBy && player.claimedBy === myClientId;
   const isClaimed = player.claimedBy != null; // using != to catch both null and undefined
   const isWaiting = gameState.status === "waiting";
+
+  // Apply custom player color
+  const playerColor = getPlayerColor(player);
+  card.style.setProperty("--player-primary", playerColor.primary);
+  card.style.setProperty("--player-secondary", playerColor.secondary);
+  card.classList.add("custom-color");
 
   if (player.isEliminated) {
     card.classList.add("eliminated");
@@ -849,11 +881,196 @@ function hideTimeoutModal() {
 }
 
 function showSettingsModal() {
+  // Populate thresholds from game state
+  populateThresholds();
+  // Populate player colors
+  populatePlayerColors();
+  // Update UI based on owner status
+  updateSettingsOwnerUI();
   settingsModal.modal.style.display = "flex";
+}
+
+function updateSettingsOwnerUI() {
+  const isOwner = gameState && gameState.ownerId === myClientId;
+  const thresholdsContainer = settingsModal.thresholdsContainer;
+  const addBtn = settingsModal.addThresholdBtn;
+
+  // Disable threshold editing for non-owners
+  const inputs = thresholdsContainer.querySelectorAll(".threshold-input");
+  const removeButtons = thresholdsContainer.querySelectorAll(".btn-threshold-remove");
+
+  inputs.forEach(input => {
+    input.disabled = !isOwner;
+    input.style.opacity = isOwner ? "1" : "0.5";
+  });
+
+  removeButtons.forEach(btn => {
+    btn.disabled = !isOwner;
+    btn.style.display = isOwner ? "block" : "none";
+  });
+
+  addBtn.disabled = !isOwner;
+  addBtn.style.display = isOwner ? "inline-block" : "none";
+
+  // Update hint text
+  const formGroup = thresholdsContainer.closest(".form-group");
+  let hint = formGroup.querySelector(".form-hint");
+  if (hint) {
+    hint.textContent = isOwner
+      ? "Audio alerts when time remaining drops below these values"
+      : "Only the game owner can change thresholds";
+  }
 }
 
 function hideSettingsModal() {
   settingsModal.modal.style.display = "none";
+}
+
+function populateThresholds() {
+  if (!gameState) return;
+
+  const thresholds = gameState.settings?.warningThresholds || [300000, 60000, 30000];
+  settingsModal.thresholdsContainer.innerHTML = "";
+
+  thresholds.forEach((ms, index) => {
+    const minutes = ms / 60000;
+    addThresholdItem(minutes, index);
+  });
+}
+
+function addThresholdItem(value = 1, index = null) {
+  const container = settingsModal.thresholdsContainer;
+  const item = document.createElement("div");
+  item.className = "threshold-item";
+  item.dataset.index = index !== null ? index : container.children.length;
+
+  item.innerHTML = `
+    <input type="number" class="threshold-input" value="${value}" min="0.1" step="0.1" />
+    <span class="threshold-unit">min</span>
+    <button type="button" class="btn-threshold-remove" aria-label="Remove threshold">&times;</button>
+  `;
+
+  item.querySelector(".btn-threshold-remove").addEventListener("click", () => {
+    if (container.children.length > 1) {
+      item.remove();
+    }
+  });
+
+  container.appendChild(item);
+}
+
+function getThresholdsFromUI() {
+  const inputs = settingsModal.thresholdsContainer.querySelectorAll(".threshold-input");
+  const thresholds = [];
+
+  inputs.forEach(input => {
+    const minutes = parseFloat(input.value);
+    if (!isNaN(minutes) && minutes > 0) {
+      thresholds.push(Math.round(minutes * 60000));
+    }
+  });
+
+  // Sort descending and remove duplicates
+  return [...new Set(thresholds)].sort((a, b) => b - a);
+}
+
+function populatePlayerColors() {
+  if (!gameState) return;
+
+  const container = settingsModal.playerColorsContainer;
+  container.innerHTML = "";
+
+  // Find the player claimed by this client
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+
+  if (!myPlayer) {
+    container.innerHTML = '<p class="form-hint">Claim a player to change your color</p>';
+    return;
+  }
+
+  const color = getPlayerColor(myPlayer);
+  const item = document.createElement("div");
+  item.className = "player-color-item";
+  item.style.background = `linear-gradient(135deg, ${color.primary}22 0%, ${color.secondary}33 100%)`;
+  item.style.borderColor = `${color.primary}55`;
+
+  item.innerHTML = `
+    <div class="player-color-swatch" style="background: ${color.primary}"></div>
+    <span class="player-color-name">${myPlayer.name}</span>
+    <span class="color-change-hint">Tap to change</span>
+  `;
+
+  item.addEventListener("click", () => {
+    openColorPicker(myPlayer);
+  });
+
+  container.appendChild(item);
+}
+
+function getPlayerColor(player) {
+  // If player has a custom color, use it
+  if (player.color) {
+    const customColor = PLAYER_COLORS.find(c => c.id === player.color);
+    if (customColor) return customColor;
+  }
+
+  // Default colors based on player ID
+  const defaultColors = ["red", "blue", "green", "yellow", "purple", "cyan", "orange", "pink"];
+  const colorId = defaultColors[(player.id - 1) % defaultColors.length];
+  return PLAYER_COLORS.find(c => c.id === colorId) || PLAYER_COLORS[0];
+}
+
+function openColorPicker(player) {
+  selectedPlayerForColor = player;
+  const container = colorPickerModal.options;
+  container.innerHTML = "";
+
+  const currentColor = player.color || getPlayerColor(player).id;
+
+  PLAYER_COLORS.forEach(color => {
+    const option = document.createElement("div");
+    option.className = "color-option" + (color.id === currentColor ? " selected" : "");
+    option.style.background = `linear-gradient(135deg, ${color.primary} 0%, ${color.secondary} 100%)`;
+    option.title = color.name;
+
+    option.addEventListener("click", () => {
+      selectColor(color.id);
+    });
+
+    container.appendChild(option);
+  });
+
+  colorPickerModal.modal.style.display = "flex";
+}
+
+function selectColor(colorId) {
+  if (selectedPlayerForColor) {
+    sendUpdatePlayer(selectedPlayerForColor.id, { color: colorId });
+    // Update the color display immediately (optimistic update)
+    updateColorDisplay(colorId);
+  }
+  closeColorPicker();
+}
+
+function updateColorDisplay(colorId) {
+  const color = PLAYER_COLORS.find(c => c.id === colorId);
+  if (!color) return;
+
+  const container = settingsModal.playerColorsContainer;
+  const item = container.querySelector(".player-color-item");
+  if (item) {
+    item.style.background = `linear-gradient(135deg, ${color.primary}22 0%, ${color.secondary}33 100%)`;
+    item.style.borderColor = `${color.primary}55`;
+    const swatch = item.querySelector(".player-color-swatch");
+    if (swatch) {
+      swatch.style.background = color.primary;
+    }
+  }
+}
+
+function closeColorPicker() {
+  colorPickerModal.modal.style.display = "none";
+  selectedPlayerForColor = null;
 }
 
 function hideAllScreens() {
@@ -985,17 +1202,12 @@ controls.backToMenu.addEventListener("click", () => {
 });
 
 settingsModal.save.addEventListener("click", () => {
-  const thresholdsValue = settingsModal.thresholds.value;
-  const thresholds = thresholdsValue
-    .split(",")
-    .map(t => {
-      const minutes = parseFloat(t.trim());
-      return Math.round(minutes * 60 * 1000);
-    })
-    .filter(t => t > 0);
-
-  if (thresholds.length > 0) {
-    sendUpdateSettings({ warningThresholds: thresholds });
+  // Only the game owner can change warning thresholds
+  if (gameState && myClientId && gameState.ownerId === myClientId) {
+    const thresholds = getThresholdsFromUI();
+    if (thresholds.length > 0) {
+      sendUpdateSettings({ warningThresholds: thresholds });
+    }
   }
 
   hideSettingsModal();
@@ -1004,6 +1216,16 @@ settingsModal.save.addEventListener("click", () => {
 
 settingsModal.close.addEventListener("click", () => {
   hideSettingsModal();
+  playClick();
+});
+
+settingsModal.addThresholdBtn.addEventListener("click", () => {
+  addThresholdItem(1);
+  playClick();
+});
+
+colorPickerModal.cancel.addEventListener("click", () => {
+  closeColorPicker();
   playClick();
 });
 

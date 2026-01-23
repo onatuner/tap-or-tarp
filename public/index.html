@@ -159,15 +159,44 @@
       <div id="settings-modal" style="display: none" class="modal">
         <div class="modal-content">
           <h2>Game Settings</h2>
+
           <div class="form-group">
-            <label>Warning Thresholds (minutes)</label>
-            <input
-              type="text"
-              id="warning-thresholds"
-              value="5,1,0.5"
-              placeholder="Comma-separated"
-            />
+            <label>Warning Thresholds</label>
+            <p class="form-hint">Audio alerts when time remaining drops below these values</p>
+            <div id="thresholds-container" class="thresholds-container">
+              <div class="threshold-item" data-index="0">
+                <input type="number" class="threshold-input" value="5" min="0.1" step="0.5" />
+                <span class="threshold-unit">min</span>
+                <button type="button" class="btn-threshold-remove" aria-label="Remove threshold">
+                  &times;
+                </button>
+              </div>
+              <div class="threshold-item" data-index="1">
+                <input type="number" class="threshold-input" value="1" min="0.1" step="0.5" />
+                <span class="threshold-unit">min</span>
+                <button type="button" class="btn-threshold-remove" aria-label="Remove threshold">
+                  &times;
+                </button>
+              </div>
+              <div class="threshold-item" data-index="2">
+                <input type="number" class="threshold-input" value="0.5" min="0.1" step="0.1" />
+                <span class="threshold-unit">min</span>
+                <button type="button" class="btn-threshold-remove" aria-label="Remove threshold">
+                  &times;
+                </button>
+              </div>
+            </div>
+            <button type="button" id="add-threshold-btn" class="btn btn-small btn-secondary">
+              + Add Threshold
+            </button>
           </div>
+
+          <div class="form-group">
+            <label>Your Color</label>
+            <p class="form-hint">Customize your player card color</p>
+            <div id="player-colors-container" class="player-colors-container"></div>
+          </div>
+
           <div class="modal-actions">
             <button id="save-settings" class="btn btn-primary" aria-label="Save settings">
               Save
@@ -175,6 +204,16 @@
             <button id="close-settings" class="btn btn-secondary" aria-label="Close settings">
               Cancel
             </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="color-picker-modal" style="display: none" class="modal">
+        <div class="modal-content modal-small">
+          <h3>Choose Color</h3>
+          <div id="color-options" class="color-options"></div>
+          <div class="modal-actions">
+            <button id="cancel-color-picker" class="btn btn-secondary">Cancel</button>
           </div>
         </div>
       </div>
