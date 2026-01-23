@@ -1,0 +1,19 @@
+window.CONSTANTS = {
+  // Reconnection
+  RECONNECT_INITIAL_DELAY: 1000,
+  RECONNECT_MAX_DELAY: 30000,
+
+  // Time utilities
+  TIME_ADJUSTMENT_MINUTES: 1,
+  TIME_ADJUSTMENT_MS: 60000,
+
+  // Warning thresholds
+  WARNING_THRESHOLD_5MIN: 300000,
+  WARNING_THRESHOLD_1MIN: 60000,
+  CRITICAL_THRESHOLD: 60000,
+  MINUTE_MS: 60000,
+
+  // Client storage
+  TOKEN_STORAGE_KEY: "tapOrTarpReconnectTokens",
+  TOKEN_MAX_AGE: 60 * 60 * 1000,
+};

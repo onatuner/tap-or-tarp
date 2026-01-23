@@ -8,19 +8,6 @@ const volume = 0.5;
 let myClientId = null;
 let pendingReconnect = null; // Track pending reconnection attempt for token cleanup on failure
 
-const CONSTANTS = {
-  RECONNECT_INITIAL_DELAY: 1000,
-  RECONNECT_MAX_DELAY: 30000,
-  TIME_ADJUSTMENT_MINUTES: 1,
-  TIME_ADJUSTMENT_MS: 60000,
-  WARNING_THRESHOLD_5MIN: 300000,
-  WARNING_THRESHOLD_1MIN: 60000,
-  CRITICAL_THRESHOLD: 60000,
-  MINUTE_MS: 60000,
-  TOKEN_STORAGE_KEY: "tapOrTarpReconnectTokens",
-  TOKEN_MAX_AGE: 60 * 60 * 1000, // 1 hour
-};
-
 // ============================================================================
 // RECONNECTION TOKEN MANAGEMENT
 // ============================================================================
