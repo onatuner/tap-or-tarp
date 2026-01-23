@@ -895,34 +895,31 @@ function showSettingsModal() {
 }
 
 function updateSettingsOwnerUI() {
-  const isOwner = gameState && gameState.ownerId === myClientId;
+  // All players can now edit settings - no owner restrictions
   const thresholdsContainer = settingsModal.thresholdsContainer;
   const addBtn = settingsModal.addThresholdBtn;
 
-  // Disable threshold editing for non-owners
   const inputs = thresholdsContainer.querySelectorAll(".threshold-input");
   const removeButtons = thresholdsContainer.querySelectorAll(".btn-threshold-remove");
 
   inputs.forEach(input => {
-    input.disabled = !isOwner;
-    input.style.opacity = isOwner ? "1" : "0.5";
+    input.disabled = false;
+    input.style.opacity = "1";
   });
 
   removeButtons.forEach(btn => {
-    btn.disabled = !isOwner;
-    btn.style.display = isOwner ? "block" : "none";
+    btn.disabled = false;
+    btn.style.display = "block";
   });
 
-  addBtn.disabled = !isOwner;
-  addBtn.style.display = isOwner ? "inline-block" : "none";
+  addBtn.disabled = false;
+  addBtn.style.display = "inline-block";
 
   // Update hint text
   const formGroup = thresholdsContainer.closest(".form-group");
   let hint = formGroup.querySelector(".form-hint");
   if (hint) {
-    hint.textContent = isOwner
-      ? "Audio alerts when time remaining drops below these values"
-      : "Only the game owner can change thresholds";
+    hint.textContent = "Audio alerts when time remaining drops below these values";
   }
 }
 
@@ -1206,12 +1203,10 @@ controls.backToMenu.addEventListener("click", () => {
 });
 
 settingsModal.save.addEventListener("click", () => {
-  // Only the game owner can change warning thresholds
-  if (gameState && myClientId && gameState.ownerId === myClientId) {
-    const thresholds = getThresholdsFromUI();
-    if (thresholds.length > 0) {
-      sendUpdateSettings({ warningThresholds: thresholds });
-    }
+  // Any player can change warning thresholds
+  const thresholds = getThresholdsFromUI();
+  if (thresholds.length > 0) {
+    sendUpdateSettings({ warningThresholds: thresholds });
   }
 
   hideSettingsModal();
