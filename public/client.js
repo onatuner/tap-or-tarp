@@ -207,6 +207,7 @@ const settingsModal = {
   save: document.getElementById("save-settings"),
   close: document.getElementById("close-settings"),
   closeLobbyBtn: document.getElementById("close-lobby-btn"),
+  gameNameInput: document.getElementById("game-name-input"),
 };
 
 const gameTitleDisplay = document.getElementById("game-title-display");
@@ -411,6 +412,16 @@ function handleMessage(message) {
       break;
     case "gameEnded":
       backToMenu();
+      break;
+    case "gameRenamed":
+      if (gameState && message.data.name) {
+        gameState.name = message.data.name;
+        if (message.data.name !== "Game") {
+          gameTitleDisplay.textContent = message.data.name;
+        } else {
+          gameTitleDisplay.textContent = "Tap or Tarp";
+        }
+      }
       break;
   }
 }
@@ -886,6 +897,10 @@ function sendUpdateSettings(settings) {
   safeSend({ type: "updateSettings", data: settings });
 }
 
+function sendRenameGame(newName) {
+  safeSend({ type: "renameGame", data: { name: newName } });
+}
+
 function sendFeedback(feedbackText) {
   safeSend({ type: "feedback", data: { text: feedbackText } });
 }
@@ -935,6 +950,12 @@ function showSettingsModal() {
   populateThresholds();
   // Populate player colors
   populatePlayerColors();
+  // Populate game name
+  if (gameState && gameState.name) {
+    settingsModal.gameNameInput.value = gameState.name !== "Game" ? gameState.name : "";
+  } else {
+    settingsModal.gameNameInput.value = "";
+  }
   // Update UI based on owner status
   updateSettingsOwnerUI();
   settingsModal.modal.style.display = "flex";
@@ -1381,6 +1402,12 @@ settingsModal.save.addEventListener("click", () => {
   const thresholds = getThresholdsFromUI();
   if (thresholds.length > 0) {
     sendUpdateSettings({ warningThresholds: thresholds });
+  }
+
+  // Check if game name is being renamed
+  const newName = settingsModal.gameNameInput.value.trim();
+  if (newName) {
+    sendRenameGame(newName);
   }
 
   hideSettingsModal();
