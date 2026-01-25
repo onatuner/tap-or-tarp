@@ -574,16 +574,22 @@ function createPlayerCard(player, isActive) {
     statusSpan.appendChild(activeIndicator);
   }
 
-  // Check if this player has priority (last in interruptingPlayers queue)
+  // Check if this player has priority
+  // Priority is either: active player (no interrupts) or last in interruptingPlayers queue
+  let hasPriority = false;
   if (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) {
     const priorityPlayerId =
       gameState.interruptingPlayers[gameState.interruptingPlayers.length - 1];
-    if (player.id === priorityPlayerId) {
-      const priorityIndicator = document.createElement("span");
-      priorityIndicator.className = "priority-indicator";
-      priorityIndicator.textContent = "PRIORITY";
-      statusSpan.appendChild(priorityIndicator);
-    }
+    hasPriority = player.id === priorityPlayerId;
+  } else if (isActive) {
+    hasPriority = true;
+  }
+
+  if (hasPriority) {
+    const priorityIndicator = document.createElement("span");
+    priorityIndicator.className = "priority-indicator";
+    priorityIndicator.textContent = "PRIORITY";
+    statusSpan.appendChild(priorityIndicator);
   }
 
   nameContainer.appendChild(nameInput);
@@ -849,16 +855,24 @@ function updateControls() {
     } else {
       controls.passTurn.classList.remove("btn-primary");
     }
-    if (
+    // Determine which player has priority
+    let priorityPlayerId = null;
+    if (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) {
+      priorityPlayerId = gameState.interruptingPlayers[gameState.interruptingPlayers.length - 1];
+    } else {
+      priorityPlayerId = gameState.activePlayer;
+    }
+
+    const myHasPriority = myPlayer && myPlayer.id === priorityPlayerId;
+    const myInInterruptQueue =
       myPlayer &&
       gameState.interruptingPlayers &&
-      gameState.interruptingPlayers.includes(myPlayer.id)
-    ) {
+      gameState.interruptingPlayers.includes(myPlayer.id);
+
+    if (myInInterruptQueue) {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Pass Priority";
-      const hasPriority =
-        gameState.interruptingPlayers[gameState.interruptingPlayers.length - 1] === myPlayer.id;
-      controls.interrupt.disabled = !hasPriority;
+      controls.interrupt.disabled = !myHasPriority;
       if (!controls.interrupt.disabled) {
         controls.interrupt.classList.add("btn-primary");
       } else {
@@ -867,8 +881,12 @@ function updateControls() {
     } else if (myPlayer && gameState.status === "running") {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Interrupt";
-      controls.interrupt.disabled = false;
-      controls.interrupt.classList.add("btn-primary");
+      controls.interrupt.disabled = myHasPriority;
+      if (!controls.interrupt.disabled) {
+        controls.interrupt.classList.add("btn-primary");
+      } else {
+        controls.interrupt.classList.remove("btn-primary");
+      }
     } else {
       controls.interrupt.style.display = "none";
       controls.interrupt.classList.remove("btn-primary");
