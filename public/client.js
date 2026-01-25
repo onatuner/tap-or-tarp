@@ -591,8 +591,7 @@ function createPlayerCard(player, isActive) {
 
   const drunkIcon = document.createElement("span");
   drunkIcon.className = "counter-icon drunk-icon";
-  drunkIcon.innerHTML =
-    '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M7.5 7l-2-2h13l-2 2h-9zm7 5.5c0 1.38-1.12 2.5-2.5 2.5s-2.5-1.12-2.5-2.5S10.62 10 12 10s2.5 1.12 2.5 2.5zM8 18h8v1H8v-1zm3-11v2.26c-1.81.47-3 2.09-3 3.99 0 2.29 1.71 4.25 4 4.71V19c0 .55.45 1 1 1s1-.45 1-1v-1.04c2.29-.46 4-2.42 4-4.71 0-1.9-1.19-3.52-3-3.99V7h-4z"/></svg>';
+  drunkIcon.innerHTML = `<svg viewBox="0 0 44 44" width="44" height="44"><rect width="44" height="44" rx="8" fill="${playerColor.secondary}"/><rect width="44" height="44" rx="8" fill="rgba(0,0,0,0.5)"/><path fill="#fff" d="M10 10h24l-10.5 14v8h6v2h-15v-2h6v-8L10 10zm3.5 2l7.5 10 7.5-10h-15z"/><circle cx="28" cy="14" r="3" fill="#8bc34a"/></svg>`;
 
   const drunkControls = document.createElement("div");
   drunkControls.className = "counter-controls";
@@ -630,7 +629,7 @@ function createPlayerCard(player, isActive) {
   const genericIcon = document.createElement("span");
   genericIcon.className = "counter-icon generic-icon";
   genericIcon.innerHTML =
-    '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><text x="12" y="16" text-anchor="middle" fill="currentColor" font-size="12" font-weight="bold">#</text></svg>';
+    '<svg viewBox="0 0 24 24" width="44" height="44"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><text x="12" y="16" text-anchor="middle" fill="currentColor" font-size="12" font-weight="bold">#</text></svg>';
 
   const genericControls = document.createElement("div");
   genericControls.className = "counter-controls";

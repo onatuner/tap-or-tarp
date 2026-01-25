@@ -697,10 +697,14 @@ h1 {
 
 .drunk-icon {
   color: #f0a030;
+  width: 44px;
+  height: 44px;
 }
 
 .generic-icon {
   color: #888;
+  width: 44px;
+  height: 44px;
 }
 
 .counter-controls {
@@ -725,8 +729,8 @@ h1 {
 }
 
 .btn-counter-sm {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   font-size: 1em;
   font-weight: bold;
