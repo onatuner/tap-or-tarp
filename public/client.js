@@ -205,6 +205,7 @@ const settingsModal = {
   playerColorsContainer: document.getElementById("player-colors-container"),
   save: document.getElementById("save-settings"),
   close: document.getElementById("close-settings"),
+  closeLobbyBtn: document.getElementById("close-lobby-btn"),
 };
 
 const colorPickerModal = {
@@ -404,6 +405,9 @@ function handleMessage(message) {
       break;
     case "feedbackUpdated":
       loadFeedbacks();
+      break;
+    case "gameEnded":
+      backToMenu();
       break;
   }
 }
@@ -888,6 +892,10 @@ function sendDeleteFeedback(feedbackId) {
   safeSend({ type: "deleteFeedback", data: { id: feedbackId } });
 }
 
+function sendEndGame() {
+  safeSend({ type: "endGame" });
+}
+
 function sendClaim(playerId) {
   safeSend({ type: "claim", data: { playerId } });
 }
@@ -1369,6 +1377,16 @@ settingsModal.save.addEventListener("click", () => {
 settingsModal.close.addEventListener("click", () => {
   hideSettingsModal();
   playClick();
+});
+
+settingsModal.closeLobbyBtn.addEventListener("click", () => {
+  if (
+    confirm("Are you sure you want to close the lobby? This will end the game for all players.")
+  ) {
+    sendEndGame();
+    hideSettingsModal();
+    playClick();
+  }
 });
 
 settingsModal.addThresholdBtn.addEventListener("click", () => {

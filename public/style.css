@@ -764,6 +764,24 @@ h1 {
   margin-bottom: 12px;
 }
 
+.form-group-danger {
+  border: 2px solid rgba(255, 100, 100, 0.3);
+  border-radius: 10px;
+  padding: 15px;
+  margin-top: 20px;
+  background: rgba(255, 50, 50, 0.05);
+}
+
+.form-group-danger label {
+  color: #ff6b6b;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.form-group-danger .form-hint {
+  color: #ff8888;
+}
+
 .thresholds-container {
   display: flex;
   flex-direction: column;
