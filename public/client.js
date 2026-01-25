@@ -1481,11 +1481,9 @@ controls.passTurn.addEventListener("click", () => {
 });
 
 controls.interrupt.addEventListener("click", () => {
-  if (gameState.interruptingPlayers.length > 0) {
-    const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-    if (myPlayer && gameState.interruptingPlayers.includes(myPlayer.id)) {
-      sendPassPriority();
-    }
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  if (myPlayer && gameState.interruptingPlayers.includes(myPlayer.id)) {
+    sendPassPriority();
   } else {
     sendInterrupt();
   }
