@@ -955,6 +955,10 @@ h1 {
 }
 
 @media (max-width: 768px) {
+  #players-container {
+    gap: 10px;
+  }
+
   #players-container.players-2,
   #players-container.players-3,
   #players-container.players-4,
@@ -970,98 +974,102 @@ h1 {
   }
 
   .player-card {
-    padding: 15px;
+    padding: 12px;
+    border-width: 2px;
   }
 
   .player-name {
-    font-size: 1em;
-    margin-bottom: 10px;
+    font-size: 0.9em;
+    margin-bottom: 8px;
   }
 
   .player-name input {
-    width: 65%;
-    font-size: 1em;
-  }
-
-  .status-badges span {
-    font-size: 0.7em;
-    padding: 3px 6px;
-  }
-
-  .player-time {
-    font-size: 2.8em;
-    margin: 15px 0;
-  }
-
-  .time-controls {
-    margin-bottom: 10px;
-  }
-
-  .time-controls button {
-    padding: 6px 12px;
-    font-size: 0.85em;
-    min-width: 70px;
-  }
-
-  .life-section {
-    padding: 10px;
-    gap: 8px;
-    margin: 10px 0;
-  }
-
-  .life-label {
+    width: 55%;
     font-size: 0.9em;
   }
 
+  .status-badges span {
+    font-size: 0.6em;
+    padding: 2px 5px;
+  }
+
+  .player-time {
+    font-size: 2.2em;
+    margin: 12px 0;
+  }
+
+  .time-controls {
+    margin-bottom: 8px;
+  }
+
+  .time-controls button {
+    padding: 5px 10px;
+    font-size: 0.8em;
+    min-width: 60px;
+  }
+
+  .life-section {
+    padding: 8px;
+    gap: 6px;
+    margin: 8px 0;
+  }
+
+  .life-label {
+    font-size: 0.8em;
+  }
+
   .life-display {
-    font-size: 1.8em;
-    min-width: 45px;
+    font-size: 1.5em;
+    min-width: 40px;
   }
 
   .btn-counter {
-    width: 36px;
-    height: 36px;
-    font-size: 1.3em;
+    width: 32px;
+    height: 32px;
+    font-size: 1.2em;
   }
 
   .counters-section {
     flex-direction: row;
     align-items: center;
-    gap: 10px;
-    margin-top: 10px;
+    gap: 8px;
+    margin-top: 8px;
   }
 
   .counter {
-    padding: 8px 10px;
-    gap: 6px;
+    padding: 6px 8px;
+    gap: 5px;
     flex: 1;
     justify-content: center;
   }
 
   .counter-icon {
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
   }
 
   .counter-display {
-    font-size: 1.1em;
-    min-width: 25px;
+    font-size: 1em;
+    min-width: 22px;
   }
 
   .btn-counter-sm {
-    width: 38px;
-    height: 38px;
-    font-size: 0.95em;
+    width: 34px;
+    height: 34px;
+    font-size: 0.9em;
   }
 
   .controls {
     flex-direction: column;
     align-items: center;
+    gap: 10px;
   }
 
   .btn-control {
     width: 100%;
     max-width: 200px;
+    padding: 10px 20px;
+    font-size: 0.9em;
   }
 }
 
@@ -1137,7 +1145,11 @@ h1 {
 
 @media (max-width: 480px) {
   #app {
-    padding: 10px;
+    padding: 8px;
+  }
+
+  #players-container {
+    gap: 8px;
   }
 
   #main-menu-screen,
@@ -1146,13 +1158,13 @@ h1 {
   #campaign-screen,
   #load-screen,
   #menu-settings-screen {
-    padding: 20px;
+    padding: 15px;
     border-radius: 10px;
   }
 
   h1 {
-    font-size: 1.8em;
-    margin-bottom: 20px;
+    font-size: 1.6em;
+    margin-bottom: 15px;
   }
 
   .menu-container {
@@ -1160,148 +1172,213 @@ h1 {
   }
 
   .btn-menu {
-    padding: 14px 20px;
-    font-size: 1em;
-  }
-
-  .player-card {
-    padding: 20px;
-  }
-
-  .player-time {
-    font-size: 2.5em;
-    margin: 15px 0;
-  }
-
-  .player-time.deciseconds {
-    font-size: 1.8em;
-  }
-
-  .player-name {
-    font-size: 1em;
-  }
-
-  .player-name input {
-    width: 60%;
-  }
-
-  .life-section {
-    padding: 10px;
-    gap: 10px;
-  }
-
-  .life-display {
-    font-size: 1.6em;
-    min-width: 50px;
-  }
-
-  .btn-counter {
-    width: 32px;
-    height: 32px;
-    font-size: 1.2em;
-  }
-
-  .btn-counter-sm {
-    width: 36px;
-    height: 36px;
-    font-size: 0.9em;
-  }
-
-  .drunk-icon,
-  .generic-icon {
-    width: 36px;
-    height: 36px;
-  }
-
-  .counter {
-    padding: 8px 12px;
-    gap: 8px;
-  }
-
-  .counter-display {
-    font-size: 1em;
-    min-width: 25px;
-  }
-
-  .time-controls button {
-    padding: 6px 12px;
-    font-size: 0.85em;
-    min-width: 70px;
-  }
-
-  .dead-banner {
-    font-size: 2em;
-    padding: 10px 30px;
-  }
-
-  .modal-content {
-    padding: 25px;
-    max-width: 95%;
-  }
-
-  .modal-content h2 {
-    font-size: 1.3em;
-  }
-
-  .btn {
-    padding: 10px 20px;
-    font-size: 0.9em;
-  }
-
-  .form-group {
-    margin-bottom: 15px;
-  }
-
-  .form-group label {
-    font-size: 0.85em;
-  }
-
-  .form-group input,
-  .form-group select {
-    padding: 14px;
+    padding: 12px 16px;
     font-size: 0.95em;
   }
 
-  .player-colors-container {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 8px;
+  .player-card {
+    padding: 10px;
+    border-width: 2px;
   }
 
-  .threshold-input {
-    width: 70px;
-    font-size: 1em;
-  }
-}
-
-@media (max-width: 375px) {
   .player-time {
-    font-size: 2.2em;
+    font-size: 1.8em;
+    margin: 10px 0;
+  }
+
+  .player-time.deciseconds {
+    font-size: 1.5em;
+  }
+
+  .player-name {
+    font-size: 0.85em;
+    margin-bottom: 6px;
+  }
+
+  .player-name input {
+    width: 50%;
+    font-size: 0.85em;
+  }
+
+  .status-badges span {
+    font-size: 0.55em;
+    padding: 2px 4px;
+  }
+
+  .life-section {
+    padding: 6px;
+    gap: 5px;
+    margin: 6px 0;
+  }
+
+  .life-label {
+    font-size: 0.75em;
   }
 
   .life-display {
-    font-size: 1.4em;
+    font-size: 1.3em;
+    min-width: 35px;
   }
 
   .btn-counter {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     font-size: 1.1em;
   }
 
   .btn-counter-sm {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     font-size: 0.85em;
   }
 
   .drunk-icon,
   .generic-icon {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .counter {
+    padding: 5px 6px;
+    gap: 4px;
+  }
+
+  .counter-display {
+    font-size: 0.9em;
+    min-width: 20px;
+  }
+
+  .time-controls button {
+    padding: 4px 8px;
+    font-size: 0.75em;
+    min-width: 55px;
+  }
+
+  .dead-banner {
+    font-size: 1.5em;
+    padding: 8px 20px;
+  }
+
+  .modal-content {
+    padding: 20px;
+    max-width: 95%;
+  }
+
+  .modal-content h2 {
+    font-size: 1.2em;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    font-size: 0.85em;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .form-group label {
+    font-size: 0.8em;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 12px;
+    font-size: 0.9em;
+  }
+
+  .player-colors-container {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 6px;
+  }
+
+  .threshold-input {
+    width: 60px;
+    font-size: 0.9em;
+  }
+}
+
+@media (max-width: 375px) {
+  #players-container {
+    gap: 6px;
+  }
+
+  .player-card {
+    padding: 8px;
+  }
+
+  .player-time {
+    font-size: 1.6em;
+    margin: 8px 0;
+  }
+
+  .player-name {
+    font-size: 0.8em;
+    margin-bottom: 5px;
   }
 
   .player-name input {
-    width: 55%;
+    width: 45%;
+    font-size: 0.8em;
+  }
+
+  .status-badges span {
+    font-size: 0.5em;
+    padding: 2px 3px;
+  }
+
+  .life-section {
+    padding: 5px;
+    gap: 4px;
+    margin: 5px 0;
+  }
+
+  .life-label {
+    font-size: 0.7em;
+  }
+
+  .life-display {
+    font-size: 1.2em;
+    min-width: 30px;
+  }
+
+  .btn-counter {
+    width: 26px;
+    height: 26px;
+    font-size: 1em;
+  }
+
+  .btn-counter-sm {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8em;
+  }
+
+  .drunk-icon,
+  .generic-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .counter {
+    padding: 4px 5px;
+    gap: 3px;
+  }
+
+  .counter-display {
+    font-size: 0.85em;
+    min-width: 18px;
+  }
+
+  .time-controls button {
+    padding: 3px 6px;
+    font-size: 0.7em;
+    min-width: 50px;
+  }
+
+  .dead-banner {
+    font-size: 1.2em;
+    padding: 6px 15px;
   }
 }
 
