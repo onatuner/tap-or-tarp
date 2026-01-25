@@ -192,6 +192,7 @@ const setupForm = {
 const controls = {
   start: document.getElementById("start-btn"),
   passTurn: document.getElementById("pass-turn-btn"),
+  interrupt: document.getElementById("interrupt-btn"),
   pause: document.getElementById("pause-btn"),
   reset: document.getElementById("reset-btn"),
   settings: document.getElementById("settings-btn"),
@@ -810,7 +811,7 @@ function updateControls() {
 
   controls.pause.textContent = gameState.status === "paused" ? "Resume" : "Pause";
 
-  // Check if current client is the active player
+  // Check if current client is active player
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayer);
   const isActivePlayer = activePlayer && activePlayer.claimedBy === myClientId;
 
@@ -822,10 +823,29 @@ function updateControls() {
     controls.start.disabled = !allPlayersClaimed;
     controls.start.title = allPlayersClaimed ? "" : "All players must be claimed before starting";
     controls.passTurn.style.display = "none";
+    controls.interrupt.style.display = "none";
   } else {
     controls.start.style.display = "none";
     controls.passTurn.style.display = "inline-block";
-    controls.passTurn.disabled = !isActivePlayer;
+    controls.passTurn.disabled = !isActivePlayer || gameState.interruptingPlayer !== null;
+
+    const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+    if (gameState.interruptingPlayer === myPlayer?.id) {
+      controls.interrupt.style.display = "inline-block";
+      controls.interrupt.textContent = "Pass Priority";
+      controls.interrupt.disabled = false;
+    } else if (
+      !isActivePlayer &&
+      myPlayer &&
+      gameState.status === "running" &&
+      gameState.interruptingPlayer === null
+    ) {
+      controls.interrupt.style.display = "inline-block";
+      controls.interrupt.textContent = "Interrupt";
+      controls.interrupt.disabled = false;
+    } else {
+      controls.interrupt.style.display = "none";
+    }
   }
 }
 
@@ -934,6 +954,14 @@ function sendUnclaim() {
     }
   }
   safeSend({ type: "unclaim", data: {} });
+}
+
+function sendInterrupt() {
+  safeSend({ type: "interrupt", data: {} });
+}
+
+function sendPassPriority() {
+  safeSend({ type: "passPriority", data: {} });
 }
 
 function showTimeoutModal(player) {
@@ -1446,6 +1474,18 @@ controls.start.addEventListener("click", () => {
 
 controls.passTurn.addEventListener("click", () => {
   sendPassTurn();
+});
+
+controls.interrupt.addEventListener("click", () => {
+  if (gameState.interruptingPlayer !== null) {
+    const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+    if (gameState.interruptingPlayer === myPlayer?.id) {
+      sendPassPriority();
+    }
+  } else {
+    sendInterrupt();
+  }
+  playClick();
 });
 
 timeoutModal.acknowledge.addEventListener("click", () => {
