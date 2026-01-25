@@ -864,14 +864,18 @@ function updateControls() {
     }
 
     const myHasPriority = myPlayer && myPlayer.id === priorityPlayerId;
+    const myInInterruptQueue =
+      myPlayer &&
+      gameState.interruptingPlayers &&
+      gameState.interruptingPlayers.includes(myPlayer.id);
 
-    if (myHasPriority) {
-      // Player has priority - show Pass Priority button
+    if (myHasPriority && myInInterruptQueue) {
+      // Player has priority AND is in interrupt queue - show Pass Priority button
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Pass Priority";
       controls.interrupt.disabled = false;
       controls.interrupt.classList.add("btn-primary");
-    } else if (myPlayer && gameState.status === "running") {
+    } else if (myPlayer && gameState.status === "running" && !myHasPriority) {
       // Player doesn't have priority - show Interrupt button
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Interrupt";
