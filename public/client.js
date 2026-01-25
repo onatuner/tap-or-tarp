@@ -133,6 +133,7 @@ const screens = {
   campaignScreen: document.getElementById("campaign-screen"),
   loadScreen: document.getElementById("load-screen"),
   menuSettings: document.getElementById("menu-settings-screen"),
+  feedback: document.getElementById("feedback-screen"),
   game: document.getElementById("game-screen"),
 };
 
@@ -146,6 +147,7 @@ const menuButtons = {
   join: document.getElementById("menu-join-btn"),
   load: document.getElementById("menu-load-btn"),
   settings: document.getElementById("menu-settings-btn"),
+  feedback: document.getElementById("menu-feedback-btn"),
 };
 
 // Back buttons
@@ -155,12 +157,26 @@ const backButtons = {
   campaign: document.getElementById("campaign-back-btn"),
   load: document.getElementById("load-back-btn"),
   menuSettings: document.getElementById("menu-settings-back-btn"),
+  feedback: document.getElementById("feedback-back-btn"),
 };
 
 // Menu settings
 const menuSettingsForm = {
   muteCheckbox: document.getElementById("menu-mute-checkbox"),
   save: document.getElementById("menu-settings-save-btn"),
+};
+
+const feedbackForm = {
+  textarea: document.getElementById("feedback-text"),
+  charCount: document.getElementById("feedback-char-count"),
+  submit: document.getElementById("feedback-submit-btn"),
+  viewBtn: document.getElementById("feedback-view-btn"),
+  addBtn: document.getElementById("feedback-add-btn"),
+  backBtn: document.getElementById("feedback-back-btn"),
+  listBackBtn: document.getElementById("feedback-list-back-btn"),
+  formSection: document.getElementById("feedback-form-section"),
+  listSection: document.getElementById("feedback-list-section"),
+  list: document.getElementById("feedback-list"),
 };
 
 const setupForm = {
@@ -332,7 +348,7 @@ function handleMessage(message) {
         clearReconnectToken(pendingReconnect.gameId, pendingReconnect.playerId);
         pendingReconnect = null;
       }
-      alert(message.data.message);
+      console.error("Server error:", message.data.message);
       break;
     case "state":
       gameState = message.data;
@@ -378,6 +394,15 @@ function handleMessage(message) {
       console.log(`Reconnected to game ${message.data.gameId} as player ${message.data.playerId}`);
       // Switch to game screen if not already there
       showScreen("game");
+      break;
+    case "feedbackList":
+      renderFeedbackList(message.data.feedbacks);
+      break;
+    case "feedbackDeleted":
+      loadFeedbacks();
+      break;
+    case "feedbackUpdated":
+      loadFeedbacks();
       break;
   }
 }
@@ -846,6 +871,22 @@ function sendUpdateSettings(settings) {
   safeSend({ type: "updateSettings", data: settings });
 }
 
+function sendFeedback(feedbackText) {
+  safeSend({ type: "feedback", data: { text: feedbackText } });
+}
+
+function sendLoadFeedbacks() {
+  safeSend({ type: "loadFeedbacks", data: {} });
+}
+
+function sendUpdateFeedback(feedbackId, text) {
+  safeSend({ type: "updateFeedback", data: { id: feedbackId, text } });
+}
+
+function sendDeleteFeedback(feedbackId) {
+  safeSend({ type: "deleteFeedback", data: { id: feedbackId } });
+}
+
 function sendClaim(playerId) {
   safeSend({ type: "claim", data: { playerId } });
 }
@@ -1111,6 +1152,16 @@ menuButtons.settings.addEventListener("click", () => {
   playClick();
 });
 
+menuButtons.feedback.addEventListener("click", () => {
+  feedbackForm.textarea.value = "";
+  feedbackForm.editingId = null;
+  updateFeedbackCharCount();
+  feedbackForm.formSection.style.display = "block";
+  feedbackForm.listSection.style.display = "none";
+  showScreen("feedback");
+  playClick();
+});
+
 // Back buttons
 backButtons.casual.addEventListener("click", () => {
   showScreen("mainMenu");
@@ -1133,6 +1184,30 @@ backButtons.load.addEventListener("click", () => {
 });
 
 backButtons.menuSettings.addEventListener("click", () => {
+  showScreen("mainMenu");
+  playClick();
+});
+
+backButtons.feedback.addEventListener("click", () => {
+  showScreen("mainMenu");
+  playClick();
+});
+
+feedbackForm.viewBtn.addEventListener("click", () => {
+  loadFeedbacks();
+  playClick();
+});
+
+feedbackForm.addBtn.addEventListener("click", () => {
+  feedbackForm.textarea.value = "";
+  feedbackForm.editingId = null;
+  updateFeedbackCharCount();
+  feedbackForm.formSection.style.display = "block";
+  feedbackForm.listSection.style.display = "none";
+  playClick();
+});
+
+feedbackForm.listBackBtn.addEventListener("click", () => {
   showScreen("mainMenu");
   playClick();
 });
@@ -1227,6 +1302,106 @@ timeoutModal.acknowledge.addEventListener("click", () => {
   hideTimeoutModal();
   playClick();
 });
+
+feedbackForm.textarea.addEventListener("input", () => {
+  updateFeedbackCharCount();
+});
+
+feedbackForm.submit.addEventListener("click", () => {
+  const feedbackText = feedbackForm.textarea.value.trim();
+  if (feedbackText.length > 0) {
+    if (feedbackForm.editingId) {
+      sendUpdateFeedback(feedbackForm.editingId, feedbackText);
+    } else {
+      sendFeedback(feedbackText);
+    }
+    feedbackForm.textarea.value = "";
+    feedbackForm.editingId = null;
+    updateFeedbackCharCount();
+    showScreen("mainMenu");
+    playClick();
+  }
+});
+
+function updateFeedbackCharCount() {
+  feedbackForm.charCount.textContent = feedbackForm.textarea.value.length;
+}
+
+function loadFeedbacks() {
+  feedbackForm.list.innerHTML = '<p class="loading">Loading feedback...</p>';
+  feedbackForm.formSection.style.display = "none";
+  feedbackForm.listSection.style.display = "block";
+  sendLoadFeedbacks();
+}
+
+function renderFeedbackList(feedbacks) {
+  feedbackForm.list.innerHTML = "";
+
+  if (feedbacks.length === 0) {
+    feedbackForm.list.innerHTML = '<p class="form-hint">No feedback submitted yet.</p>';
+    return;
+  }
+
+  feedbacks.forEach(feedback => {
+    const card = document.createElement("div");
+    card.className = "feedback-item";
+    card.dataset.id = feedback.id;
+
+    const date = new Date(feedback.timestamp).toLocaleString();
+
+    card.innerHTML = `
+      <div class="feedback-text">${escapeHtml(feedback.text)}</div>
+      <div class="feedback-meta">
+        <span class="feedback-date">${date}</span>
+        <div class="feedback-actions">
+          <button class="btn btn-small btn-secondary" data-action="edit" data-id="${feedback.id}">Edit</button>
+          <button class="btn btn-small btn-danger" data-action="delete" data-id="${feedback.id}">Delete</button>
+        </div>
+      </div>
+    `;
+
+    feedbackForm.list.appendChild(card);
+  });
+
+  feedbackForm.list.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", e => {
+      const action = e.target.dataset.action;
+      const id = e.target.dataset.id;
+
+      if (action === "edit") {
+        editFeedback(id);
+      } else if (action === "delete") {
+        deleteFeedback(id);
+      }
+      playClick();
+    });
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function editFeedback(id) {
+  const feedbackItem = feedbackForm.list.querySelector(`[data-id="${id}"]`);
+  const textElement = feedbackItem.querySelector(".feedback-text");
+  const text = textElement.textContent;
+
+  feedbackForm.textarea.value = text;
+  feedbackForm.editingId = id;
+  updateFeedbackCharCount();
+
+  feedbackForm.formSection.style.display = "block";
+  feedbackForm.listSection.style.display = "none";
+}
+
+function deleteFeedback(id) {
+  if (confirm("Are you sure you want to delete this feedback?")) {
+    sendDeleteFeedback(id);
+  }
+}
 
 document.addEventListener("keydown", e => {
   if (!gameState || screens.game.style.display === "none") return;

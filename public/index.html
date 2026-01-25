@@ -21,6 +21,7 @@
           <button id="menu-join-btn" class="btn btn-menu">Join Game</button>
           <button id="menu-load-btn" class="btn btn-menu">Load Game</button>
           <button id="menu-settings-btn" class="btn btn-menu">Settings</button>
+          <button id="menu-feedback-btn" class="btn btn-menu">Feedback</button>
         </div>
       </div>
 
@@ -101,6 +102,52 @@
               Save
             </button>
             <button id="menu-settings-back-btn" class="btn btn-secondary" aria-label="Back to menu">
+              Back
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feedback Screen -->
+      <div id="feedback-screen" style="display: none">
+        <h1>Feedback</h1>
+        <div id="feedback-form-section" class="setup-form">
+          <div class="form-group">
+            <label for="feedback-text">Your Feedback</label>
+            <textarea
+              id="feedback-text"
+              class="feedback-textarea"
+              maxlength="255"
+              placeholder="Share your thoughts, suggestions, or report issues..."
+              rows="5"
+            ></textarea>
+            <p class="form-hint"><span id="feedback-char-count">0</span>/255 characters</p>
+          </div>
+          <div class="menu-actions">
+            <button id="feedback-submit-btn" class="btn btn-primary" aria-label="Submit feedback">
+              Submit Feedback
+            </button>
+            <button
+              id="feedback-view-btn"
+              class="btn btn-secondary"
+              aria-label="View saved feedback"
+            >
+              View Feedback
+            </button>
+            <button id="feedback-back-btn" class="btn btn-secondary" aria-label="Back to menu">
+              Back
+            </button>
+          </div>
+        </div>
+
+        <div id="feedback-list-section" style="display: none">
+          <h2>Your Feedback</h2>
+          <div id="feedback-list" class="feedback-list"></div>
+          <div class="menu-actions">
+            <button id="feedback-add-btn" class="btn btn-primary" aria-label="Add new feedback">
+              Add New Feedback
+            </button>
+            <button id="feedback-list-back-btn" class="btn btn-secondary" aria-label="Back to menu">
               Back
             </button>
           </div>
