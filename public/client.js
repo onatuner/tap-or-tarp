@@ -1005,6 +1005,13 @@ function hideTimeoutModal() {
 }
 
 function showSettingsModal() {
+  // Populate game code
+  const gameCodeDisplay = document.getElementById("settings-game-code");
+  if (gameState && gameState.id) {
+    gameCodeDisplay.textContent = gameState.id;
+  } else {
+    gameCodeDisplay.textContent = "";
+  }
   // Populate thresholds from game state
   populateThresholds();
   // Populate player colors

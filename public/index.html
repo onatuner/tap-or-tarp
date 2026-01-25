@@ -179,15 +179,6 @@
             <h1 id="game-title-display">Tap or Tarp</h1>
             <div class="game-code">Game Code: <span id="game-code-display"></span></div>
           </div>
-          <div class="game-header-right">
-            <button
-              id="back-to-menu-btn"
-              class="btn btn-secondary"
-              aria-label="Return to main menu"
-            >
-              Back to Menu
-            </button>
-          </div>
         </div>
 
         <div id="lobby-banner" class="lobby-banner" style="display: none">
@@ -229,12 +220,20 @@
           <button id="settings-btn" class="btn btn-control" aria-label="Open settings">
             Settings
           </button>
+          <button id="back-to-menu-btn" class="btn btn-control" aria-label="Return to main menu">
+            Back to Menu
+          </button>
         </div>
       </div>
 
       <div id="settings-modal" style="display: none" class="modal">
         <div class="modal-content">
           <h2>Game Settings</h2>
+
+          <div class="form-group">
+            <label>Game Code</label>
+            <div class="game-code-display" id="settings-game-code"></div>
+          </div>
 
           <div class="form-group">
             <label>Warning Thresholds</label>

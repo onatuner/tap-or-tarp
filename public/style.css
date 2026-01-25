@@ -257,6 +257,17 @@ h1 {
   margin-top: 0;
 }
 
+.game-code-display {
+  font-size: 1.8em;
+  color: #00bb00;
+  font-weight: bold;
+  letter-spacing: 2px;
+  padding: 10px;
+  background: rgba(0, 187, 0, 0.1);
+  border-radius: 8px;
+  text-align: center;
+}
+
 #players-container {
   display: grid;
   gap: 15px;
@@ -954,8 +965,93 @@ h1 {
     grid-template-columns: 1fr;
   }
 
+  .game-header {
+    display: none;
+  }
+
+  .player-card {
+    padding: 15px;
+  }
+
+  .player-name {
+    font-size: 1em;
+    margin-bottom: 10px;
+  }
+
+  .player-name input {
+    width: 65%;
+    font-size: 1em;
+  }
+
+  .status-badges span {
+    font-size: 0.7em;
+    padding: 3px 6px;
+  }
+
   .player-time {
-    font-size: 3em;
+    font-size: 2.8em;
+    margin: 15px 0;
+  }
+
+  .time-controls {
+    margin-bottom: 10px;
+  }
+
+  .time-controls button {
+    padding: 6px 12px;
+    font-size: 0.85em;
+    min-width: 70px;
+  }
+
+  .life-section {
+    padding: 10px;
+    gap: 8px;
+    margin: 10px 0;
+  }
+
+  .life-label {
+    font-size: 0.9em;
+  }
+
+  .life-display {
+    font-size: 1.8em;
+    min-width: 45px;
+  }
+
+  .btn-counter {
+    width: 36px;
+    height: 36px;
+    font-size: 1.3em;
+  }
+
+  .counters-section {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .counter {
+    padding: 8px 10px;
+    gap: 6px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .counter-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .counter-display {
+    font-size: 1.1em;
+    min-width: 25px;
+  }
+
+  .btn-counter-sm {
+    width: 38px;
+    height: 38px;
+    font-size: 0.95em;
   }
 
   .controls {
@@ -966,17 +1062,6 @@ h1 {
   .btn-control {
     width: 100%;
     max-width: 200px;
-  }
-
-  .counters-section {
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .counter {
-    width: 100%;
-    justify-content: center;
   }
 }
 
