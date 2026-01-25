@@ -360,13 +360,15 @@ async function startServer() {
 
     serverState.setStorage(storage, isAsync, isRedisPrimary);
   } catch (error) {
-    logger.error({ error: error.message }, "Failed to initialize storage");
+    logger.error({ error: error.message, stack: error.stack }, "Failed to initialize storage");
     logger.warn("Continuing with in-memory storage only");
     serverState.setStorage(createStorage("memory"), false, false);
   }
 
   // Load persisted sessions
+  logger.info("Loading persisted sessions...");
   await loadSessions();
+  logger.info(`Loaded ${serverState.getSessionCount()} sessions from storage`);
 
   // Start persistence timer
   serverState.persistenceTimer = setInterval(async () => {
@@ -399,6 +401,7 @@ async function startServer() {
       },
       "Tap or Tarp server started"
     );
+    logger.info(`Server listening on ${HOST}:${PORT}`);
   });
 }
 

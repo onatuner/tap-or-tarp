@@ -29,10 +29,10 @@ primary_region = 'ams'
 
 # Health check configuration
 [[http_service.checks]]
-  grace_period = "10s"
+  grace_period = "30s"
   interval = "30s"
   method = "GET"
-  timeout = "5s"
+  timeout = "10s"
   path = "/health"
 
 # Sticky sessions for WebSocket connections

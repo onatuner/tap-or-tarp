@@ -37,6 +37,3 @@ coverage/
 # Build artifacts
 dist/
 build/
-
-# Fly.io
-fly.toml
