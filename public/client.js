@@ -856,8 +856,14 @@ function updateControls() {
     ) {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Pass Priority";
-      controls.interrupt.disabled = false;
-      controls.interrupt.classList.add("btn-primary");
+      const hasPriority =
+        gameState.interruptingPlayers[gameState.interruptingPlayers.length - 1] === myPlayer.id;
+      controls.interrupt.disabled = !hasPriority;
+      if (!controls.interrupt.disabled) {
+        controls.interrupt.classList.add("btn-primary");
+      } else {
+        controls.interrupt.classList.remove("btn-primary");
+      }
     } else if (myPlayer && gameState.status === "running" && !isActivePlayer) {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Interrupt";
