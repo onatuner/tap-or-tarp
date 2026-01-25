@@ -828,7 +828,7 @@ function updateControls() {
     controls.start.style.display = "none";
     controls.passTurn.style.display = "inline-block";
     controls.passTurn.disabled =
-      !isActivePlayer || gameState.interruptingPlayer !== null || gameState.status === "paused";
+      !isActivePlayer || gameState.interruptingPlayers.length > 0 || gameState.status === "paused";
     if (!controls.passTurn.disabled) {
       controls.passTurn.classList.add("btn-primary");
     } else {
@@ -836,17 +836,12 @@ function updateControls() {
     }
 
     const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-    if (gameState.interruptingPlayer === myPlayer?.id) {
+    if (myPlayer && gameState.interruptingPlayers.includes(myPlayer.id)) {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Pass Priority";
       controls.interrupt.disabled = false;
       controls.interrupt.classList.add("btn-primary");
-    } else if (
-      !isActivePlayer &&
-      myPlayer &&
-      gameState.status === "running" &&
-      gameState.interruptingPlayer === null
-    ) {
+    } else if (!isActivePlayer && myPlayer && gameState.status === "running") {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Interrupt";
       controls.interrupt.disabled = false;
@@ -1486,9 +1481,9 @@ controls.passTurn.addEventListener("click", () => {
 });
 
 controls.interrupt.addEventListener("click", () => {
-  if (gameState.interruptingPlayer !== null) {
+  if (gameState.interruptingPlayers.length > 0) {
     const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-    if (gameState.interruptingPlayer === myPlayer?.id) {
+    if (myPlayer && gameState.interruptingPlayers.includes(myPlayer.id)) {
       sendPassPriority();
     }
   } else {
