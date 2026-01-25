@@ -828,7 +828,9 @@ function updateControls() {
     controls.start.style.display = "none";
     controls.passTurn.style.display = "inline-block";
     controls.passTurn.disabled =
-      !isActivePlayer || gameState.interruptingPlayers.length > 0 || gameState.status === "paused";
+      !isActivePlayer ||
+      (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) ||
+      gameState.status === "paused";
     if (!controls.passTurn.disabled) {
       controls.passTurn.classList.add("btn-primary");
     } else {
@@ -836,7 +838,11 @@ function updateControls() {
     }
 
     const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-    if (myPlayer && gameState.interruptingPlayers.includes(myPlayer.id)) {
+    if (
+      myPlayer &&
+      gameState.interruptingPlayers &&
+      gameState.interruptingPlayers.includes(myPlayer.id)
+    ) {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Pass Priority";
       controls.interrupt.disabled = false;
@@ -1482,7 +1488,11 @@ controls.passTurn.addEventListener("click", () => {
 
 controls.interrupt.addEventListener("click", () => {
   const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-  if (myPlayer && gameState.interruptingPlayers.includes(myPlayer.id)) {
+  if (
+    myPlayer &&
+    gameState.interruptingPlayers &&
+    gameState.interruptingPlayers.includes(myPlayer.id)
+  ) {
     sendPassPriority();
   } else {
     sendInterrupt();
