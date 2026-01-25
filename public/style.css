@@ -4,6 +4,13 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: #000;
@@ -18,6 +25,8 @@ body {
   width: 100%;
   max-width: 1200px;
   padding: 20px;
+  max-height: 100vh;
+  overflow-y: auto;
 }
 
 /* Menu and Setup Screens */
@@ -225,6 +234,10 @@ h1 {
 
 #game-screen {
   width: 100%;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
 .game-header {
@@ -1074,16 +1087,27 @@ h1 {
 }
 
 @media (max-width: 768px) and (orientation: landscape) {
+  #app {
+    padding: 5px;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
   #game-screen {
     display: flex;
     flex-direction: column;
-    width: 95%;
-    max-width: 95%;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    height: calc(100vh - 10px);
+    max-height: calc(100vh - 10px);
+    overflow-y: auto;
   }
 
   #players-container {
     width: 100%;
+    gap: 6px;
   }
 
   #players-container.players-2 {
@@ -1108,18 +1132,122 @@ h1 {
   .game-header,
   .lobby-banner {
     width: 100%;
-    margin-bottom: 15px;
+    margin-bottom: 8px;
+  }
+
+  .lobby-banner {
+    padding: 12px;
+  }
+
+  .lobby-banner h2 {
+    font-size: 1.1em;
+    margin-bottom: 5px;
+  }
+
+  .lobby-banner p {
+    font-size: 0.85em;
+  }
+
+  .player-card {
+    padding: 8px;
+    border-width: 2px;
+  }
+
+  .player-name {
+    font-size: 0.8em;
+    margin-bottom: 5px;
+  }
+
+  .player-name input {
+    width: 55%;
+    font-size: 0.8em;
+  }
+
+  .status-badges span {
+    font-size: 0.55em;
+    padding: 2px 4px;
+  }
+
+  .player-time {
+    font-size: 1.6em;
+    margin: 6px 0;
+  }
+
+  .time-controls {
+    margin-bottom: 5px;
+  }
+
+  .time-controls button {
+    padding: 3px 8px;
+    font-size: 0.75em;
+    min-width: 50px;
+  }
+
+  .life-section {
+    padding: 5px;
+    gap: 4px;
+    margin: 5px 0;
+  }
+
+  .life-label {
+    font-size: 0.7em;
+  }
+
+  .life-display {
+    font-size: 1.2em;
+    min-width: 30px;
+  }
+
+  .btn-counter {
+    width: 26px;
+    height: 26px;
+    font-size: 1em;
+  }
+
+  .counters-section {
+    gap: 6px;
+    margin-top: 5px;
+  }
+
+  .counter {
+    padding: 4px 5px;
+    gap: 3px;
+  }
+
+  .counter-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .counter-display {
+    font-size: 0.85em;
+    min-width: 18px;
+  }
+
+  .btn-counter-sm {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8em;
+  }
+
+  .dead-banner {
+    font-size: 1.2em;
+    padding: 5px 15px;
   }
 
   .controls {
     width: 100%;
     flex-direction: row;
     flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
   }
 
   .btn-control {
     width: auto;
-    min-width: 120px;
+    min-width: 100px;
+    padding: 6px 12px;
+    font-size: 0.8em;
   }
 }
 
