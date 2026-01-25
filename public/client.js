@@ -864,7 +864,7 @@ function updateControls() {
       } else {
         controls.interrupt.classList.remove("btn-primary");
       }
-    } else if (myPlayer && gameState.status === "running" && !isActivePlayer) {
+    } else if (myPlayer && gameState.status === "running") {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Interrupt";
       controls.interrupt.disabled = false;
