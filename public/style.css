@@ -938,6 +938,27 @@ h1 {
   }
 }
 
+@media (max-width: 768px) and (orientation: landscape) {
+  #players-container.players-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #players-container.players-3,
+  #players-container.players-4 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #players-container.players-5,
+  #players-container.players-6 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  #players-container.players-7,
+  #players-container.players-8 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 @media (max-width: 1024px) {
   #players-container.players-7,
   #players-container.players-8 {
