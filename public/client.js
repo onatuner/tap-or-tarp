@@ -850,8 +850,12 @@ function updateControls() {
     } else if (myPlayer && gameState.status === "running") {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Interrupt";
-      controls.interrupt.disabled = false;
-      controls.interrupt.classList.add("btn-primary");
+      controls.interrupt.disabled = isActivePlayer;
+      if (!controls.interrupt.disabled) {
+        controls.interrupt.classList.add("btn-primary");
+      } else {
+        controls.interrupt.classList.remove("btn-primary");
+      }
     } else {
       controls.interrupt.style.display = "none";
       controls.interrupt.classList.remove("btn-primary");
