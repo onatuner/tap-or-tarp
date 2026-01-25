@@ -928,3 +928,229 @@ h1 {
     justify-content: center;
   }
 }
+
+@media (max-width: 1024px) {
+  #players-container.players-7,
+  #players-container.players-8 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .player-card {
+    padding: 25px;
+  }
+
+  .player-time {
+    font-size: 3.2em;
+  }
+
+  .modal-content {
+    padding: 30px;
+    max-width: 450px;
+  }
+}
+
+@media (max-width: 480px) {
+  #app {
+    padding: 10px;
+  }
+
+  #main-menu-screen,
+  #casual-setup-screen,
+  #join-screen,
+  #campaign-screen,
+  #load-screen,
+  #menu-settings-screen {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  h1 {
+    font-size: 1.8em;
+    margin-bottom: 20px;
+  }
+
+  .menu-container {
+    max-width: 100%;
+  }
+
+  .btn-menu {
+    padding: 14px 20px;
+    font-size: 1em;
+  }
+
+  .player-card {
+    padding: 20px;
+  }
+
+  .player-time {
+    font-size: 2.5em;
+    margin: 15px 0;
+  }
+
+  .player-time.deciseconds {
+    font-size: 1.8em;
+  }
+
+  .player-name {
+    font-size: 1em;
+  }
+
+  .player-name input {
+    width: 60%;
+  }
+
+  .life-section {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .life-display {
+    font-size: 1.6em;
+    min-width: 50px;
+  }
+
+  .btn-counter {
+    width: 32px;
+    height: 32px;
+    font-size: 1.2em;
+  }
+
+  .btn-counter-sm {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9em;
+  }
+
+  .drunk-icon,
+  .generic-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .counter {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .counter-display {
+    font-size: 1em;
+    min-width: 25px;
+  }
+
+  .time-controls button {
+    padding: 6px 12px;
+    font-size: 0.85em;
+    min-width: 70px;
+  }
+
+  .dead-banner {
+    font-size: 2em;
+    padding: 10px 30px;
+  }
+
+  .modal-content {
+    padding: 25px;
+    max-width: 95%;
+  }
+
+  .modal-content h2 {
+    font-size: 1.3em;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    font-size: 0.9em;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    font-size: 0.85em;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 10px;
+    font-size: 0.95em;
+  }
+
+  .player-colors-container {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+
+  .threshold-input {
+    width: 70px;
+    font-size: 1em;
+  }
+}
+
+@media (max-width: 375px) {
+  .player-time {
+    font-size: 2.2em;
+  }
+
+  .life-display {
+    font-size: 1.4em;
+  }
+
+  .btn-counter {
+    width: 30px;
+    height: 30px;
+    font-size: 1.1em;
+  }
+
+  .btn-counter-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85em;
+  }
+
+  .drunk-icon,
+  .generic-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .player-name input {
+    width: 55%;
+  }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  #players-container.players-2,
+  #players-container.players-3,
+  #players-container.players-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  #players-container.players-5,
+  #players-container.players-6 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .player-time {
+    font-size: 2.5em;
+    margin: 10px 0;
+  }
+
+  .player-card {
+    padding: 15px;
+  }
+
+  .dead-banner {
+    font-size: 2em;
+    padding: 8px 25px;
+  }
+
+  .game-header {
+    padding: 10px 15px;
+    margin-bottom: 15px;
+  }
+
+  .game-code {
+    font-size: 1.2em;
+  }
+}
