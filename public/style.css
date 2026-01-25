@@ -1334,14 +1334,14 @@ h1 {
 }
 
 .game-name-display {
-  font-size: 1.1em;
+  font-size: 1.3em;
   font-weight: bold;
-  color: #fff;
+  color: #00bb00;
   margin-bottom: 10px;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
-  border-left: 3px solid #00bb00;
+  padding: 10px 12px;
+  background: rgba(0, 187, 0, 0.08);
+  border-radius: 8px;
+  border-left: 4px solid #00bb00;
 }
 
 .game-code {
