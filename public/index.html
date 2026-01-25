@@ -53,6 +53,16 @@
         <h1>Join Game</h1>
         <div class="setup-form">
           <div class="form-group">
+            <label>Active Lobbies</label>
+            <div id="game-list" class="game-list">
+              <p class="loading">Loading games...</p>
+            </div>
+            <p class="form-hint">Tap a game to join</p>
+          </div>
+          <div class="form-group-divider">
+            <span>OR</span>
+          </div>
+          <div class="form-group">
             <label for="join-game">Enter Game Code</label>
             <input type="text" id="join-game" placeholder="e.g. ABC123" maxlength="6" />
           </div>
@@ -156,7 +166,10 @@
 
       <div id="game-screen" style="display: none">
         <div class="game-header">
-          <h1>Tap or Tarp</h1>
+          <div class="game-header-left">
+            <h1>Tap or Tarp</h1>
+            <div class="game-code">Game Code: <span id="game-code-display"></span></div>
+          </div>
           <div class="game-header-right">
             <button
               id="back-to-menu-btn"
@@ -165,7 +178,6 @@
             >
               Back to Menu
             </button>
-            <div class="game-code">Game Code: <span id="game-code-display"></span></div>
           </div>
         </div>
 

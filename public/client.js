@@ -185,6 +185,7 @@ const setupForm = {
   joinGame: document.getElementById("join-game"),
   createGame: document.getElementById("create-game"),
   joinBtn: document.getElementById("join-btn"),
+  gameList: document.getElementById("game-list"),
 };
 
 const controls = {
@@ -1125,6 +1126,96 @@ function backToMenu() {
   playClick();
 }
 
+async function loadGames() {
+  if (!setupForm.gameList) return;
+
+  setupForm.gameList.innerHTML = '<p class="loading">Loading games...</p>';
+
+  try {
+    const response = await fetch("/api/games");
+    if (!response.ok) {
+      throw new Error("Failed to load games");
+    }
+    const data = await response.json();
+    renderGames(data.games || []);
+  } catch (error) {
+    console.error("Failed to load games:", error);
+    setupForm.gameList.innerHTML = '<p class="form-hint">Failed to load games. Try refreshing.</p>';
+  }
+}
+
+function renderGames(games) {
+  if (!setupForm.gameList) return;
+
+  if (games.length === 0) {
+    setupForm.gameList.innerHTML =
+      '<p class="form-hint">No active games. Create a new game or enter a code.</p>';
+    return;
+  }
+
+  setupForm.gameList.innerHTML = "";
+
+  games.forEach(game => {
+    const gameCard = document.createElement("div");
+    gameCard.className = "game-card";
+
+    const modeName = game.mode === "casual" ? "Casual" : game.mode;
+    const statusText = game.status === "waiting" ? "Waiting" : game.status;
+    const timeAgo = formatTimeAgo(game.lastActivity);
+    const timePerPlayer = formatMinutes(game.settings.initialTime);
+
+    gameCard.innerHTML = `
+      <div class="game-card-header">
+        <span class="game-code">${game.id}</span>
+        <span class="game-status status-${game.status}">${statusText}</span>
+      </div>
+      <div class="game-card-details">
+        <div class="game-detail">
+          <span class="game-detail-label">Mode:</span>
+          <span class="game-detail-value">${modeName}</span>
+        </div>
+        <div class="game-detail">
+          <span class="game-detail-label">Players:</span>
+          <span class="game-detail-value">${game.claimedCount}/${game.playerCount}</span>
+        </div>
+        <div class="game-detail">
+          <span class="game-detail-label">Time:</span>
+          <span class="game-detail-value">${timePerPlayer}</span>
+        </div>
+        <div class="game-detail">
+          <span class="game-detail-label">Active:</span>
+          <span class="game-detail-value">${timeAgo}</span>
+        </div>
+      </div>
+    `;
+
+    gameCard.addEventListener("click", () => {
+      sendJoinGame(game.id);
+    });
+
+    setupForm.gameList.appendChild(gameCard);
+  });
+}
+
+function formatTimeAgo(timestamp) {
+  const now = Date.now();
+  const diff = now - timestamp;
+
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+
+  if (seconds < 60) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return "1d+ ago";
+}
+
+function formatMinutes(milliseconds) {
+  const minutes = Math.round(milliseconds / 60000);
+  return `${minutes}min`;
+}
+
 // Main menu navigation
 menuButtons.casual.addEventListener("click", () => {
   showScreen("casualSetup");
@@ -1138,6 +1229,7 @@ menuButtons.campaign.addEventListener("click", () => {
 
 menuButtons.join.addEventListener("click", () => {
   showScreen("joinScreen");
+  loadGames();
   playClick();
 });
 

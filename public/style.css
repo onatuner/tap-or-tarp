@@ -234,6 +234,12 @@ h1 {
   border-radius: 10px;
 }
 
+.game-header-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .game-header-right {
   display: flex;
   align-items: center;
@@ -244,6 +250,8 @@ h1 {
   font-size: 1.5em;
   color: #004d00;
   font-weight: bold;
+  text-align: left;
+  margin-top: 0;
 }
 
 #players-container {
@@ -1272,4 +1280,116 @@ h1 {
   text-align: center;
   color: #666;
   padding: 20px;
+}
+
+/* Game list styles */
+.game-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+}
+
+.game-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.game-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #004d00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 77, 0, 0.3);
+}
+
+.game-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.game-code {
+  font-size: 1.3em;
+  font-weight: bold;
+  color: #00bb00;
+  letter-spacing: 2px;
+}
+
+.game-status {
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 0.85em;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.game-status.status-waiting {
+  background: rgba(0, 187, 0, 0.2);
+  color: #00bb00;
+}
+
+.game-status.status-running {
+  background: rgba(255, 170, 0, 0.2);
+  color: #ffaa00;
+}
+
+.game-status.status-paused {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+}
+
+.game-status.status-finished {
+  background: rgba(136, 136, 136, 0.2);
+  color: #888;
+}
+
+.game-card-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.game-detail {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.game-detail-label {
+  color: #888;
+  font-size: 0.85em;
+}
+
+.game-detail-value {
+  color: #fff;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+.form-group-divider {
+  display: flex;
+  align-items: center;
+  margin: 25px 0;
+}
+
+.form-group-divider::before,
+.form-group-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.form-group-divider span {
+  padding: 0 15px;
+  color: #666;
+  font-size: 0.9em;
+  font-weight: bold;
 }
