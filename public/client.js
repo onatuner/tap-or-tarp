@@ -842,9 +842,7 @@ function updateControls() {
     controls.passTurn.style.display = "inline-block";
     controls.passTurn.disabled =
       !isActivePlayer ||
-      (isActivePlayer &&
-        gameState.interruptingPlayers &&
-        gameState.interruptingPlayers.includes(myPlayer?.id)) ||
+      (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) ||
       gameState.status === "paused";
     if (!controls.passTurn.disabled) {
       controls.passTurn.classList.add("btn-primary");
