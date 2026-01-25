@@ -827,13 +827,20 @@ function updateControls() {
   } else {
     controls.start.style.display = "none";
     controls.passTurn.style.display = "inline-block";
-    controls.passTurn.disabled = !isActivePlayer || gameState.interruptingPlayer !== null;
+    controls.passTurn.disabled =
+      !isActivePlayer || gameState.interruptingPlayer !== null || gameState.status === "paused";
+    if (!controls.passTurn.disabled) {
+      controls.passTurn.classList.add("btn-primary");
+    } else {
+      controls.passTurn.classList.remove("btn-primary");
+    }
 
     const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
     if (gameState.interruptingPlayer === myPlayer?.id) {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Pass Priority";
       controls.interrupt.disabled = false;
+      controls.interrupt.classList.add("btn-primary");
     } else if (
       !isActivePlayer &&
       myPlayer &&
@@ -843,8 +850,10 @@ function updateControls() {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Interrupt";
       controls.interrupt.disabled = false;
+      controls.interrupt.classList.add("btn-primary");
     } else {
       controls.interrupt.style.display = "none";
+      controls.interrupt.classList.remove("btn-primary");
     }
   }
 }
