@@ -162,6 +162,9 @@ h1 {
     transform 0.2s,
     box-shadow 0.2s;
   margin: 5px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
 }
 
 .btn:hover {
@@ -570,6 +573,9 @@ h1 {
 .player-card.selectable {
   cursor: pointer;
   transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
 }
 
 .player-card.selectable:hover {

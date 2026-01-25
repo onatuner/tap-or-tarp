@@ -15,7 +15,7 @@ Analysis of Tap or Tarp for mobile device compatibility.
 
 ## Issues
 
-### 1. Small Touch Targets
+### 1. Small Touch Targets +++
 
 **Severity:** High  
 **Location:** `public/style.css:727-737`
@@ -40,7 +40,7 @@ The small counter buttons (`.btn-counter-sm`) are 28x28px, which is below the re
 
 ---
 
-### 2. Single Responsive Breakpoint
+### 2. Single Responsive Breakpoint +++
 
 **Severity:** Medium  
 **Location:** `public/style.css:891`
@@ -65,7 +65,7 @@ Only one media query breakpoint at 768px. This provides no optimization for:
 
 ---
 
-### 3. No Landscape Mode Optimization
+### 3. No Landscape Mode Optimization +++
 
 **Severity:** Medium  
 **Location:** N/A
@@ -84,7 +84,7 @@ When a phone is rotated to landscape, player cards stack vertically taking up ex
 
 ---
 
-### 4. Missing Touch Optimizations
+### 4. Missing Touch Optimizations +++
 
 **Severity:** Medium  
 **Location:** `public/style.css` (global)
