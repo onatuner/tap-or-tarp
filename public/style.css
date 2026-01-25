@@ -942,12 +942,13 @@ h1 {
   #game-screen {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    width: 95%;
+    max-width: 95%;
+    margin: 0 auto;
   }
 
   #players-container {
     width: 100%;
-    max-width: 95%;
   }
 
   #players-container.players-2 {
@@ -969,18 +970,16 @@ h1 {
     grid-template-columns: repeat(4, 1fr);
   }
 
-  .game-header {
+  .game-header,
+  .lobby-banner {
     width: 100%;
-    max-width: 95%;
-    margin: 0 auto 15px auto;
+    margin-bottom: 15px;
   }
 
   .controls {
     width: 100%;
     flex-direction: row;
     flex-wrap: wrap;
-    max-width: 95%;
-    margin: 0 auto;
   }
 
   .btn-control {
@@ -1207,9 +1206,8 @@ h1 {
 
   .game-header {
     width: 100%;
-    max-width: 95%;
     padding: 10px 15px;
-    margin: 0 auto 15px auto;
+    margin-bottom: 15px;
   }
 
   .game-code {
