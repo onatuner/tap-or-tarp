@@ -958,9 +958,16 @@ h1 {
     grid-template-columns: repeat(4, 1fr);
   }
 
+  .game-header {
+    max-width: 95%;
+    margin: 0 auto 15px auto;
+  }
+
   .controls {
     flex-direction: row;
     flex-wrap: wrap;
+    max-width: 95%;
+    margin: 0 auto;
   }
 
   .btn-control {
