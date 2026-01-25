@@ -977,14 +977,6 @@ function sendUnclaim() {
   safeSend({ type: "unclaim", data: {} });
 }
 
-function sendInterrupt() {
-  safeSend({ type: "interrupt", data: {} });
-}
-
-function sendPassPriority() {
-  safeSend({ type: "passPriority", data: {} });
-}
-
 function showTimeoutModal(player) {
   timeoutModal.message.textContent = `${player.name} has run out of time!`;
   timeoutModal.modal.style.display = "flex";
@@ -1504,9 +1496,9 @@ controls.interrupt.addEventListener("click", () => {
     gameState.interruptingPlayers &&
     gameState.interruptingPlayers.includes(myPlayer.id)
   ) {
-    sendPassPriority();
+    safeSend({ type: "passPriority", data: {} });
   } else {
-    sendInterrupt();
+    safeSend({ type: "interrupt", data: {} });
   }
   playClick();
 });
