@@ -30,6 +30,15 @@
         <h1>New Casual Game</h1>
         <div class="setup-form">
           <div class="form-group">
+            <label for="game-name">Game Name</label>
+            <input
+              type="text"
+              id="game-name"
+              placeholder="Enter game name (optional)"
+              maxlength="50"
+            />
+          </div>
+          <div class="form-group">
             <label for="player-count">Number of Players (2-8)</label>
             <input type="number" id="player-count" min="2" max="8" value="2" />
           </div>
@@ -167,7 +176,7 @@
       <div id="game-screen" style="display: none">
         <div class="game-header">
           <div class="game-header-left">
-            <h1>Tap or Tarp</h1>
+            <h1 id="game-title-display">Tap or Tarp</h1>
             <div class="game-code">Game Code: <span id="game-code-display"></span></div>
           </div>
           <div class="game-header-right">

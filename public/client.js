@@ -180,6 +180,7 @@ const feedbackForm = {
 };
 
 const setupForm = {
+  gameName: document.getElementById("game-name"),
   playerCount: document.getElementById("player-count"),
   initialTime: document.getElementById("initial-time"),
   joinGame: document.getElementById("join-game"),
@@ -207,6 +208,8 @@ const settingsModal = {
   close: document.getElementById("close-settings"),
   closeLobbyBtn: document.getElementById("close-lobby-btn"),
 };
+
+const gameTitleDisplay = document.getElementById("game-title-display");
 
 const colorPickerModal = {
   modal: document.getElementById("color-picker-modal"),
@@ -729,6 +732,13 @@ function renderGame() {
   screens.game.style.display = "block";
   gameCodeDisplay.textContent = gameState.id;
 
+  // Update game title with custom name if set
+  if (gameState.name && gameState.name !== "Game") {
+    gameTitleDisplay.textContent = gameState.name;
+  } else {
+    gameTitleDisplay.textContent = "Tap or Tarp";
+  }
+
   // Show/hide lobby banner based on game status and player selection
   const lobbyBanner = document.getElementById("lobby-banner");
   const hasClaimedPlayer = gameState.players.some(p => p.claimedBy === myClientId);
@@ -1131,6 +1141,7 @@ function backToMenu() {
   showScreen("mainMenu");
   gameState = null;
   setupForm.joinGame.value = "";
+  setupForm.gameName.value = "";
   playClick();
 }
 
@@ -1177,6 +1188,7 @@ function renderGames(games) {
         <span class="game-code">${game.id}</span>
         <span class="game-status status-${game.status}">${statusText}</span>
       </div>
+      <div class="game-name-display">${escapeHtml(game.name)}</div>
       <div class="game-card-details">
         <div class="game-detail">
           <span class="game-detail-label">Mode:</span>
@@ -1322,6 +1334,7 @@ menuSettingsForm.save.addEventListener("click", () => {
 setupForm.createGame.addEventListener("click", () => {
   console.log("Create game button clicked");
   const settings = {
+    name: setupForm.gameName.value.trim() || "Game",
     playerCount: parseInt(setupForm.playerCount.value),
     initialTime: parseInt(setupForm.initialTime.value) * 60 * 1000,
   };
