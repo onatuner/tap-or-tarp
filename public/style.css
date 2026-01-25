@@ -537,6 +537,16 @@ h1 {
   margin-right: 5px;
 }
 
+.priority-indicator {
+  font-size: 0.8em;
+  padding: 5px 10px;
+  background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+  color: #fff;
+  border-radius: 5px;
+  font-weight: bold;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
 .player-card.my-player {
   background: linear-gradient(
     135deg,

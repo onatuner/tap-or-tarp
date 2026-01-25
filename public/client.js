@@ -574,6 +574,18 @@ function createPlayerCard(player, isActive) {
     statusSpan.appendChild(activeIndicator);
   }
 
+  // Check if this player has priority (last in interruptingPlayers queue)
+  if (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) {
+    const priorityPlayerId =
+      gameState.interruptingPlayers[gameState.interruptingPlayers.length - 1];
+    if (player.id === priorityPlayerId) {
+      const priorityIndicator = document.createElement("span");
+      priorityIndicator.className = "priority-indicator";
+      priorityIndicator.textContent = "PRIORITY";
+      statusSpan.appendChild(priorityIndicator);
+    }
+  }
+
   nameContainer.appendChild(nameInput);
   nameContainer.appendChild(statusSpan);
   card.appendChild(nameContainer);
