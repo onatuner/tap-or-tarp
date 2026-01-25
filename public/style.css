@@ -297,8 +297,10 @@ h1 {
 }
 
 #players-container.players-5,
-#players-container.players-6 {
-  grid-template-columns: repeat(3, 1fr);
+#players-container.players-6,
+#players-container.players-7,
+#players-container.players-8 {
+  grid-template-columns: repeat(2, 1fr);
 }
 
 #players-container.players-7,
@@ -1120,13 +1122,10 @@ h1 {
   }
 
   #players-container.players-5,
-  #players-container.players-6 {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
+  #players-container.players-6,
   #players-container.players-7,
   #players-container.players-8 {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: 1fr 1fr;
   }
 
   .game-header,
