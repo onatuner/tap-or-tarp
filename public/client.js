@@ -847,7 +847,7 @@ function updateControls() {
       controls.interrupt.textContent = "Pass Priority";
       controls.interrupt.disabled = false;
       controls.interrupt.classList.add("btn-primary");
-    } else if (!isActivePlayer && myPlayer && gameState.status === "running") {
+    } else if (myPlayer && gameState.status === "running") {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Interrupt";
       controls.interrupt.disabled = false;
