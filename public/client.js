@@ -814,6 +814,7 @@ function updateControls() {
   // Check if current client is active player
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayer);
   const isActivePlayer = activePlayer && activePlayer.claimedBy === myClientId;
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
 
   // Check if all players are claimed
   const allPlayersClaimed = gameState.players.every(p => p.claimedBy !== null);
@@ -829,15 +830,15 @@ function updateControls() {
     controls.passTurn.style.display = "inline-block";
     controls.passTurn.disabled =
       !isActivePlayer ||
-      (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) ||
+      (isActivePlayer &&
+        gameState.interruptingPlayers &&
+        gameState.interruptingPlayers.includes(myPlayer?.id)) ||
       gameState.status === "paused";
     if (!controls.passTurn.disabled) {
       controls.passTurn.classList.add("btn-primary");
     } else {
       controls.passTurn.classList.remove("btn-primary");
     }
-
-    const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
     if (
       myPlayer &&
       gameState.interruptingPlayers &&
@@ -847,10 +848,16 @@ function updateControls() {
       controls.interrupt.textContent = "Pass Priority";
       controls.interrupt.disabled = false;
       controls.interrupt.classList.add("btn-primary");
-    } else if (myPlayer && gameState.status === "running") {
+    } else if (myPlayer && gameState.status === "running" && !isActivePlayer) {
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Interrupt";
-      controls.interrupt.disabled = isActivePlayer;
+      controls.interrupt.disabled = false;
+      controls.interrupt.classList.add("btn-primary");
+    } else if (myPlayer && gameState.status === "running" && isActivePlayer) {
+      controls.interrupt.style.display = "inline-block";
+      controls.interrupt.textContent = "Interrupt";
+      controls.interrupt.disabled =
+        gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0;
       if (!controls.interrupt.disabled) {
         controls.interrupt.classList.add("btn-primary");
       } else {
