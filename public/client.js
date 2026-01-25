@@ -864,29 +864,19 @@ function updateControls() {
     }
 
     const myHasPriority = myPlayer && myPlayer.id === priorityPlayerId;
-    const myInInterruptQueue =
-      myPlayer &&
-      gameState.interruptingPlayers &&
-      gameState.interruptingPlayers.includes(myPlayer.id);
 
-    if (myInInterruptQueue) {
+    if (myHasPriority) {
+      // Player has priority - show Pass Priority button
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Pass Priority";
-      controls.interrupt.disabled = !myHasPriority;
-      if (!controls.interrupt.disabled) {
-        controls.interrupt.classList.add("btn-primary");
-      } else {
-        controls.interrupt.classList.remove("btn-primary");
-      }
+      controls.interrupt.disabled = false;
+      controls.interrupt.classList.add("btn-primary");
     } else if (myPlayer && gameState.status === "running") {
+      // Player doesn't have priority - show Interrupt button
       controls.interrupt.style.display = "inline-block";
       controls.interrupt.textContent = "Interrupt";
-      controls.interrupt.disabled = myHasPriority;
-      if (!controls.interrupt.disabled) {
-        controls.interrupt.classList.add("btn-primary");
-      } else {
-        controls.interrupt.classList.remove("btn-primary");
-      }
+      controls.interrupt.disabled = false;
+      controls.interrupt.classList.add("btn-primary");
     } else {
       controls.interrupt.style.display = "none";
       controls.interrupt.classList.remove("btn-primary");
@@ -1515,11 +1505,18 @@ controls.passTurn.addEventListener("click", () => {
 
 controls.interrupt.addEventListener("click", () => {
   const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-  if (
-    myPlayer &&
-    gameState.interruptingPlayers &&
-    gameState.interruptingPlayers.includes(myPlayer.id)
-  ) {
+
+  // Determine which player has priority
+  let priorityPlayerId = null;
+  if (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) {
+    priorityPlayerId = gameState.interruptingPlayers[gameState.interruptingPlayers.length - 1];
+  } else {
+    priorityPlayerId = gameState.activePlayer;
+  }
+
+  const myHasPriority = myPlayer && myPlayer.id === priorityPlayerId;
+
+  if (myHasPriority) {
     safeSend({ type: "passPriority", data: {} });
   } else {
     safeSend({ type: "interrupt", data: {} });
