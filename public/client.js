@@ -7,6 +7,67 @@ let reconnectTimeout = null;
 const volume = 0.5;
 let myClientId = null;
 let pendingReconnect = null; // Track pending reconnection attempt for token cleanup on failure
+let wakeLock = null; // Screen wake lock to prevent screen timeout during gameplay
+
+// ============================================================================
+// SCREEN WAKE LOCK MANAGEMENT
+// ============================================================================
+
+/**
+ * Request a screen wake lock to prevent the device from sleeping
+ */
+async function requestWakeLock() {
+  if (!("wakeLock" in navigator)) {
+    console.log("Wake Lock API not supported");
+    return;
+  }
+
+  try {
+    wakeLock = await navigator.wakeLock.request("screen");
+    console.log("Screen wake lock acquired");
+
+    wakeLock.addEventListener("release", () => {
+      console.log("Screen wake lock released");
+    });
+  } catch (err) {
+    console.log("Failed to acquire wake lock:", err.message);
+  }
+}
+
+/**
+ * Release the screen wake lock
+ */
+async function releaseWakeLock() {
+  if (wakeLock) {
+    try {
+      await wakeLock.release();
+      wakeLock = null;
+    } catch (err) {
+      console.log("Failed to release wake lock:", err.message);
+    }
+  }
+}
+
+/**
+ * Update wake lock based on game state
+ * Acquires lock when game is running, releases when paused/stopped
+ */
+async function updateWakeLock() {
+  if (gameState && gameState.status === "running") {
+    if (!wakeLock) {
+      await requestWakeLock();
+    }
+  } else {
+    await releaseWakeLock();
+  }
+}
+
+// Re-acquire wake lock when page becomes visible again
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState === "visible" && gameState && gameState.status === "running") {
+    await requestWakeLock();
+  }
+});
 
 // ============================================================================
 // RECONNECTION TOKEN MANAGEMENT
@@ -360,6 +421,7 @@ function handleMessage(message) {
     case "state":
       gameState = message.data;
       renderGame();
+      updateWakeLock();
       break;
     case "tick":
       if (gameState) {
@@ -1225,6 +1287,8 @@ function backToMenu() {
   if (gameState && gameState.id) {
     clearGameTokens(gameState.id);
   }
+  // Release wake lock when leaving the game
+  releaseWakeLock();
   showScreen("mainMenu");
   gameState = null;
   setupForm.joinGame.value = "";
