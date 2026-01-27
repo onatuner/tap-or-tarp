@@ -1086,6 +1086,45 @@ h1 {
     padding: 10px 20px;
     font-size: 0.9em;
   }
+
+  .modal-content {
+    padding: 15px;
+    max-width: 90%;
+  }
+
+  .modal-content h2 {
+    font-size: 1.15em;
+    margin-bottom: 10px;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+  }
+
+  .form-hint {
+    font-size: 0.75em;
+    margin-bottom: 8px;
+  }
+
+  .thresholds-container {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .threshold-item {
+    padding: 6px 10px;
+  }
+
+  .threshold-input {
+    width: 65px;
+    padding: 5px 8px;
+    font-size: 0.95em;
+  }
+
+  .form-group-danger {
+    padding: 10px;
+    margin-top: 10px;
+  }
 }
 
 @media (max-width: 768px) and (orientation: landscape) {
@@ -1265,7 +1304,7 @@ h1 {
   }
 
   .modal-content {
-    padding: 30px;
+    padding: 25px;
     max-width: 450px;
   }
 }
@@ -1387,25 +1426,99 @@ h1 {
   }
 
   .modal-content {
-    padding: 20px;
+    padding: 12px;
     max-width: 95%;
+    max-height: none;
+    overflow-y: visible;
   }
 
   .modal-content h2 {
-    font-size: 1.2em;
+    font-size: 1.1em;
+    margin-bottom: 8px;
   }
 
   .btn {
-    padding: 8px 16px;
-    font-size: 0.85em;
+    padding: 6px 12px;
+    font-size: 0.8em;
   }
 
   .form-group {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   .form-group label {
+    font-size: 0.75em;
+    margin-bottom: 2px;
+  }
+
+  .form-hint {
+    display: none;
+  }
+
+  .thresholds-container {
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+
+  .threshold-item {
+    padding: 5px 8px;
+  }
+
+  .threshold-input {
+    width: 60px;
+    padding: 4px 6px;
+    font-size: 0.9em;
+  }
+
+  .btn-threshold-remove {
+    width: 22px;
+    height: 22px;
+    font-size: 1em;
+  }
+
+  .player-colors-container {
+    margin-bottom: 8px;
+  }
+
+  .player-color-item {
+    padding: 6px 8px;
+  }
+
+  .player-color-swatch {
+    width: 18px;
+    height: 18px;
+  }
+
+  .player-color-name {
     font-size: 0.8em;
+  }
+
+  .color-change-hint {
+    display: none;
+  }
+
+  .form-group-danger {
+    padding: 8px;
+    margin-top: 8px;
+  }
+
+  .form-group-danger label {
+    margin-bottom: 6px;
+  }
+
+  .modal-actions {
+    margin-top: 10px;
+    gap: 8px;
+  }
+
+  .game-code-display {
+    font-size: 1.1em;
+    padding: 4px 8px;
+  }
+
+  #game-name-input {
+    padding: 6px 8px;
+    font-size: 0.85em;
   }
 
   .form-group input,
@@ -1510,6 +1623,126 @@ h1 {
 }
 
 @media (max-width: 768px) and (orientation: landscape) {
+  .modal {
+    align-items: flex-start;
+    padding: 5px;
+  }
+
+  .modal-content {
+    padding: 10px 12px;
+    max-height: none;
+    overflow-y: visible;
+    margin-top: 5px;
+  }
+
+  .modal-content h2 {
+    font-size: 1em;
+    margin-bottom: 6px;
+  }
+
+  .form-group {
+    margin-bottom: 6px;
+  }
+
+  .form-group label {
+    font-size: 0.7em;
+    margin-bottom: 2px;
+  }
+
+  .form-hint {
+    display: none;
+  }
+
+  .thresholds-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+
+  .threshold-item {
+    padding: 4px 6px;
+    flex: 0 0 auto;
+  }
+
+  .threshold-input {
+    width: 50px;
+    padding: 3px 5px;
+    font-size: 0.85em;
+  }
+
+  .threshold-unit {
+    font-size: 0.75em;
+    min-width: 24px;
+  }
+
+  .btn-threshold-remove {
+    width: 20px;
+    height: 20px;
+    font-size: 0.9em;
+  }
+
+  #add-threshold-btn {
+    padding: 4px 8px;
+    font-size: 0.75em;
+  }
+
+  .player-colors-container {
+    margin-bottom: 6px;
+  }
+
+  .player-color-item {
+    padding: 5px 6px;
+  }
+
+  .player-color-swatch {
+    width: 16px;
+    height: 16px;
+  }
+
+  .player-color-name {
+    font-size: 0.75em;
+  }
+
+  .color-change-hint {
+    display: none;
+  }
+
+  .form-group-danger {
+    padding: 6px;
+    margin-top: 6px;
+  }
+
+  .form-group-danger label {
+    margin-bottom: 4px;
+    font-size: 0.7em;
+  }
+
+  .btn-small {
+    padding: 4px 8px;
+    font-size: 0.75em;
+  }
+
+  .modal-actions {
+    margin-top: 8px;
+    gap: 6px;
+  }
+
+  .modal-actions .btn {
+    padding: 5px 10px;
+    font-size: 0.8em;
+  }
+
+  .game-code-display {
+    font-size: 1em;
+    padding: 3px 6px;
+  }
+
+  #game-name-input {
+    padding: 4px 6px;
+    font-size: 0.8em;
+  }
+
   #players-container.players-2,
   #players-container.players-3,
   #players-container.players-4 {
