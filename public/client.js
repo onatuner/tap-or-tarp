@@ -812,14 +812,10 @@ function renderGame() {
     gameTitleDisplay.textContent = "Tap or Tarp";
   }
 
-  // Show/hide lobby banner based on game status and player selection
-  const lobbyBanner = document.getElementById("lobby-banner");
   const hasClaimedPlayer = gameState.players.some(p => p.claimedBy === myClientId);
   if (gameState.status === "waiting" && !hasClaimedPlayer) {
-    lobbyBanner.style.display = "block";
     screens.game.classList.add("lobby-mode");
   } else {
-    lobbyBanner.style.display = "none";
     screens.game.classList.remove("lobby-mode");
   }
 
