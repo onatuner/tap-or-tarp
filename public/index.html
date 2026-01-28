@@ -219,6 +219,79 @@
         </div>
       </div>
 
+      <!-- Mobile Game Screen (New Redesigned Layout) -->
+      <div id="mobile-game-screen" class="mobile-layout" style="display: none">
+        <header class="mobile-top-bar">
+          <button class="mobile-icon-btn mobile-exit-btn" aria-label="Exit to menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          <button class="mobile-icon-btn mobile-settings-btn" aria-label="Open settings">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+        </header>
+
+        <section class="mobile-time-display">
+          <div class="mobile-turn-indicator">YOUR TURN</div>
+          <div class="mobile-time-value">05:23</div>
+        </section>
+
+        <section class="mobile-interaction-area">
+          <button class="mobile-interaction-btn mobile-interaction-btn-pass" aria-label="Pass turn">
+            PASS TURN
+          </button>
+        </section>
+
+        <section class="mobile-other-players">
+          <div class="mobile-player-cards">
+            <!-- Player cards will be inserted here dynamically -->
+            <div class="mobile-player-card" data-placeholder="true">
+              <span class="mobile-player-card-name">Player 2</span>
+              <span class="mobile-player-card-life">40</span>
+            </div>
+            <div class="mobile-player-card" data-placeholder="true">
+              <span class="mobile-player-card-name">Player 3</span>
+              <span class="mobile-player-card-life">38</span>
+            </div>
+            <div class="mobile-player-card" data-placeholder="true">
+              <span class="mobile-player-card-name">Player 4</span>
+              <span class="mobile-player-card-life">40</span>
+            </div>
+          </div>
+        </section>
+
+        <footer class="mobile-player-stats">
+          <div class="mobile-stat-group mobile-stat-life">
+            <span class="mobile-stat-icon">&#10084;</span>
+            <span class="mobile-stat-value">40</span>
+            <div class="mobile-stat-controls">
+              <button class="mobile-stat-btn" aria-label="Decrease life">-</button>
+              <button class="mobile-stat-btn" aria-label="Increase life">+</button>
+            </div>
+          </div>
+          <div class="mobile-stat-group mobile-stat-poison">
+            <span class="mobile-stat-icon">&#127866;</span>
+            <span class="mobile-stat-value">0</span>
+            <div class="mobile-stat-controls">
+              <button class="mobile-stat-btn" aria-label="Decrease counter">-</button>
+              <button class="mobile-stat-btn" aria-label="Increase counter">+</button>
+            </div>
+          </div>
+          <div class="mobile-stat-group mobile-stat-generic">
+            <span class="mobile-stat-icon">&#11088;</span>
+            <span class="mobile-stat-value">0</span>
+            <div class="mobile-stat-controls">
+              <button class="mobile-stat-btn" aria-label="Decrease counter">-</button>
+              <button class="mobile-stat-btn" aria-label="Increase counter">+</button>
+            </div>
+          </div>
+        </footer>
+      </div>
+
       <div id="settings-modal" style="display: none" class="modal">
         <div class="modal-content">
           <h2>Game Settings</h2>
