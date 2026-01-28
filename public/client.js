@@ -1683,19 +1683,6 @@ function deleteFeedback(id) {
   }
 }
 
-document.addEventListener("keydown", e => {
-  if (!gameState || screens.game.style.display === "none") return;
-
-  if (e.code === "Space") {
-    e.preventDefault();
-    sendPassTurn();
-  } else if (e.code === "KeyP") {
-    e.preventDefault();
-    sendPause();
-    playPauseResume();
-  }
-});
-
 window.addEventListener("click", () => {
   if (!audioContext) {
     initAudio();
