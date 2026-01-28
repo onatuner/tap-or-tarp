@@ -178,7 +178,31 @@ const screens = {
   menuSettings: document.getElementById("menu-settings-screen"),
   feedback: document.getElementById("feedback-screen"),
   game: document.getElementById("game-screen"),
+  mobileGame: document.getElementById("mobile-game-screen"),
 };
+
+// Mobile UI elements
+const mobileUI = {
+  screen: document.getElementById("mobile-game-screen"),
+  exitBtn: document.querySelector(".mobile-exit-btn"),
+  settingsBtn: document.querySelector(".mobile-settings-btn"),
+  timeDisplay: document.querySelector(".mobile-time-display"),
+  timeValue: document.querySelector(".mobile-time-value"),
+  turnIndicator: document.querySelector(".mobile-turn-indicator"),
+  interactionArea: document.querySelector(".mobile-interaction-area"),
+  interactionBtn: document.querySelector(".mobile-interaction-btn"),
+  otherPlayers: document.querySelector(".mobile-other-players"),
+  playerCards: document.querySelector(".mobile-player-cards"),
+  playerStats: document.querySelector(".mobile-player-stats"),
+  lifeStat: document.querySelector(".mobile-stat-life"),
+  poisonStat: document.querySelector(".mobile-stat-poison"),
+  genericStat: document.querySelector(".mobile-stat-generic"),
+};
+
+// Check if we should use mobile layout (based on screen size and touch capability)
+function isMobileDevice() {
+  return window.innerWidth <= 768 || ("ontouchstart" in window && window.innerWidth <= 1024);
+}
 
 const playersContainer = document.getElementById("players-container");
 const gameCodeDisplay = document.getElementById("game-code-display");
@@ -802,7 +826,15 @@ function renderGame() {
   if (!gameState) return;
 
   hideAllScreens();
-  screens.game.style.display = "block";
+
+  // Show mobile or desktop screen based on device
+  if (isMobileDevice()) {
+    screens.mobileGame.style.display = "flex";
+    updateMobileUI();
+  } else {
+    screens.game.style.display = "block";
+  }
+
   gameCodeDisplay.textContent = gameState.id;
 
   // Update game title with custom name if set
@@ -861,6 +893,11 @@ function updateTimes() {
       }
     }
   });
+
+  // Also update mobile UI time display
+  if (isMobileDevice()) {
+    updateMobileTimeDisplay();
+  }
 }
 
 function updateControls() {
@@ -1684,5 +1721,400 @@ window.addEventListener("click", () => {
     initAudio();
   }
 });
+
+// ============================================================================
+// MOBILE UI FUNCTIONS
+// ============================================================================
+
+/**
+ * Update the entire mobile UI based on current game state
+ */
+function updateMobileUI() {
+  if (!gameState || !mobileUI.screen) return;
+
+  updateMobileTimeDisplay();
+  updateMobileInteractionButton();
+  updateMobileOtherPlayers();
+  updateMobilePlayerStats();
+}
+
+/**
+ * Update the mobile time display with current player's time and state
+ */
+function updateMobileTimeDisplay() {
+  if (!gameState || !mobileUI.timeValue) return;
+
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  const activePlayer = gameState.players.find(p => p.id === gameState.activePlayer);
+  const isWaiting = gameState.status === "waiting";
+  const isPaused = gameState.status === "paused";
+
+  // Remove all state classes
+  mobileUI.timeDisplay.classList.remove("warning", "critical", "paused");
+
+  if (isWaiting) {
+    // Show game code in waiting state
+    mobileUI.turnIndicator.textContent = `Code: ${gameState.id}`;
+    const claimedCount = gameState.players.filter(p => p.claimedBy !== null).length;
+    mobileUI.timeValue.textContent = `Waiting (${claimedCount}/${gameState.players.length})`;
+  } else if (isPaused) {
+    mobileUI.turnIndicator.textContent = "GAME PAUSED";
+    mobileUI.timeValue.textContent = "--:--";
+    mobileUI.timeDisplay.classList.add("paused");
+  } else if (myPlayer) {
+    // Show time and turn indicator
+    const isMyTurn = myPlayer.id === gameState.activePlayer;
+    const timeRemaining = myPlayer.timeRemaining;
+
+    // Update turn indicator
+    if (isMyTurn) {
+      mobileUI.turnIndicator.textContent = "YOUR TURN";
+    } else if (activePlayer) {
+      mobileUI.turnIndicator.textContent = `${activePlayer.name}'s Turn`;
+    }
+
+    // Update time display with appropriate format and state
+    if (timeRemaining < CONSTANTS.CRITICAL_THRESHOLD) {
+      mobileUI.timeValue.textContent = formatTimeWithDeciseconds(timeRemaining);
+      mobileUI.timeDisplay.classList.add("critical");
+    } else if (timeRemaining < CONSTANTS.WARNING_THRESHOLD_1MIN) {
+      mobileUI.timeValue.textContent = formatTime(timeRemaining);
+      mobileUI.timeDisplay.classList.add("warning");
+    } else {
+      mobileUI.timeValue.textContent = formatTime(timeRemaining);
+    }
+  } else {
+    // No claimed player, show active player's time
+    if (activePlayer) {
+      mobileUI.turnIndicator.textContent = `${activePlayer.name}'s Turn`;
+      mobileUI.timeValue.textContent = formatTime(activePlayer.timeRemaining);
+    }
+  }
+}
+
+/**
+ * Update the mobile interaction button based on game state
+ */
+function updateMobileInteractionButton() {
+  if (!gameState || !mobileUI.interactionBtn) return;
+
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  const activePlayer = gameState.players.find(p => p.id === gameState.activePlayer);
+  const isMyTurn = myPlayer && myPlayer.id === gameState.activePlayer;
+  const isWaiting = gameState.status === "waiting";
+  const isPaused = gameState.status === "paused";
+  const allPlayersClaimed = gameState.players.every(p => p.claimedBy !== null);
+
+  // Determine who has priority
+  let priorityPlayerId = null;
+  if (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) {
+    priorityPlayerId = gameState.interruptingPlayers[gameState.interruptingPlayers.length - 1];
+  } else {
+    priorityPlayerId = gameState.activePlayer;
+  }
+  const myHasPriority = myPlayer && myPlayer.id === priorityPlayerId;
+  const myInInterruptQueue =
+    myPlayer &&
+    gameState.interruptingPlayers &&
+    gameState.interruptingPlayers.includes(myPlayer.id);
+
+  // Remove all variant classes
+  mobileUI.interactionBtn.classList.remove(
+    "mobile-interaction-btn-pass",
+    "mobile-interaction-btn-interrupt",
+    "mobile-interaction-btn-priority",
+    "mobile-interaction-btn-start"
+  );
+
+  if (isWaiting) {
+    // Start Game button
+    mobileUI.interactionBtn.textContent = "START GAME";
+    mobileUI.interactionBtn.classList.add("mobile-interaction-btn-start");
+    mobileUI.interactionBtn.disabled = !allPlayersClaimed;
+  } else if (isPaused) {
+    // Resume button
+    mobileUI.interactionBtn.textContent = "RESUME";
+    mobileUI.interactionBtn.classList.add("mobile-interaction-btn-start");
+    mobileUI.interactionBtn.disabled = false;
+  } else if (myHasPriority && myInInterruptQueue) {
+    // Pass Priority button (player has priority and is in interrupt queue)
+    mobileUI.interactionBtn.textContent = "PASS PRIORITY";
+    mobileUI.interactionBtn.classList.add("mobile-interaction-btn-priority");
+    mobileUI.interactionBtn.disabled = false;
+  } else if (isMyTurn && (!gameState.interruptingPlayers || gameState.interruptingPlayers.length === 0)) {
+    // Pass Turn button (active player, no interrupts)
+    mobileUI.interactionBtn.textContent = "PASS TURN";
+    mobileUI.interactionBtn.classList.add("mobile-interaction-btn-pass");
+    mobileUI.interactionBtn.disabled = false;
+  } else if (myPlayer && !myHasPriority) {
+    // Interrupt button (not my turn or someone else has priority)
+    mobileUI.interactionBtn.textContent = "INTERRUPT";
+    mobileUI.interactionBtn.classList.add("mobile-interaction-btn-interrupt");
+    mobileUI.interactionBtn.disabled = false;
+  } else {
+    // Disabled state (no claimed player or waiting for something)
+    mobileUI.interactionBtn.textContent = "WAITING...";
+    mobileUI.interactionBtn.disabled = true;
+  }
+}
+
+/**
+ * Update the mobile other players section with compact cards
+ */
+function updateMobileOtherPlayers() {
+  if (!gameState || !mobileUI.playerCards) return;
+
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  const otherPlayers = gameState.players.filter(p => p.claimedBy !== myClientId);
+
+  mobileUI.playerCards.innerHTML = "";
+
+  otherPlayers.forEach(player => {
+    const card = document.createElement("div");
+    card.className = "mobile-player-card";
+    card.dataset.playerId = player.id;
+
+    // Apply player color
+    const playerColor = getPlayerColor(player);
+    card.style.borderColor = `${playerColor.primary}66`;
+
+    if (player.id === gameState.activePlayer) {
+      card.classList.add("active");
+    }
+
+    if (player.isEliminated) {
+      card.classList.add("eliminated");
+    }
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "mobile-player-card-name";
+    nameSpan.textContent = player.name;
+
+    const lifeSpan = document.createElement("span");
+    lifeSpan.className = "mobile-player-card-life";
+    lifeSpan.textContent = player.life;
+
+    card.appendChild(nameSpan);
+    card.appendChild(lifeSpan);
+
+    // Add status indicator if needed
+    if (player.id === gameState.activePlayer) {
+      const statusSpan = document.createElement("span");
+      statusSpan.className = "mobile-player-card-status status-active";
+      statusSpan.textContent = "\u25CF"; // Filled circle
+      card.appendChild(statusSpan);
+    } else if (player.timeRemaining < CONSTANTS.WARNING_THRESHOLD_1MIN) {
+      const statusSpan = document.createElement("span");
+      statusSpan.className = "mobile-player-card-status status-warning";
+      statusSpan.textContent = "\u26A0"; // Warning sign
+      card.appendChild(statusSpan);
+    }
+
+    // Click to view player details (tap to select in waiting)
+    card.addEventListener("click", () => {
+      if (gameState.status === "waiting") {
+        if (!player.claimedBy) {
+          sendClaim(player.id);
+          playClick();
+        }
+      }
+    });
+
+    mobileUI.playerCards.appendChild(card);
+  });
+
+  // If we haven't claimed a player yet in waiting state, show empty slots
+  if (gameState.status === "waiting" && !myPlayer) {
+    const unclaimedPlayers = gameState.players.filter(p => !p.claimedBy);
+    unclaimedPlayers.forEach(player => {
+      const existingCard = mobileUI.playerCards.querySelector(`[data-player-id="${player.id}"]`);
+      if (existingCard) {
+        existingCard.classList.add("selectable");
+      }
+    });
+  }
+}
+
+/**
+ * Update the mobile player stats bar with current player's life and counters
+ */
+function updateMobilePlayerStats() {
+  if (!gameState || !mobileUI.playerStats) return;
+
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+
+  if (!myPlayer) {
+    // Hide stats or show placeholder if no player claimed
+    mobileUI.playerStats.style.opacity = "0.5";
+    return;
+  }
+
+  mobileUI.playerStats.style.opacity = "1";
+
+  // Update life display
+  const lifeValue = mobileUI.lifeStat.querySelector(".mobile-stat-value");
+  if (lifeValue) {
+    lifeValue.textContent = myPlayer.life;
+  }
+
+  // Update poison/drunk counter display
+  const poisonValue = mobileUI.poisonStat.querySelector(".mobile-stat-value");
+  if (poisonValue) {
+    poisonValue.textContent = myPlayer.drunkCounter;
+  }
+
+  // Update generic counter display
+  const genericValue = mobileUI.genericStat.querySelector(".mobile-stat-value");
+  if (genericValue) {
+    genericValue.textContent = myPlayer.genericCounter;
+  }
+}
+
+/**
+ * Handle mobile interaction button click
+ */
+function handleMobileInteractionClick() {
+  if (!gameState) return;
+
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  const isWaiting = gameState.status === "waiting";
+  const isPaused = gameState.status === "paused";
+
+  // Determine who has priority
+  let priorityPlayerId = null;
+  if (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) {
+    priorityPlayerId = gameState.interruptingPlayers[gameState.interruptingPlayers.length - 1];
+  } else {
+    priorityPlayerId = gameState.activePlayer;
+  }
+  const myHasPriority = myPlayer && myPlayer.id === priorityPlayerId;
+  const myInInterruptQueue =
+    myPlayer &&
+    gameState.interruptingPlayers &&
+    gameState.interruptingPlayers.includes(myPlayer.id);
+
+  if (isWaiting) {
+    sendStart();
+  } else if (isPaused) {
+    sendPause(); // Toggle pause to resume
+    playPauseResume();
+  } else if (myHasPriority && myInInterruptQueue) {
+    safeSend({ type: "passPriority", data: {} });
+  } else if (myPlayer && myPlayer.id === gameState.activePlayer) {
+    sendPassTurn();
+  } else if (myPlayer && !myHasPriority) {
+    safeSend({ type: "interrupt", data: {} });
+  }
+
+  playClick();
+
+  // Haptic feedback if supported
+  if (navigator.vibrate) {
+    navigator.vibrate(10);
+  }
+}
+
+/**
+ * Setup mobile UI event listeners
+ */
+function setupMobileEventListeners() {
+  if (!mobileUI.screen) return;
+
+  // Exit button
+  if (mobileUI.exitBtn) {
+    mobileUI.exitBtn.addEventListener("click", () => {
+      if (
+        confirm(
+          "Are you sure you want to return to the main menu? This will disconnect you from the current game."
+        )
+      ) {
+        backToMenu();
+      }
+    });
+  }
+
+  // Settings button
+  if (mobileUI.settingsBtn) {
+    mobileUI.settingsBtn.addEventListener("click", () => {
+      showSettingsModal();
+      playClick();
+    });
+  }
+
+  // Interaction button
+  if (mobileUI.interactionBtn) {
+    mobileUI.interactionBtn.addEventListener("click", handleMobileInteractionClick);
+  }
+
+  // Player stats buttons
+  setupMobileStatButtons();
+}
+
+/**
+ * Setup the +/- buttons for mobile player stats
+ */
+function setupMobileStatButtons() {
+  if (!mobileUI.playerStats) return;
+
+  // Life controls
+  const lifeControls = mobileUI.lifeStat?.querySelectorAll(".mobile-stat-btn");
+  if (lifeControls && lifeControls.length === 2) {
+    lifeControls[0].addEventListener("click", () => {
+      const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+      if (myPlayer) {
+        sendUpdatePlayer(myPlayer.id, { life: myPlayer.life - 1 });
+        playClick();
+      }
+    });
+    lifeControls[1].addEventListener("click", () => {
+      const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+      if (myPlayer) {
+        sendUpdatePlayer(myPlayer.id, { life: myPlayer.life + 1 });
+        playClick();
+      }
+    });
+  }
+
+  // Poison/Drunk controls
+  const poisonControls = mobileUI.poisonStat?.querySelectorAll(".mobile-stat-btn");
+  if (poisonControls && poisonControls.length === 2) {
+    poisonControls[0].addEventListener("click", () => {
+      const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+      if (myPlayer) {
+        sendUpdatePlayer(myPlayer.id, { drunkCounter: Math.max(0, myPlayer.drunkCounter - 1) });
+        playClick();
+      }
+    });
+    poisonControls[1].addEventListener("click", () => {
+      const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+      if (myPlayer) {
+        sendUpdatePlayer(myPlayer.id, { drunkCounter: myPlayer.drunkCounter + 1 });
+        playClick();
+      }
+    });
+  }
+
+  // Generic counter controls
+  const genericControls = mobileUI.genericStat?.querySelectorAll(".mobile-stat-btn");
+  if (genericControls && genericControls.length === 2) {
+    genericControls[0].addEventListener("click", () => {
+      const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+      if (myPlayer) {
+        sendUpdatePlayer(myPlayer.id, { genericCounter: Math.max(0, myPlayer.genericCounter - 1) });
+        playClick();
+      }
+    });
+    genericControls[1].addEventListener("click", () => {
+      const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+      if (myPlayer) {
+        sendUpdatePlayer(myPlayer.id, { genericCounter: myPlayer.genericCounter + 1 });
+        playClick();
+      }
+    });
+  }
+}
+
+// Initialize mobile event listeners
+setupMobileEventListeners();
 
 connect();

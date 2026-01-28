@@ -2300,6 +2300,16 @@ h1 {
 .mobile-player-card-status.status-warning { color: var(--color-warning); }
 .mobile-player-card-status.status-eliminated { color: var(--color-danger); }
 
+.mobile-player-card.selectable {
+  border-style: dashed;
+  border-color: var(--color-success);
+}
+
+.mobile-player-card.selectable:hover {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: var(--color-success);
+}
+
 /* Landscape: single row, smaller cards */
 @media (orientation: landscape) and (max-height: 500px) {
   .mobile-other-players {
