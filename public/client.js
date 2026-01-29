@@ -2550,7 +2550,7 @@ function handlePopupOutsideClick(e) {
 }
 
 // Track previous stat values for change animation
-let prevStatValues = { life: null, drunk: null, generic: null };
+const prevStatValues = { life: null, drunk: null, generic: null };
 
 /**
  * Update the mobile player stats bar with current player's life and counters
