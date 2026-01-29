@@ -2687,12 +2687,498 @@ h1 {
   transition-timing-function: ease-out;
 }
 
-/* Disable transitions on orientation change for instant layout */
+/* =============================================================================
+   SCREEN TRANSITION ANIMATIONS
+   ============================================================================= */
+
+/* Fade in animation for entering screens */
+@keyframes screen-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Slide in from left (for entering) */
+@keyframes screen-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Slide out to right (for exiting) */
+@keyframes screen-slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* Apply enter animation to mobile game screen */
+.mobile-layout.screen-enter {
+  animation: screen-fade-in 0.2s ease-out;
+}
+
+.mobile-layout.screen-exit {
+  animation: screen-slide-out-right 0.2s ease-out forwards;
+}
+
+/* =============================================================================
+   STATE TRANSITION ANIMATIONS
+   ============================================================================= */
+
+/* Interaction button smooth color transitions */
+.mobile-interaction-btn {
+  transition: transform 0.1s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Time display color transitions */
+.mobile-time-value {
+  transition: color 0.15s ease;
+}
+
+/* Player card state transitions */
+.mobile-player-card {
+  transition: border-color 0.2s ease, background-color 0.2s ease,
+              transform 0.1s ease, box-shadow 0.2s ease, opacity 0.3s ease,
+              filter 0.3s ease;
+}
+
+/* Smooth elimination fade */
+.mobile-player-card.eliminating {
+  animation: card-eliminate 0.3s ease-out forwards;
+}
+
+@keyframes card-eliminate {
+  from {
+    opacity: 1;
+    filter: grayscale(0);
+  }
+  to {
+    opacity: 0.5;
+    filter: grayscale(0.5);
+  }
+}
+
+/* Game paused overlay effect */
+.mobile-layout.game-paused .mobile-other-players {
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.mobile-layout.game-paused .mobile-interaction-area::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  pointer-events: none;
+  animation: fade-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Turn change pulse on interaction area */
+.mobile-interaction-area.turn-changed {
+  animation: turn-pulse 0.3s ease-out;
+}
+
+@keyframes turn-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+/* =============================================================================
+   MICRO-INTERACTION ANIMATIONS
+   ============================================================================= */
+
+/* Button press feedback */
+.mobile-icon-btn:active,
+.mobile-stat-btn:active,
+.mobile-settings-action-btn:active,
+.mobile-settings-tab:active,
+.mobile-color-option:active,
+.mobile-add-btn:active,
+.mobile-danger-btn:active {
+  transform: scale(0.92);
+}
+
+/* Counter value bounce animation */
+@keyframes value-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.mobile-stat-value.value-changed {
+  animation: value-bounce 0.2s ease-out;
+}
+
+/* Life change flash highlight */
+@keyframes flash-highlight {
+  0%, 100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+  50% {
+    background-color: rgba(255, 107, 107, 0.3);
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+  }
+}
+
+.mobile-stat-life.value-flash {
+  animation: flash-highlight 0.25s ease-out;
+}
+
+/* Poison counter flash */
+@keyframes flash-poison {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(240, 160, 48, 0.3); }
+}
+
+.mobile-stat-poison.value-flash {
+  animation: flash-poison 0.25s ease-out;
+}
+
+/* Generic counter flash */
+@keyframes flash-generic {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(170, 170, 170, 0.3); }
+}
+
+.mobile-stat-generic.value-flash {
+  animation: flash-generic 0.25s ease-out;
+}
+
+/* Card tap feedback */
+.mobile-player-card:active {
+  transform: scale(0.97);
+}
+
+/* Settings tab switch indicator slide */
+.mobile-settings-tab {
+  position: relative;
+  transition: color 0.15s ease;
+}
+
+.mobile-settings-tab::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--color-success);
+  transition: width 0.15s ease, left 0.15s ease;
+}
+
+.mobile-settings-tab.active::after {
+  width: 100%;
+  left: 0;
+}
+
+/* Popup appear animation */
+@keyframes popup-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Time critical pulse enhancement */
+.mobile-time-display.critical .mobile-time-value {
+  animation: time-pulse-critical 0.8s ease-in-out infinite;
+}
+
+@keyframes time-pulse-critical {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    opacity: 0.7;
+    text-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+  }
+}
+
+/* =============================================================================
+   FOCUS STATES FOR KEYBOARD NAVIGATION
+   ============================================================================= */
+
+/* Universal focus-visible style */
+:focus-visible {
+  outline: 2px solid var(--color-success);
+  outline-offset: 2px;
+}
+
+/* Buttons - more prominent focus */
+.mobile-icon-btn:focus-visible,
+.mobile-stat-btn:focus-visible,
+.mobile-interaction-btn:focus-visible,
+.mobile-settings-action-btn:focus-visible,
+.mobile-settings-tab:focus-visible,
+.mobile-color-option:focus-visible,
+.mobile-add-btn:focus-visible,
+.mobile-danger-btn:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.4);
+}
+
+/* Player cards */
+.mobile-player-card:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255, 170, 0, 0.4);
+}
+
+/* Input fields */
+.mobile-settings-input:focus-visible,
+.mobile-threshold-input:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+}
+
+/* Remove default outline when using custom focus styles */
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Tab focus indicator */
+.mobile-settings-tab:focus-visible {
+  outline: none;
+  box-shadow: inset 0 -2px 0 0 #fff, 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+/* Ensure focus is visible in high contrast mode */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 3px solid CanvasText;
+    outline-offset: 2px;
+  }
+}
+
+/* =============================================================================
+   REDUCED MOTION SUPPORT
+   ============================================================================= */
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
   .mobile-layout,
   .mobile-layout * {
-    transition: none;
+    transition: none !important;
+    animation: none !important;
   }
+
+  /* Keep essential state indicators visible without animation */
+  .mobile-time-display.critical .mobile-time-value {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+
+  .mobile-player-card.active {
+    animation: none !important;
+  }
+
+  .mobile-player-card.critical {
+    animation: none !important;
+  }
+}
+
+/* =============================================================================
+   TOAST NOTIFICATIONS
+   ============================================================================= */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  /* Avoid safe area at top */
+  top: max(20px, env(safe-area-inset-top));
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #222;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font-size: 0.9em;
+  font-weight: 500;
+  pointer-events: auto;
+  animation: toast-in 0.2s ease-out;
+  max-width: 90vw;
+}
+
+.toast.toast-exit {
+  animation: toast-out 0.15s ease-in forwards;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+}
+
+.toast-icon {
+  font-size: 1.1em;
+}
+
+.toast-message {
+  flex: 1;
+}
+
+.toast-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 1em;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* Toast variants */
+.toast.toast-success {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, #222 100%);
+}
+
+.toast.toast-success .toast-icon {
+  color: var(--color-success);
+}
+
+.toast.toast-error {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, #222 100%);
+}
+
+.toast.toast-error .toast-icon {
+  color: var(--color-danger);
+}
+
+.toast.toast-info {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, #222 100%);
+}
+
+.toast.toast-info .toast-icon {
+  color: var(--color-info);
+}
+
+/* Game code tap-to-copy styling */
+.mobile-game-code.copyable {
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s;
+  position: relative;
+}
+
+.mobile-game-code.copyable:hover {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.mobile-game-code.copyable:active {
+  transform: scale(0.98);
+}
+
+.mobile-game-code.copyable::after {
+  content: "Tap to copy";
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65em;
+  color: #666;
+  white-space: nowrap;
+}
+
+.mobile-game-code.copied {
+  animation: copy-flash 0.3s ease-out;
+}
+
+@keyframes copy-flash {
+  0%, 100% { background: rgba(34, 197, 94, 0.1); }
+  50% { background: rgba(34, 197, 94, 0.4); }
+}
+
+/* Time display also copyable in waiting state */
+.mobile-turn-indicator.copyable {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 3px;
+}
+
+.mobile-turn-indicator.copyable:hover {
+  color: var(--color-success);
 }
 
 /* =============================================================================

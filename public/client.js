@@ -377,6 +377,148 @@ function playClick() {
   playTone(600, 0.1);
 }
 
+// ============================================================================
+// HAPTIC FEEDBACK
+// ============================================================================
+
+/**
+ * Trigger haptic feedback if supported
+ * @param {string} style - 'light', 'medium', or 'heavy'
+ */
+function hapticFeedback(style = "light") {
+  if (!("vibrate" in navigator)) return;
+
+  const patterns = {
+    light: 10,
+    medium: 20,
+    heavy: 30,
+    success: [10, 50, 10],
+    error: [30, 50, 30],
+  };
+
+  try {
+    navigator.vibrate(patterns[style] || 10);
+  } catch (e) {
+    // Silently fail if vibration not allowed
+  }
+}
+
+// ============================================================================
+// TOAST NOTIFICATIONS
+// ============================================================================
+
+/**
+ * Show a toast notification
+ * @param {string} message - The message to display
+ * @param {string} type - 'success', 'error', 'info', or 'default'
+ * @param {number} duration - How long to show in ms (default 2500)
+ */
+function showToast(message, type = "default", duration = 2500) {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
+  const icons = {
+    success: "✓",
+    error: "✕",
+    info: "ℹ",
+    default: "",
+  };
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+
+  const iconHtml = icons[type] ? `<span class="toast-icon">${icons[type]}</span>` : "";
+
+  toast.innerHTML = `
+    ${iconHtml}
+    <span class="toast-message">${message}</span>
+    <button class="toast-close" aria-label="Dismiss">&times;</button>
+  `;
+
+  // Close button handler
+  toast.querySelector(".toast-close").addEventListener("click", () => {
+    dismissToast(toast);
+  });
+
+  container.appendChild(toast);
+
+  // Auto dismiss
+  const timeoutId = setTimeout(() => {
+    dismissToast(toast);
+  }, duration);
+
+  // Store timeout ID for cleanup
+  toast.dataset.timeoutId = timeoutId;
+}
+
+/**
+ * Dismiss a toast notification
+ */
+function dismissToast(toast) {
+  if (!toast || toast.classList.contains("toast-exit")) return;
+
+  // Clear auto-dismiss timeout
+  if (toast.dataset.timeoutId) {
+    clearTimeout(parseInt(toast.dataset.timeoutId));
+  }
+
+  toast.classList.add("toast-exit");
+  setTimeout(() => {
+    toast.remove();
+  }, 150);
+}
+
+/**
+ * Copy text to clipboard
+ * @param {string} text - Text to copy
+ * @returns {Promise<boolean>} - Whether copy succeeded
+ */
+async function copyToClipboard(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    // Fallback for older browsers
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+    document.body.appendChild(textArea);
+    textArea.select();
+    const success = document.execCommand("copy");
+    document.body.removeChild(textArea);
+    return success;
+  } catch (err) {
+    console.error("Failed to copy:", err);
+    return false;
+  }
+}
+
+/**
+ * Handle game code copy
+ */
+async function copyGameCode() {
+  if (!gameState || !gameState.id) return;
+
+  const success = await copyToClipboard(gameState.id);
+
+  if (success) {
+    showToast("Game code copied!", "success");
+    hapticFeedback("success");
+
+    // Add visual feedback to the code display
+    const codeDisplay = document.getElementById("mobile-settings-game-code");
+    if (codeDisplay) {
+      codeDisplay.classList.add("copied");
+      setTimeout(() => codeDisplay.classList.remove("copied"), 300);
+    }
+  } else {
+    showToast("Failed to copy code", "error");
+    hapticFeedback("error");
+  }
+}
+
 function playPauseResume() {
   playTone(523.25, 0.15);
   setTimeout(() => playTone(659.25, 0.15), 100);
@@ -849,6 +991,9 @@ function renderGame() {
   // Show mobile or desktop screen based on device
   if (isMobileDevice()) {
     screens.mobileGame.style.display = "flex";
+    // Add enter animation class
+    screens.mobileGame.classList.add("screen-enter");
+    setTimeout(() => screens.mobileGame.classList.remove("screen-enter"), 200);
     updateMobileUI();
   } else {
     screens.game.style.display = "block";
@@ -1175,9 +1320,10 @@ function hideSettingsModal() {
 function showMobileSettingsModal() {
   if (!mobileSettingsModal.modal) return;
 
-  // Populate game code
+  // Populate game code (make it copyable)
   if (gameState && mobileSettingsModal.gameCodeDisplay) {
     mobileSettingsModal.gameCodeDisplay.textContent = gameState.id;
+    mobileSettingsModal.gameCodeDisplay.classList.add("copyable");
   }
 
   // Populate game name
@@ -1215,12 +1361,16 @@ function hideMobileSettingsModal() {
 function switchMobileSettingsTab(tabName) {
   // Update tab buttons
   mobileSettingsModal.tabs.forEach(tab => {
-    tab.classList.toggle("active", tab.dataset.tab === tabName);
+    const isActive = tab.dataset.tab === tabName;
+    tab.classList.toggle("active", isActive);
+    tab.setAttribute("aria-selected", isActive.toString());
   });
 
   // Update panels
   mobileSettingsModal.panels.forEach(panel => {
-    panel.classList.toggle("active", panel.dataset.panel === tabName);
+    const isActive = panel.dataset.panel === tabName;
+    panel.classList.toggle("active", isActive);
+    panel.hidden = !isActive;
   });
 }
 
@@ -1394,6 +1544,7 @@ function setupMobileSettingsEventListeners() {
     tab.addEventListener("click", () => {
       switchMobileSettingsTab(tab.dataset.tab);
       playClick();
+      hapticFeedback("light");
     });
   });
 
@@ -1436,6 +1587,9 @@ function setupMobileSettingsEventListeners() {
       hideMobileSettingsModal();
     }
   });
+
+  // Game code copy
+  mobileSettingsModal.gameCodeDisplay?.addEventListener("click", copyGameCode);
 }
 
 function populateThresholds() {
@@ -2034,6 +2188,10 @@ window.addEventListener("click", () => {
 function updateMobileUI() {
   if (!gameState || !mobileUI.screen) return;
 
+  // Update game paused state class
+  const isPaused = gameState.status === "paused";
+  mobileUI.screen.classList.toggle("game-paused", isPaused);
+
   updateMobileTimeDisplay();
   updateMobileInteractionButton();
   updateMobileOtherPlayers();
@@ -2055,15 +2213,18 @@ function updateMobileTimeDisplay() {
   mobileUI.timeDisplay.classList.remove("warning", "critical", "paused");
 
   if (isWaiting) {
-    // Show game code in waiting state
+    // Show game code in waiting state (copyable)
     mobileUI.turnIndicator.textContent = `Code: ${gameState.id}`;
+    mobileUI.turnIndicator.classList.add("copyable");
     const claimedCount = gameState.players.filter(p => p.claimedBy !== null).length;
     mobileUI.timeValue.textContent = `Waiting (${claimedCount}/${gameState.players.length})`;
   } else if (isPaused) {
     mobileUI.turnIndicator.textContent = "GAME PAUSED";
+    mobileUI.turnIndicator.classList.remove("copyable");
     mobileUI.timeValue.textContent = "--:--";
     mobileUI.timeDisplay.classList.add("paused");
   } else if (myPlayer) {
+    mobileUI.turnIndicator.classList.remove("copyable");
     // Show time and turn indicator
     const isMyTurn = myPlayer.id === gameState.activePlayer;
     const timeRemaining = myPlayer.timeRemaining;
@@ -2133,30 +2294,36 @@ function updateMobileInteractionButton() {
     mobileUI.interactionBtn.textContent = "START GAME";
     mobileUI.interactionBtn.classList.add("mobile-interaction-btn-start");
     mobileUI.interactionBtn.disabled = !allPlayersClaimed;
+    mobileUI.interactionBtn.setAttribute("aria-label", allPlayersClaimed ? "Start the game" : "Waiting for all players to join");
   } else if (isPaused) {
     // Resume button
     mobileUI.interactionBtn.textContent = "RESUME";
     mobileUI.interactionBtn.classList.add("mobile-interaction-btn-start");
     mobileUI.interactionBtn.disabled = false;
+    mobileUI.interactionBtn.setAttribute("aria-label", "Resume the game");
   } else if (myHasPriority && myInInterruptQueue) {
     // Pass Priority button (player has priority and is in interrupt queue)
     mobileUI.interactionBtn.textContent = "PASS PRIORITY";
     mobileUI.interactionBtn.classList.add("mobile-interaction-btn-priority");
     mobileUI.interactionBtn.disabled = false;
+    mobileUI.interactionBtn.setAttribute("aria-label", "Pass priority to next player");
   } else if (isMyTurn && (!gameState.interruptingPlayers || gameState.interruptingPlayers.length === 0)) {
     // Pass Turn button (active player, no interrupts)
     mobileUI.interactionBtn.textContent = "PASS TURN";
     mobileUI.interactionBtn.classList.add("mobile-interaction-btn-pass");
     mobileUI.interactionBtn.disabled = false;
+    mobileUI.interactionBtn.setAttribute("aria-label", "Pass turn to next player");
   } else if (myPlayer && !myHasPriority) {
     // Interrupt button (not my turn or someone else has priority)
     mobileUI.interactionBtn.textContent = "INTERRUPT";
     mobileUI.interactionBtn.classList.add("mobile-interaction-btn-interrupt");
     mobileUI.interactionBtn.disabled = false;
+    mobileUI.interactionBtn.setAttribute("aria-label", "Interrupt and take priority");
   } else {
     // Disabled state (no claimed player or waiting for something)
     mobileUI.interactionBtn.textContent = "WAITING...";
     mobileUI.interactionBtn.disabled = true;
+    mobileUI.interactionBtn.setAttribute("aria-label", "Waiting for game action");
   }
 }
 
@@ -2185,6 +2352,9 @@ function updateMobileOtherPlayers() {
     const card = document.createElement("div");
     card.className = "mobile-player-card";
     card.dataset.playerId = player.id;
+    card.setAttribute("role", "listitem");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("aria-label", `${player.name}, ${player.life} life${player.isEliminated ? ", eliminated" : ""}`);
 
     // Apply player color using CSS variable
     const playerColor = getPlayerColor(player);
@@ -2449,6 +2619,15 @@ function updateStatValue(element, newValue, oldValue) {
     void element.offsetWidth;
     element.classList.add("value-changed");
 
+    // Also flash the parent stat group
+    const statGroup = element.closest(".mobile-stat-group");
+    if (statGroup) {
+      statGroup.classList.remove("value-flash");
+      void statGroup.offsetWidth;
+      statGroup.classList.add("value-flash");
+      setTimeout(() => statGroup.classList.remove("value-flash"), 250);
+    }
+
     // Remove class after animation completes
     setTimeout(() => {
       element.classList.remove("value-changed");
@@ -2493,11 +2672,7 @@ function handleMobileInteractionClick() {
   }
 
   playClick();
-
-  // Haptic feedback if supported
-  if (navigator.vibrate) {
-    navigator.vibrate(10);
-  }
+  hapticFeedback("medium");
 }
 
 /**
@@ -2532,6 +2707,15 @@ function setupMobileEventListeners() {
     mobileUI.interactionBtn.addEventListener("click", handleMobileInteractionClick);
   }
 
+  // Turn indicator - tap to copy game code in waiting state
+  if (mobileUI.turnIndicator) {
+    mobileUI.turnIndicator.addEventListener("click", () => {
+      if (mobileUI.turnIndicator.classList.contains("copyable")) {
+        copyGameCode();
+      }
+    });
+  }
+
   // Player stats buttons
   setupMobileStatButtons();
 }
@@ -2550,6 +2734,7 @@ function setupMobileStatButtons() {
       if (myPlayer) {
         sendUpdatePlayer(myPlayer.id, { life: myPlayer.life - 1 });
         playClick();
+        hapticFeedback("light");
       }
     });
     lifeControls[1].addEventListener("click", () => {
@@ -2557,6 +2742,7 @@ function setupMobileStatButtons() {
       if (myPlayer) {
         sendUpdatePlayer(myPlayer.id, { life: myPlayer.life + 1 });
         playClick();
+        hapticFeedback("light");
       }
     });
   }
@@ -2569,6 +2755,7 @@ function setupMobileStatButtons() {
       if (myPlayer) {
         sendUpdatePlayer(myPlayer.id, { drunkCounter: Math.max(0, myPlayer.drunkCounter - 1) });
         playClick();
+        hapticFeedback("light");
       }
     });
     poisonControls[1].addEventListener("click", () => {
@@ -2576,6 +2763,7 @@ function setupMobileStatButtons() {
       if (myPlayer) {
         sendUpdatePlayer(myPlayer.id, { drunkCounter: myPlayer.drunkCounter + 1 });
         playClick();
+        hapticFeedback("light");
       }
     });
   }
@@ -2588,6 +2776,7 @@ function setupMobileStatButtons() {
       if (myPlayer) {
         sendUpdatePlayer(myPlayer.id, { genericCounter: Math.max(0, myPlayer.genericCounter - 1) });
         playClick();
+        hapticFeedback("light");
       }
     });
     genericControls[1].addEventListener("click", () => {
@@ -2595,6 +2784,7 @@ function setupMobileStatButtons() {
       if (myPlayer) {
         sendUpdatePlayer(myPlayer.id, { genericCounter: myPlayer.genericCounter + 1 });
         playClick();
+        hapticFeedback("light");
       }
     });
   }

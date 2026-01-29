@@ -220,51 +220,39 @@
       </div>
 
       <!-- Mobile Game Screen (New Redesigned Layout) -->
-      <div id="mobile-game-screen" class="mobile-layout" style="display: none">
-        <header class="mobile-top-bar">
-          <button class="mobile-icon-btn mobile-exit-btn" aria-label="Exit to menu">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div id="mobile-game-screen" class="mobile-layout" style="display: none" role="main" aria-label="Game screen">
+        <header class="mobile-top-bar" role="banner">
+          <button class="mobile-icon-btn mobile-exit-btn" aria-label="Exit to main menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
           </button>
-          <button class="mobile-icon-btn mobile-settings-btn" aria-label="Open settings">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="mobile-icon-btn mobile-settings-btn" aria-label="Open game settings">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="12" cy="12" r="3"/>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
           </button>
         </header>
 
-        <section class="mobile-time-display">
-          <div class="mobile-turn-indicator">YOUR TURN</div>
-          <div class="mobile-time-value">05:23</div>
+        <section class="mobile-time-display" aria-label="Game status">
+          <div class="mobile-turn-indicator" role="status" aria-live="polite">YOUR TURN</div>
+          <div class="mobile-time-value" role="timer" aria-live="off" aria-atomic="true">05:23</div>
         </section>
 
-        <section class="mobile-interaction-area">
-          <button class="mobile-interaction-btn mobile-interaction-btn-pass" aria-label="Pass turn">
+        <section class="mobile-interaction-area" aria-label="Main action">
+          <button class="mobile-interaction-btn mobile-interaction-btn-pass" aria-label="Pass turn to next player">
             PASS TURN
           </button>
         </section>
 
-        <section class="mobile-other-players">
-          <div class="mobile-player-cards">
+        <section class="mobile-other-players" aria-label="Other players">
+          <div class="mobile-player-cards" role="list">
             <!-- Player cards will be inserted here dynamically -->
-            <div class="mobile-player-card" data-placeholder="true">
-              <span class="mobile-player-card-name">Player 2</span>
-              <span class="mobile-player-card-life">40</span>
-            </div>
-            <div class="mobile-player-card" data-placeholder="true">
-              <span class="mobile-player-card-name">Player 3</span>
-              <span class="mobile-player-card-life">38</span>
-            </div>
-            <div class="mobile-player-card" data-placeholder="true">
-              <span class="mobile-player-card-name">Player 4</span>
-              <span class="mobile-player-card-life">40</span>
-            </div>
           </div>
         </section>
 
-        <footer class="mobile-player-stats">
+        <footer class="mobile-player-stats" aria-label="Your stats">
           <!-- Player name row (visible in waiting state) -->
           <div class="mobile-player-name-row">
             <span class="mobile-player-name-label">You:</span>
@@ -272,34 +260,34 @@
           </div>
           <!-- Stats row -->
           <div class="mobile-stats-row">
-            <div class="mobile-stat-group mobile-stat-life">
+            <div class="mobile-stat-group mobile-stat-life" role="group" aria-label="Life total">
               <div class="mobile-stat-header">
-                <span class="mobile-stat-icon">&#10084;</span>
-                <span class="mobile-stat-value">40</span>
+                <span class="mobile-stat-icon" aria-hidden="true">&#10084;</span>
+                <span class="mobile-stat-value" aria-live="polite">40</span>
               </div>
               <div class="mobile-stat-controls">
-                <button class="mobile-stat-btn" aria-label="Decrease life">-</button>
-                <button class="mobile-stat-btn" aria-label="Increase life">+</button>
+                <button class="mobile-stat-btn" aria-label="Decrease life by 1">-</button>
+                <button class="mobile-stat-btn" aria-label="Increase life by 1">+</button>
               </div>
             </div>
-            <div class="mobile-stat-group mobile-stat-poison">
+            <div class="mobile-stat-group mobile-stat-poison" role="group" aria-label="Drunk counter">
               <div class="mobile-stat-header">
-                <span class="mobile-stat-icon">&#127866;</span>
-                <span class="mobile-stat-value">0</span>
+                <span class="mobile-stat-icon" aria-hidden="true">&#127866;</span>
+                <span class="mobile-stat-value" aria-live="polite">0</span>
               </div>
               <div class="mobile-stat-controls">
-                <button class="mobile-stat-btn" aria-label="Decrease counter">-</button>
-                <button class="mobile-stat-btn" aria-label="Increase counter">+</button>
+                <button class="mobile-stat-btn" aria-label="Decrease drunk counter">-</button>
+                <button class="mobile-stat-btn" aria-label="Increase drunk counter">+</button>
               </div>
             </div>
-            <div class="mobile-stat-group mobile-stat-generic">
+            <div class="mobile-stat-group mobile-stat-generic" role="group" aria-label="Generic counter">
               <div class="mobile-stat-header">
-                <span class="mobile-stat-icon">&#11088;</span>
-                <span class="mobile-stat-value">0</span>
+                <span class="mobile-stat-icon" aria-hidden="true">&#11088;</span>
+                <span class="mobile-stat-value" aria-live="polite">0</span>
               </div>
               <div class="mobile-stat-controls">
-                <button class="mobile-stat-btn" aria-label="Decrease counter">-</button>
-                <button class="mobile-stat-btn" aria-label="Increase counter">+</button>
+                <button class="mobile-stat-btn" aria-label="Decrease generic counter">-</button>
+                <button class="mobile-stat-btn" aria-label="Increase generic counter">+</button>
               </div>
             </div>
           </div>
@@ -391,14 +379,14 @@
             <button class="mobile-settings-close" aria-label="Close">&times;</button>
           </div>
 
-          <div class="mobile-settings-tabs">
-            <button class="mobile-settings-tab active" data-tab="controls">Controls</button>
-            <button class="mobile-settings-tab" data-tab="thresholds">Thresholds</button>
-            <button class="mobile-settings-tab" data-tab="more">More</button>
+          <div class="mobile-settings-tabs" role="tablist" aria-label="Settings sections">
+            <button class="mobile-settings-tab active" data-tab="controls" role="tab" aria-selected="true" aria-controls="panel-controls" id="tab-controls">Controls</button>
+            <button class="mobile-settings-tab" data-tab="thresholds" role="tab" aria-selected="false" aria-controls="panel-thresholds" id="tab-thresholds">Thresholds</button>
+            <button class="mobile-settings-tab" data-tab="more" role="tab" aria-selected="false" aria-controls="panel-more" id="tab-more">More</button>
           </div>
 
           <!-- Controls Tab -->
-          <div class="mobile-settings-panel active" data-panel="controls">
+          <div class="mobile-settings-panel active" data-panel="controls" role="tabpanel" id="panel-controls" aria-labelledby="tab-controls">
             <div class="mobile-settings-buttons">
               <button id="mobile-pause-btn" class="mobile-settings-action-btn">
                 <span class="action-icon">⏸</span>
@@ -419,7 +407,7 @@
           </div>
 
           <!-- Thresholds Tab -->
-          <div class="mobile-settings-panel" data-panel="thresholds">
+          <div class="mobile-settings-panel" data-panel="thresholds" role="tabpanel" id="panel-thresholds" aria-labelledby="tab-thresholds" hidden>
             <div class="mobile-settings-section">
               <label class="mobile-settings-label">Warning Thresholds</label>
               <p class="mobile-settings-hint">Audio alerts at these times</p>
@@ -431,7 +419,7 @@
           </div>
 
           <!-- More Tab -->
-          <div class="mobile-settings-panel" data-panel="more">
+          <div class="mobile-settings-panel" data-panel="more" role="tabpanel" id="panel-more" aria-labelledby="tab-more" hidden>
             <div class="mobile-settings-section">
               <label class="mobile-settings-label">Game Code</label>
               <div class="mobile-game-code" id="mobile-settings-game-code">ABC123</div>
@@ -480,6 +468,9 @@
           </button>
         </div>
       </div>
+
+      <!-- Toast Notifications Container -->
+      <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
       <!-- Mobile Player Details Popup -->
       <div id="mobile-player-popup" class="mobile-player-popup" style="display: none">
