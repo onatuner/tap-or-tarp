@@ -265,34 +265,49 @@
         </section>
 
         <footer class="mobile-player-stats">
-          <div class="mobile-stat-group mobile-stat-life">
-            <span class="mobile-stat-icon">&#10084;</span>
-            <span class="mobile-stat-value">40</span>
-            <div class="mobile-stat-controls">
-              <button class="mobile-stat-btn" aria-label="Decrease life">-</button>
-              <button class="mobile-stat-btn" aria-label="Increase life">+</button>
-            </div>
+          <!-- Player name row (visible in waiting state) -->
+          <div class="mobile-player-name-row">
+            <span class="mobile-player-name-label">You:</span>
+            <span class="mobile-player-name-value">Player 1</span>
           </div>
-          <div class="mobile-stat-group mobile-stat-poison">
-            <span class="mobile-stat-icon">&#127866;</span>
-            <span class="mobile-stat-value">0</span>
-            <div class="mobile-stat-controls">
-              <button class="mobile-stat-btn" aria-label="Decrease counter">-</button>
-              <button class="mobile-stat-btn" aria-label="Increase counter">+</button>
+          <!-- Stats row -->
+          <div class="mobile-stats-row">
+            <div class="mobile-stat-group mobile-stat-life">
+              <div class="mobile-stat-header">
+                <span class="mobile-stat-icon">&#10084;</span>
+                <span class="mobile-stat-value">40</span>
+              </div>
+              <div class="mobile-stat-controls">
+                <button class="mobile-stat-btn" aria-label="Decrease life">-</button>
+                <button class="mobile-stat-btn" aria-label="Increase life">+</button>
+              </div>
             </div>
-          </div>
-          <div class="mobile-stat-group mobile-stat-generic">
-            <span class="mobile-stat-icon">&#11088;</span>
-            <span class="mobile-stat-value">0</span>
-            <div class="mobile-stat-controls">
-              <button class="mobile-stat-btn" aria-label="Decrease counter">-</button>
-              <button class="mobile-stat-btn" aria-label="Increase counter">+</button>
+            <div class="mobile-stat-group mobile-stat-poison">
+              <div class="mobile-stat-header">
+                <span class="mobile-stat-icon">&#127866;</span>
+                <span class="mobile-stat-value">0</span>
+              </div>
+              <div class="mobile-stat-controls">
+                <button class="mobile-stat-btn" aria-label="Decrease counter">-</button>
+                <button class="mobile-stat-btn" aria-label="Increase counter">+</button>
+              </div>
+            </div>
+            <div class="mobile-stat-group mobile-stat-generic">
+              <div class="mobile-stat-header">
+                <span class="mobile-stat-icon">&#11088;</span>
+                <span class="mobile-stat-value">0</span>
+              </div>
+              <div class="mobile-stat-controls">
+                <button class="mobile-stat-btn" aria-label="Decrease counter">-</button>
+                <button class="mobile-stat-btn" aria-label="Increase counter">+</button>
+              </div>
             </div>
           </div>
         </footer>
       </div>
 
-      <div id="settings-modal" style="display: none" class="modal">
+      <!-- Desktop Settings Modal -->
+      <div id="settings-modal" style="display: none" class="modal desktop-only-modal">
         <div class="modal-content">
           <h2>Game Settings</h2>
 
@@ -368,6 +383,84 @@
         </div>
       </div>
 
+      <!-- Mobile Settings Modal (Tabbed) -->
+      <div id="mobile-settings-modal" style="display: none" class="modal mobile-settings-modal">
+        <div class="mobile-settings-content">
+          <div class="mobile-settings-header">
+            <h2>Settings</h2>
+            <button class="mobile-settings-close" aria-label="Close">&times;</button>
+          </div>
+
+          <div class="mobile-settings-tabs">
+            <button class="mobile-settings-tab active" data-tab="controls">Controls</button>
+            <button class="mobile-settings-tab" data-tab="thresholds">Thresholds</button>
+            <button class="mobile-settings-tab" data-tab="more">More</button>
+          </div>
+
+          <!-- Controls Tab -->
+          <div class="mobile-settings-panel active" data-panel="controls">
+            <div class="mobile-settings-buttons">
+              <button id="mobile-pause-btn" class="mobile-settings-action-btn">
+                <span class="action-icon">⏸</span>
+                <span class="action-label">Pause</span>
+              </button>
+              <button id="mobile-reset-btn" class="mobile-settings-action-btn mobile-settings-action-btn-secondary">
+                <span class="action-icon">🔄</span>
+                <span class="action-label">Reset</span>
+              </button>
+            </div>
+
+            <div class="mobile-settings-section">
+              <label class="mobile-settings-label">Player Color</label>
+              <div id="mobile-color-picker" class="mobile-color-grid">
+                <!-- Colors populated by JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Thresholds Tab -->
+          <div class="mobile-settings-panel" data-panel="thresholds">
+            <div class="mobile-settings-section">
+              <label class="mobile-settings-label">Warning Thresholds</label>
+              <p class="mobile-settings-hint">Audio alerts at these times</p>
+              <div id="mobile-thresholds-container" class="mobile-thresholds-list">
+                <!-- Thresholds populated by JS -->
+              </div>
+              <button id="mobile-add-threshold-btn" class="mobile-add-btn">+ Add Threshold</button>
+            </div>
+          </div>
+
+          <!-- More Tab -->
+          <div class="mobile-settings-panel" data-panel="more">
+            <div class="mobile-settings-section">
+              <label class="mobile-settings-label">Game Code</label>
+              <div class="mobile-game-code" id="mobile-settings-game-code">ABC123</div>
+            </div>
+
+            <div class="mobile-settings-section">
+              <label class="mobile-settings-label" for="mobile-game-name-input">Game Name</label>
+              <input
+                type="text"
+                id="mobile-game-name-input"
+                class="mobile-settings-input"
+                placeholder="Enter game name"
+                maxlength="50"
+              />
+            </div>
+
+            <div class="mobile-settings-section mobile-danger-zone">
+              <label class="mobile-settings-label">Danger Zone</label>
+              <button id="mobile-close-lobby-btn" class="mobile-danger-btn">Close Lobby</button>
+            </div>
+          </div>
+
+          <div class="mobile-settings-footer">
+            <button id="mobile-settings-save" class="btn btn-primary">Save</button>
+            <button id="mobile-settings-cancel" class="btn btn-secondary">Cancel</button>
+          </div>
+        </div>
+      </div>
+
       <div id="color-picker-modal" style="display: none" class="modal">
         <div class="modal-content modal-small">
           <h3>Choose Color</h3>
@@ -385,6 +478,34 @@
           <button id="acknowledge-timeout" class="btn btn-primary" aria-label="Acknowledge timeout">
             Acknowledge
           </button>
+        </div>
+      </div>
+
+      <!-- Mobile Player Details Popup -->
+      <div id="mobile-player-popup" class="mobile-player-popup" style="display: none">
+        <div class="mobile-player-popup-content">
+          <div class="mobile-player-popup-header">
+            <span class="mobile-player-popup-name">Player Name</span>
+            <button class="mobile-player-popup-close" aria-label="Close">&times;</button>
+          </div>
+          <div class="mobile-player-popup-body">
+            <div class="mobile-player-popup-stat">
+              <span class="mobile-player-popup-label">Time</span>
+              <span class="mobile-player-popup-value mobile-player-popup-time">05:23</span>
+            </div>
+            <div class="mobile-player-popup-stat">
+              <span class="mobile-player-popup-label">Life</span>
+              <span class="mobile-player-popup-value mobile-player-popup-life">40</span>
+            </div>
+            <div class="mobile-player-popup-stat">
+              <span class="mobile-player-popup-label">Drunk</span>
+              <span class="mobile-player-popup-value mobile-player-popup-drunk">0</span>
+            </div>
+            <div class="mobile-player-popup-stat">
+              <span class="mobile-player-popup-label">Counter</span>
+              <span class="mobile-player-popup-value mobile-player-popup-generic">0</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

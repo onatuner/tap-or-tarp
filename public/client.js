@@ -194,9 +194,10 @@ const mobileUI = {
   otherPlayers: document.querySelector(".mobile-other-players"),
   playerCards: document.querySelector(".mobile-player-cards"),
   playerStats: document.querySelector(".mobile-player-stats"),
-  lifeStat: document.querySelector(".mobile-stat-life"),
-  poisonStat: document.querySelector(".mobile-stat-poison"),
-  genericStat: document.querySelector(".mobile-stat-generic"),
+  statsRow: document.querySelector(".mobile-stats-row"),
+  lifeStat: document.querySelector(".mobile-stats-row .mobile-stat-life"),
+  poisonStat: document.querySelector(".mobile-stats-row .mobile-stat-poison"),
+  genericStat: document.querySelector(".mobile-stats-row .mobile-stat-generic"),
 };
 
 // Check if we should use mobile layout (based on screen size and touch capability)
@@ -284,6 +285,24 @@ const colorPickerModal = {
   modal: document.getElementById("color-picker-modal"),
   options: document.getElementById("color-options"),
   cancel: document.getElementById("cancel-color-picker"),
+};
+
+// Mobile settings modal elements
+const mobileSettingsModal = {
+  modal: document.getElementById("mobile-settings-modal"),
+  closeBtn: document.querySelector(".mobile-settings-close"),
+  tabs: document.querySelectorAll(".mobile-settings-tab"),
+  panels: document.querySelectorAll(".mobile-settings-panel"),
+  pauseBtn: document.getElementById("mobile-pause-btn"),
+  resetBtn: document.getElementById("mobile-reset-btn"),
+  colorPicker: document.getElementById("mobile-color-picker"),
+  thresholdsContainer: document.getElementById("mobile-thresholds-container"),
+  addThresholdBtn: document.getElementById("mobile-add-threshold-btn"),
+  gameCodeDisplay: document.getElementById("mobile-settings-game-code"),
+  gameNameInput: document.getElementById("mobile-game-name-input"),
+  closeLobbyBtn: document.getElementById("mobile-close-lobby-btn"),
+  saveBtn: document.getElementById("mobile-settings-save"),
+  cancelBtn: document.getElementById("mobile-settings-cancel"),
 };
 
 // Available player colors
@@ -1081,6 +1100,13 @@ function hideTimeoutModal() {
 }
 
 function showSettingsModal() {
+  // Use mobile settings modal on mobile devices
+  if (isMobileDevice() && mobileSettingsModal.modal) {
+    showMobileSettingsModal();
+    return;
+  }
+
+  // Desktop settings modal
   // Populate game code
   const gameCodeDisplay = document.getElementById("settings-game-code");
   if (gameState && gameState.id) {
@@ -1134,6 +1160,282 @@ function updateSettingsOwnerUI() {
 
 function hideSettingsModal() {
   settingsModal.modal.style.display = "none";
+  if (mobileSettingsModal.modal) {
+    mobileSettingsModal.modal.style.display = "none";
+  }
+}
+
+// ============================================================================
+// MOBILE SETTINGS MODAL FUNCTIONS
+// ============================================================================
+
+/**
+ * Show the mobile settings modal
+ */
+function showMobileSettingsModal() {
+  if (!mobileSettingsModal.modal) return;
+
+  // Populate game code
+  if (gameState && mobileSettingsModal.gameCodeDisplay) {
+    mobileSettingsModal.gameCodeDisplay.textContent = gameState.id;
+  }
+
+  // Populate game name
+  if (gameState && mobileSettingsModal.gameNameInput) {
+    mobileSettingsModal.gameNameInput.value = (gameState.name && gameState.name !== "Game") ? gameState.name : "";
+  }
+
+  // Populate thresholds
+  populateMobileThresholds();
+
+  // Populate color picker
+  populateMobileColorPicker();
+
+  // Update pause button text
+  updateMobilePauseButton();
+
+  // Reset to first tab
+  switchMobileSettingsTab("controls");
+
+  mobileSettingsModal.modal.style.display = "flex";
+}
+
+/**
+ * Hide the mobile settings modal
+ */
+function hideMobileSettingsModal() {
+  if (mobileSettingsModal.modal) {
+    mobileSettingsModal.modal.style.display = "none";
+  }
+}
+
+/**
+ * Switch between mobile settings tabs
+ */
+function switchMobileSettingsTab(tabName) {
+  // Update tab buttons
+  mobileSettingsModal.tabs.forEach(tab => {
+    tab.classList.toggle("active", tab.dataset.tab === tabName);
+  });
+
+  // Update panels
+  mobileSettingsModal.panels.forEach(panel => {
+    panel.classList.toggle("active", panel.dataset.panel === tabName);
+  });
+}
+
+/**
+ * Update the mobile pause button text
+ */
+function updateMobilePauseButton() {
+  if (!gameState || !mobileSettingsModal.pauseBtn) return;
+
+  const labelEl = mobileSettingsModal.pauseBtn.querySelector(".action-label");
+  const iconEl = mobileSettingsModal.pauseBtn.querySelector(".action-icon");
+
+  if (gameState.status === "paused") {
+    if (labelEl) labelEl.textContent = "Resume";
+    if (iconEl) iconEl.textContent = "▶";
+  } else {
+    if (labelEl) labelEl.textContent = "Pause";
+    if (iconEl) iconEl.textContent = "⏸";
+  }
+}
+
+/**
+ * Populate the mobile thresholds list
+ */
+function populateMobileThresholds() {
+  if (!gameState || !mobileSettingsModal.thresholdsContainer) return;
+
+  const thresholds = gameState.settings?.warningThresholds || [300000, 60000, 30000];
+  mobileSettingsModal.thresholdsContainer.innerHTML = "";
+
+  thresholds.forEach((ms, index) => {
+    const minutes = ms / 60000;
+    addMobileThresholdItem(minutes, index);
+  });
+}
+
+/**
+ * Add a threshold item to the mobile list
+ */
+function addMobileThresholdItem(value = 1, index = null) {
+  const container = mobileSettingsModal.thresholdsContainer;
+  if (!container) return;
+
+  const item = document.createElement("div");
+  item.className = "mobile-threshold-item";
+  item.dataset.index = index !== null ? index : container.children.length;
+
+  item.innerHTML = `
+    <input type="number" class="mobile-threshold-input" value="${value}" min="0.1" step="0.1" />
+    <span class="mobile-threshold-unit">min</span>
+    <button type="button" class="mobile-threshold-remove" aria-label="Remove">&times;</button>
+  `;
+
+  item.querySelector(".mobile-threshold-remove").addEventListener("click", () => {
+    if (container.children.length > 1) {
+      item.remove();
+    }
+  });
+
+  container.appendChild(item);
+}
+
+/**
+ * Get thresholds from mobile UI
+ */
+function getMobileThresholdsFromUI() {
+  if (!mobileSettingsModal.thresholdsContainer) return [];
+
+  const inputs = mobileSettingsModal.thresholdsContainer.querySelectorAll(".mobile-threshold-input");
+  const thresholds = [];
+
+  inputs.forEach(input => {
+    const minutes = parseFloat(input.value);
+    if (!isNaN(minutes) && minutes > 0) {
+      thresholds.push(Math.round(minutes * 60000));
+    }
+  });
+
+  return [...new Set(thresholds)].sort((a, b) => b - a);
+}
+
+/**
+ * Populate the mobile color picker
+ */
+function populateMobileColorPicker() {
+  if (!mobileSettingsModal.colorPicker) return;
+
+  const container = mobileSettingsModal.colorPicker;
+  container.innerHTML = "";
+
+  const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+  const currentColorId = myPlayer?.color || getPlayerColor(myPlayer || { id: 1 }).id;
+
+  PLAYER_COLORS.forEach(color => {
+    const option = document.createElement("div");
+    option.className = "mobile-color-option" + (color.id === currentColorId ? " selected" : "");
+    option.style.background = `linear-gradient(135deg, ${color.primary} 0%, ${color.secondary} 100%)`;
+    option.title = color.name;
+    option.dataset.colorId = color.id;
+
+    option.addEventListener("click", () => {
+      // Update selection visually
+      container.querySelectorAll(".mobile-color-option").forEach(opt => {
+        opt.classList.remove("selected");
+      });
+      option.classList.add("selected");
+    });
+
+    container.appendChild(option);
+  });
+}
+
+/**
+ * Get selected color from mobile picker
+ */
+function getMobileSelectedColor() {
+  const selected = mobileSettingsModal.colorPicker?.querySelector(".mobile-color-option.selected");
+  return selected?.dataset.colorId || null;
+}
+
+/**
+ * Save mobile settings
+ */
+function saveMobileSettings() {
+  // Save thresholds
+  const thresholds = getMobileThresholdsFromUI();
+  if (thresholds.length > 0) {
+    sendUpdateSettings({ warningThresholds: thresholds });
+  }
+
+  // Save game name
+  const newName = mobileSettingsModal.gameNameInput?.value.trim();
+  if (newName) {
+    sendRenameGame(newName);
+  }
+
+  // Save color
+  const selectedColor = getMobileSelectedColor();
+  const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+  if (selectedColor && myPlayer) {
+    sendUpdatePlayer(myPlayer.id, { color: selectedColor });
+  }
+
+  hideMobileSettingsModal();
+  playClick();
+}
+
+/**
+ * Setup mobile settings modal event listeners
+ */
+function setupMobileSettingsEventListeners() {
+  if (!mobileSettingsModal.modal) return;
+
+  // Close button
+  mobileSettingsModal.closeBtn?.addEventListener("click", () => {
+    hideMobileSettingsModal();
+    playClick();
+  });
+
+  // Cancel button
+  mobileSettingsModal.cancelBtn?.addEventListener("click", () => {
+    hideMobileSettingsModal();
+    playClick();
+  });
+
+  // Save button
+  mobileSettingsModal.saveBtn?.addEventListener("click", saveMobileSettings);
+
+  // Tab switching
+  mobileSettingsModal.tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      switchMobileSettingsTab(tab.dataset.tab);
+      playClick();
+    });
+  });
+
+  // Pause button
+  mobileSettingsModal.pauseBtn?.addEventListener("click", () => {
+    sendPause();
+    playPauseResume();
+    updateMobilePauseButton();
+    // Don't close modal, let user see the state change
+    setTimeout(updateMobilePauseButton, 100);
+  });
+
+  // Reset button
+  mobileSettingsModal.resetBtn?.addEventListener("click", () => {
+    if (confirm("Are you sure you want to reset the game?")) {
+      sendReset();
+      hideMobileSettingsModal();
+      playClick();
+    }
+  });
+
+  // Add threshold button
+  mobileSettingsModal.addThresholdBtn?.addEventListener("click", () => {
+    addMobileThresholdItem(1);
+    playClick();
+  });
+
+  // Close lobby button
+  mobileSettingsModal.closeLobbyBtn?.addEventListener("click", () => {
+    if (confirm("Are you sure you want to close the lobby? This will end the game for all players.")) {
+      sendEndGame();
+      hideMobileSettingsModal();
+      playClick();
+    }
+  });
+
+  // Close on backdrop click
+  mobileSettingsModal.modal?.addEventListener("click", (e) => {
+    if (e.target === mobileSettingsModal.modal) {
+      hideMobileSettingsModal();
+    }
+  });
 }
 
 function populateThresholds() {
@@ -1865,75 +2167,220 @@ function updateMobileOtherPlayers() {
   if (!gameState || !mobileUI.playerCards) return;
 
   const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-  const otherPlayers = gameState.players.filter(p => p.claimedBy !== myClientId);
+  const isWaiting = gameState.status === "waiting";
+  const isPaused = gameState.status === "paused";
+
+  // In waiting state without a claimed player, show all players
+  // Otherwise, show only other players
+  const playersToShow = (isWaiting && !myPlayer)
+    ? gameState.players
+    : gameState.players.filter(p => p.claimedBy !== myClientId);
+
+  // Set player count for CSS-based sizing
+  mobileUI.playerCards.dataset.playerCount = playersToShow.length;
 
   mobileUI.playerCards.innerHTML = "";
 
-  otherPlayers.forEach(player => {
+  playersToShow.forEach(player => {
     const card = document.createElement("div");
     card.className = "mobile-player-card";
     card.dataset.playerId = player.id;
 
-    // Apply player color
+    // Apply player color using CSS variable
     const playerColor = getPlayerColor(player);
-    card.style.borderColor = `${playerColor.primary}66`;
+    card.style.setProperty("--card-color", playerColor.primary);
 
-    if (player.id === gameState.activePlayer) {
+    const isClaimed = player.claimedBy !== null;
+    const isMyPlayer = player.claimedBy === myClientId;
+    const isActive = player.id === gameState.activePlayer;
+
+    // Apply state classes
+    if (isActive && !isPaused) {
       card.classList.add("active");
     }
 
     if (player.isEliminated) {
       card.classList.add("eliminated");
+    } else if (isPaused) {
+      card.classList.add("paused");
+    } else if (player.timeRemaining < CONSTANTS.CRITICAL_THRESHOLD) {
+      card.classList.add("critical");
+    } else if (player.timeRemaining < CONSTANTS.WARNING_THRESHOLD_1MIN) {
+      card.classList.add("warning");
     }
 
+    // Waiting state - selectable/claimed styling
+    if (isWaiting) {
+      if (!isClaimed) {
+        card.classList.add("selectable");
+      } else if (!isMyPlayer) {
+        card.classList.add("claimed-other");
+      }
+    }
+
+    // Name
     const nameSpan = document.createElement("span");
     nameSpan.className = "mobile-player-card-name";
     nameSpan.textContent = player.name;
+    nameSpan.title = player.name; // Full name on hover
 
+    // Life total
     const lifeSpan = document.createElement("span");
     lifeSpan.className = "mobile-player-card-life";
     lifeSpan.textContent = player.life;
 
-    card.appendChild(nameSpan);
-    card.appendChild(lifeSpan);
+    // Status indicator - show most important status
+    const statusSpan = document.createElement("span");
+    statusSpan.className = "mobile-player-card-status";
 
-    // Add status indicator if needed
-    if (player.id === gameState.activePlayer) {
-      const statusSpan = document.createElement("span");
-      statusSpan.className = "mobile-player-card-status status-active";
-      statusSpan.textContent = "\u25CF"; // Filled circle
-      card.appendChild(statusSpan);
-    } else if (player.timeRemaining < CONSTANTS.WARNING_THRESHOLD_1MIN) {
-      const statusSpan = document.createElement("span");
-      statusSpan.className = "mobile-player-card-status status-warning";
-      statusSpan.textContent = "\u26A0"; // Warning sign
-      card.appendChild(statusSpan);
+    const status = getPlayerStatusIcon(player, isActive, isPaused);
+    statusSpan.textContent = status.icon;
+    if (status.class) {
+      statusSpan.classList.add(status.class);
     }
 
-    // Click to view player details (tap to select in waiting)
-    card.addEventListener("click", () => {
-      if (gameState.status === "waiting") {
-        if (!player.claimedBy) {
+    card.appendChild(nameSpan);
+    card.appendChild(lifeSpan);
+    card.appendChild(statusSpan);
+
+    // Click handler
+    card.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (isWaiting) {
+        // In waiting state - claim/unclaim
+        if (isMyPlayer) {
+          sendUnclaim();
+          playClick();
+        } else if (!isClaimed) {
           sendClaim(player.id);
           playClick();
         }
+      } else {
+        // In game - show player details popup
+        showPlayerDetailsPopup(player, card);
       }
     });
 
     mobileUI.playerCards.appendChild(card);
   });
+}
 
-  // If we haven't claimed a player yet in waiting state, show empty slots
-  if (gameState.status === "waiting" && !myPlayer) {
-    const unclaimedPlayers = gameState.players.filter(p => !p.claimedBy);
-    unclaimedPlayers.forEach(player => {
-      const existingCard = mobileUI.playerCards.querySelector(`[data-player-id="${player.id}"]`);
-      if (existingCard) {
-        existingCard.classList.add("selectable");
-      }
-    });
+/**
+ * Get the status icon and class for a player
+ */
+function getPlayerStatusIcon(player, isActive, isPaused) {
+  // Priority order: eliminated > paused > critical > warning > active > none
+  if (player.isEliminated) {
+    return { icon: "\u2620", class: "status-eliminated" }; // ☠
+  }
+  if (isPaused) {
+    return { icon: "\u23F8", class: "status-paused" }; // ⏸
+  }
+  if (!player.isEliminated && player.timeRemaining < CONSTANTS.CRITICAL_THRESHOLD) {
+    return { icon: "\u26A0", class: "status-critical" }; // ⚠
+  }
+  if (!player.isEliminated && player.timeRemaining < CONSTANTS.WARNING_THRESHOLD_1MIN) {
+    return { icon: "\u26A0", class: "status-warning" }; // ⚠
+  }
+  if (isActive) {
+    return { icon: "\u25CF", class: "status-active" }; // ●
+  }
+  return { icon: "", class: "" }; // No status
+}
+
+/**
+ * Show player details popup near the tapped card
+ */
+function showPlayerDetailsPopup(player, cardElement) {
+  const popup = document.getElementById("mobile-player-popup");
+  if (!popup) return;
+
+  // Update popup content
+  const nameEl = popup.querySelector(".mobile-player-popup-name");
+  const timeEl = popup.querySelector(".mobile-player-popup-time");
+  const lifeEl = popup.querySelector(".mobile-player-popup-life");
+  const drunkEl = popup.querySelector(".mobile-player-popup-drunk");
+  const genericEl = popup.querySelector(".mobile-player-popup-generic");
+
+  if (nameEl) nameEl.textContent = player.name;
+  if (timeEl) timeEl.textContent = formatTime(player.timeRemaining);
+  if (lifeEl) lifeEl.textContent = player.life;
+  if (drunkEl) drunkEl.textContent = player.drunkCounter;
+  if (genericEl) genericEl.textContent = player.genericCounter;
+
+  // Position popup near the card
+  const cardRect = cardElement.getBoundingClientRect();
+  const popupContent = popup.querySelector(".mobile-player-popup-content");
+
+  // Show popup to calculate its dimensions
+  popup.style.display = "block";
+  const popupRect = popupContent.getBoundingClientRect();
+
+  // Calculate position - try to position above the card
+  let top = cardRect.top - popupRect.height - 10;
+  let left = cardRect.left + (cardRect.width / 2) - (popupRect.width / 2);
+
+  // If popup would go above viewport, show below instead
+  popup.classList.remove("popup-above");
+  if (top < 10) {
+    top = cardRect.bottom + 10;
+    popup.classList.add("popup-above");
+  }
+
+  // Keep popup within horizontal bounds
+  if (left < 10) {
+    left = 10;
+  } else if (left + popupRect.width > window.innerWidth - 10) {
+    left = window.innerWidth - popupRect.width - 10;
+  }
+
+  popupContent.style.left = `${left}px`;
+  popupContent.style.top = `${top}px`;
+
+  // Close button handler
+  const closeBtn = popup.querySelector(".mobile-player-popup-close");
+  if (closeBtn) {
+    closeBtn.onclick = (e) => {
+      e.stopPropagation();
+      hidePlayerDetailsPopup();
+    };
+  }
+
+  // Close on tap outside (delayed to prevent immediate close)
+  setTimeout(() => {
+    document.addEventListener("click", handlePopupOutsideClick);
+    document.addEventListener("touchstart", handlePopupOutsideClick);
+  }, 50);
+
+  playClick();
+}
+
+/**
+ * Hide the player details popup
+ */
+function hidePlayerDetailsPopup() {
+  const popup = document.getElementById("mobile-player-popup");
+  if (popup) {
+    popup.style.display = "none";
+  }
+  document.removeEventListener("click", handlePopupOutsideClick);
+  document.removeEventListener("touchstart", handlePopupOutsideClick);
+}
+
+/**
+ * Handle clicks outside the popup to close it
+ */
+function handlePopupOutsideClick(e) {
+  const popup = document.getElementById("mobile-player-popup");
+  const popupContent = popup?.querySelector(".mobile-player-popup-content");
+
+  if (popup && popupContent && !popupContent.contains(e.target)) {
+    hidePlayerDetailsPopup();
   }
 }
+
+// Track previous stat values for change animation
+let prevStatValues = { life: null, drunk: null, generic: null };
 
 /**
  * Update the mobile player stats bar with current player's life and counters
@@ -1942,31 +2389,70 @@ function updateMobilePlayerStats() {
   if (!gameState || !mobileUI.playerStats) return;
 
   const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  const isWaiting = gameState.status === "waiting";
+
+  // Show/hide name row based on waiting state
+  if (isWaiting && myPlayer) {
+    mobileUI.playerStats.classList.add("show-name");
+  } else {
+    mobileUI.playerStats.classList.remove("show-name");
+  }
+
+  // Update player name display
+  const nameValueEl = mobileUI.playerStats.querySelector(".mobile-player-name-value");
+  if (nameValueEl && myPlayer) {
+    nameValueEl.textContent = myPlayer.name;
+  }
 
   if (!myPlayer) {
-    // Hide stats or show placeholder if no player claimed
+    // Dim stats if no player claimed
     mobileUI.playerStats.style.opacity = "0.5";
     return;
   }
 
   mobileUI.playerStats.style.opacity = "1";
 
-  // Update life display
-  const lifeValue = mobileUI.lifeStat.querySelector(".mobile-stat-value");
+  // Update life display with animation
+  const lifeValue = mobileUI.lifeStat?.querySelector(".mobile-stat-value");
   if (lifeValue) {
-    lifeValue.textContent = myPlayer.life;
+    updateStatValue(lifeValue, myPlayer.life, prevStatValues.life);
+    prevStatValues.life = myPlayer.life;
+    // Add negative class if life is negative
+    lifeValue.classList.toggle("negative", myPlayer.life < 0);
   }
 
-  // Update poison/drunk counter display
-  const poisonValue = mobileUI.poisonStat.querySelector(".mobile-stat-value");
+  // Update poison/drunk counter display with animation
+  const poisonValue = mobileUI.poisonStat?.querySelector(".mobile-stat-value");
   if (poisonValue) {
-    poisonValue.textContent = myPlayer.drunkCounter;
+    updateStatValue(poisonValue, myPlayer.drunkCounter, prevStatValues.drunk);
+    prevStatValues.drunk = myPlayer.drunkCounter;
   }
 
-  // Update generic counter display
-  const genericValue = mobileUI.genericStat.querySelector(".mobile-stat-value");
+  // Update generic counter display with animation
+  const genericValue = mobileUI.genericStat?.querySelector(".mobile-stat-value");
   if (genericValue) {
-    genericValue.textContent = myPlayer.genericCounter;
+    updateStatValue(genericValue, myPlayer.genericCounter, prevStatValues.generic);
+    prevStatValues.generic = myPlayer.genericCounter;
+  }
+}
+
+/**
+ * Update a stat value element with bounce animation if changed
+ */
+function updateStatValue(element, newValue, oldValue) {
+  element.textContent = newValue;
+
+  // Animate if value changed
+  if (oldValue !== null && oldValue !== newValue) {
+    element.classList.remove("value-changed");
+    // Trigger reflow to restart animation
+    void element.offsetWidth;
+    element.classList.add("value-changed");
+
+    // Remove class after animation completes
+    setTimeout(() => {
+      element.classList.remove("value-changed");
+    }, 200);
   }
 }
 
@@ -2116,5 +2602,6 @@ function setupMobileStatButtons() {
 
 // Initialize mobile event listeners
 setupMobileEventListeners();
+setupMobileSettingsEventListeners();
 
 connect();
