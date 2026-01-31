@@ -2204,10 +2204,9 @@ h1 {
 .mobile-interaction-area {
   display: flex;
   flex: 1 1 auto;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding-top: var(--spacing-md);
-  padding-bottom: var(--spacing-xs);
+  padding: var(--spacing-xs);
   min-height: 0; /* Allow shrinking */
 }
 
@@ -2271,8 +2270,7 @@ h1 {
 
   .mobile-interaction-area {
     min-height: 0;
-    padding-top: var(--spacing-sm);
-    padding-bottom: var(--spacing-xs);
+    padding: var(--spacing-xs);
   }
 }
 
@@ -2391,20 +2389,20 @@ h1 {
 }
 
 .mobile-player-card-name {
-  font-size: 0.7em;
+  font-size: 0.65em;
   color: #aaa;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
   text-align: center;
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 .mobile-player-card-time {
-  font-size: 0.7em;
+  font-size: 0.65em;
   font-family: "Courier New", monospace;
-  color: #aaa;
+  color: #888;
   line-height: 1;
 }
 
@@ -2417,16 +2415,16 @@ h1 {
 }
 
 .mobile-player-card-life {
-  font-size: 1.1em;
+  font-size: 1.05em;
   font-weight: bold;
   color: #fff;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 .mobile-player-card-status {
-  font-size: 0.75em;
+  font-size: 0.6em;
   line-height: 1;
-  height: 12px;
+  height: 10px;
 }
 
 /* Status indicator icons and colors */
@@ -2504,19 +2502,19 @@ h1 {
   }
 
   .mobile-player-card-name {
-    font-size: 0.55em;
+    font-size: 0.5em;
   }
 
   .mobile-player-card-time {
-    font-size: 0.6em;
+    font-size: 0.55em;
   }
 
   .mobile-player-card-life {
-    font-size: 0.9em;
+    font-size: 0.85em;
   }
 
   .mobile-player-card-status {
-    font-size: 0.55em;
+    font-size: 0.5em;
     height: 8px;
   }
 }
