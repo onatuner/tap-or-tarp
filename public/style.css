@@ -2468,7 +2468,7 @@ h1 {
   cursor: not-allowed;
 }
 
-/* Landscape: single row, smaller cards */
+/* Landscape: single row, smaller cards - centered, not stretched */
 @media (orientation: landscape) and (max-height: 500px) {
   .mobile-other-players {
     min-height: 0;
@@ -2479,9 +2479,10 @@ h1 {
   .mobile-player-cards {
     flex-wrap: nowrap;
     gap: var(--spacing-xs);
+    justify-content: center;
   }
 
-  /* Override portrait sizes for landscape - equal distribution */
+  /* Override portrait sizes for landscape - fixed width, centered */
   .mobile-player-cards[data-player-count="1"] .mobile-player-card,
   .mobile-player-cards[data-player-count="2"] .mobile-player-card,
   .mobile-player-cards[data-player-count="3"] .mobile-player-card,
@@ -2489,15 +2490,15 @@ h1 {
   .mobile-player-cards[data-player-count="5"] .mobile-player-card,
   .mobile-player-cards[data-player-count="6"] .mobile-player-card,
   .mobile-player-cards[data-player-count="7"] .mobile-player-card {
-    min-width: 45px;
-    max-width: none;
-    flex: 1 1 0;
+    min-width: 50px;
+    max-width: 65px;
+    flex: 0 0 auto;
   }
 
   .mobile-player-card {
-    min-width: 40px;
-    max-width: none;
-    flex: 1 1 0;
+    min-width: 50px;
+    max-width: 65px;
+    flex: 0 0 auto;
     height: var(--mobile-player-card-height);
     padding: 2px var(--spacing-xs);
   }

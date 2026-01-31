@@ -2715,8 +2715,24 @@ function updateMobilePlayerStats() {
   }
 
   if (!myPlayer) {
-    // Dim stats if no player claimed
+    // Dim stats and reset to default values when no player claimed
     mobileUI.playerStats.style.opacity = "0.5";
+
+    // Reset displayed values to defaults
+    const lifeValue = mobileUI.lifeStat?.querySelector(".mobile-stat-value");
+    if (lifeValue) {
+      lifeValue.textContent = "20";
+      lifeValue.classList.remove("negative");
+    }
+    const poisonValue = mobileUI.poisonStat?.querySelector(".mobile-stat-value");
+    if (poisonValue) poisonValue.textContent = "0";
+    const genericValue = mobileUI.genericStat?.querySelector(".mobile-stat-value");
+    if (genericValue) genericValue.textContent = "0";
+
+    // Reset cached values
+    prevStatValues.life = null;
+    prevStatValues.drunk = null;
+    prevStatValues.generic = null;
     return;
   }
 
