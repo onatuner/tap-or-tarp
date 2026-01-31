@@ -986,10 +986,30 @@ function createPlayerCard(player, isActive) {
 function renderGame() {
   if (!gameState) return;
 
+  // Check if game screen is already visible (avoid full re-render for updates)
+  const isMobile = isMobileDevice();
+  const mobileVisible = isMobile && screens.mobileGame.style.display === "flex";
+  const desktopVisible = !isMobile && screens.game.style.display === "block";
+
+  if (mobileVisible) {
+    // Just update the mobile UI without re-rendering
+    updateMobileUI();
+    updateControls();
+    return;
+  }
+
+  if (desktopVisible) {
+    // Update desktop UI without hiding/showing screens
+    updateDesktopPlayerCards();
+    updateControls();
+    return;
+  }
+
+  // First time showing game screen - do full render
   hideAllScreens();
 
   // Show mobile or desktop screen based on device
-  if (isMobileDevice()) {
+  if (isMobile) {
     document.body.classList.add("mobile-active");
     screens.mobileGame.style.display = "flex";
     // Add enter animation class
@@ -1027,6 +1047,48 @@ function renderGame() {
   });
 
   updateControls();
+}
+
+/**
+ * Update desktop player cards in place without rebuilding
+ */
+function updateDesktopPlayerCards() {
+  if (!gameState) return;
+
+  const cards = playersContainer.querySelectorAll(".player-card");
+
+  // If card count doesn't match, do a full rebuild
+  if (cards.length !== gameState.players.length) {
+    playersContainer.innerHTML = "";
+    playersContainer.className = `players-${gameState.players.length}`;
+    gameState.players.forEach(player => {
+      const isActive = player.id === gameState.activePlayer;
+      const card = createPlayerCard(player, isActive);
+      playersContainer.appendChild(card);
+    });
+    return;
+  }
+
+  // Update existing cards in place
+  cards.forEach(card => {
+    const playerId = parseInt(card.dataset.playerId);
+    const player = gameState.players.find(p => p.id === playerId);
+    if (!player) return;
+
+    const isActive = player.id === gameState.activePlayer;
+
+    // Update life display
+    const lifeDisplay = card.querySelector(".life-display");
+    if (lifeDisplay) lifeDisplay.textContent = player.life;
+
+    // Update counter displays
+    const counterDisplays = card.querySelectorAll(".counter-display");
+    if (counterDisplays[0]) counterDisplays[0].textContent = player.drunkCounter;
+    if (counterDisplays[1]) counterDisplays[1].textContent = player.genericCounter;
+
+    // Update active state
+    card.classList.toggle("active", isActive);
+  });
 }
 
 function updateTimes() {
@@ -2350,6 +2412,58 @@ function updateMobileOtherPlayers() {
   // Set player count for CSS-based sizing
   mobileUI.playerCards.dataset.playerCount = playersToShow.length;
 
+  // Check if we can update in place (same players)
+  const existingCards = mobileUI.playerCards.querySelectorAll(".mobile-player-card");
+  const existingIds = Array.from(existingCards).map(c => parseInt(c.dataset.playerId));
+  const newIds = playersToShow.map(p => p.id);
+  const canUpdateInPlace = existingIds.length === newIds.length &&
+    existingIds.every((id, i) => id === newIds[i]);
+
+  if (canUpdateInPlace) {
+    // Update existing cards in place
+    existingCards.forEach(card => {
+      const playerId = parseInt(card.dataset.playerId);
+      const player = playersToShow.find(p => p.id === playerId);
+      if (!player) return;
+
+      const isActive = player.id === gameState.activePlayer;
+
+      // Update life
+      const lifeSpan = card.querySelector(".mobile-player-card-life");
+      if (lifeSpan) lifeSpan.textContent = player.life;
+
+      // Update time
+      const timeSpan = card.querySelector(".mobile-player-card-time");
+      if (timeSpan) {
+        timeSpan.textContent = formatTimeCompact(player.timeRemaining);
+      }
+
+      // Update state classes
+      card.classList.remove("active", "eliminated", "paused", "critical", "warning");
+      if (isActive && !isPaused) card.classList.add("active");
+      if (player.isEliminated) {
+        card.classList.add("eliminated");
+      } else if (isPaused) {
+        card.classList.add("paused");
+      } else if (player.timeRemaining < CONSTANTS.CRITICAL_THRESHOLD) {
+        card.classList.add("critical");
+      } else if (player.timeRemaining < CONSTANTS.WARNING_THRESHOLD_1MIN) {
+        card.classList.add("warning");
+      }
+
+      // Update status indicator
+      const statusSpan = card.querySelector(".mobile-player-card-status");
+      if (statusSpan) {
+        const status = getPlayerStatusIcon(player, isActive, isPaused);
+        statusSpan.textContent = status.icon;
+        statusSpan.className = "mobile-player-card-status";
+        if (status.class) statusSpan.classList.add(status.class);
+      }
+    });
+    return;
+  }
+
+  // Need to rebuild cards
   mobileUI.playerCards.innerHTML = "";
 
   playersToShow.forEach(player => {
@@ -2398,6 +2512,11 @@ function updateMobileOtherPlayers() {
     nameSpan.textContent = player.name;
     nameSpan.title = player.name; // Full name on hover
 
+    // Time display (compact format)
+    const timeSpan = document.createElement("span");
+    timeSpan.className = "mobile-player-card-time";
+    timeSpan.textContent = formatTimeCompact(player.timeRemaining);
+
     // Life total
     const lifeSpan = document.createElement("span");
     lifeSpan.className = "mobile-player-card-life";
@@ -2414,6 +2533,7 @@ function updateMobileOtherPlayers() {
     }
 
     card.appendChild(nameSpan);
+    card.appendChild(timeSpan);
     card.appendChild(lifeSpan);
     card.appendChild(statusSpan);
 
@@ -2437,6 +2557,22 @@ function updateMobileOtherPlayers() {
 
     mobileUI.playerCards.appendChild(card);
   });
+}
+
+/**
+ * Format time in compact format (M:SS or S.s)
+ */
+function formatTimeCompact(ms) {
+  if (ms < CONSTANTS.CRITICAL_THRESHOLD) {
+    // Show seconds with deciseconds for critical time
+    const seconds = Math.floor(ms / 1000);
+    const deciseconds = Math.floor((ms % 1000) / 100);
+    return `${seconds}.${deciseconds}`;
+  }
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 /**

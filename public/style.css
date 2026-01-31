@@ -2401,11 +2401,26 @@ h1 {
   line-height: 1.2;
 }
 
+.mobile-player-card-time {
+  font-size: 0.7em;
+  font-family: "Courier New", monospace;
+  color: #aaa;
+  line-height: 1;
+}
+
+.mobile-player-card.warning .mobile-player-card-time {
+  color: var(--color-warning);
+}
+
+.mobile-player-card.critical .mobile-player-card-time {
+  color: var(--color-danger);
+}
+
 .mobile-player-card-life {
-  font-size: 1.2em;
+  font-size: 1.1em;
   font-weight: bold;
   color: #fff;
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 .mobile-player-card-status {
@@ -2491,12 +2506,16 @@ h1 {
     font-size: 0.55em;
   }
 
+  .mobile-player-card-time {
+    font-size: 0.6em;
+  }
+
   .mobile-player-card-life {
-    font-size: 0.95em;
+    font-size: 0.9em;
   }
 
   .mobile-player-card-status {
-    font-size: 0.6em;
+    font-size: 0.55em;
     height: 8px;
   }
 }
