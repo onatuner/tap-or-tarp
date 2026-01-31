@@ -2669,7 +2669,8 @@ function handleMobileInteractionClick() {
     playPauseResume();
   } else if (myHasPriority && myInInterruptQueue) {
     safeSend({ type: "passPriority", data: {} });
-  } else if (myPlayer && myPlayer.id === gameState.activePlayer) {
+  } else if (myPlayer && myPlayer.id === gameState.activePlayer && (!gameState.interruptingPlayers || gameState.interruptingPlayers.length === 0)) {
+    // Only pass turn if active player AND no one has interrupted
     sendPassTurn();
   } else if (myPlayer && !myHasPriority) {
     safeSend({ type: "interrupt", data: {} });
