@@ -990,12 +990,14 @@ function renderGame() {
 
   // Show mobile or desktop screen based on device
   if (isMobileDevice()) {
+    document.body.classList.add("mobile-active");
     screens.mobileGame.style.display = "flex";
     // Add enter animation class
     screens.mobileGame.classList.add("screen-enter");
     setTimeout(() => screens.mobileGame.classList.remove("screen-enter"), 200);
     updateMobileUI();
   } else {
+    document.body.classList.remove("mobile-active");
     screens.game.style.display = "block";
   }
 
@@ -1743,6 +1745,8 @@ function hideAllScreens() {
   Object.values(screens).forEach(screen => {
     if (screen) screen.style.display = "none";
   });
+  // Remove mobile-active class when hiding screens
+  document.body.classList.remove("mobile-active");
 }
 
 function showScreen(screenName) {
@@ -2793,5 +2797,26 @@ function setupMobileStatButtons() {
 // Initialize mobile event listeners
 setupMobileEventListeners();
 setupMobileSettingsEventListeners();
+
+// Handle orientation changes to ensure layout recalculates
+window.addEventListener("orientationchange", () => {
+  // Wait for the orientation change to complete
+  setTimeout(() => {
+    if (gameState && isMobileDevice() && screens.mobileGame.style.display !== "none") {
+      updateMobileUI();
+    }
+  }, 100);
+});
+
+// Also handle resize for desktop testing and non-standard orientation change behavior
+let resizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    if (gameState && isMobileDevice() && screens.mobileGame.style.display !== "none") {
+      updateMobileUI();
+    }
+  }, 150);
+});
 
 connect();

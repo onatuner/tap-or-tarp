@@ -34,13 +34,41 @@
 /* Landscape orientation - smaller devices */
 @media (orientation: landscape) and (max-height: 500px) {
   :root {
-    --mobile-top-bar-height: 32px;
-    --mobile-time-display-height: 28px;
-    --mobile-time-font-size: 1.8em;
-    --mobile-interaction-height: 44px;
-    --mobile-interaction-btn-height: 44px;
+    --mobile-top-bar-height: 28px;
+    --mobile-time-display-height: 24px;
+    --mobile-time-font-size: 1.5em;
+    --mobile-interaction-height: 40px;
+    --mobile-interaction-btn-height: 40px;
+    --mobile-player-card-height: 40px;
+    --mobile-stats-height: 40px;
+    --mobile-button-size: 28px;
+  }
+}
+
+/* Very constrained landscape (under 350px height) */
+@media (orientation: landscape) and (max-height: 350px) {
+  :root {
+    --mobile-top-bar-height: 24px;
+    --mobile-time-display-height: 20px;
+    --mobile-time-font-size: 1.3em;
+    --mobile-interaction-height: 36px;
+    --mobile-interaction-btn-height: 36px;
+    --mobile-player-card-height: 36px;
+    --mobile-stats-height: 36px;
+    --mobile-button-size: 24px;
+  }
+}
+
+/* Small portrait screens (under 600px height) */
+@media (orientation: portrait) and (max-height: 600px) {
+  :root {
+    --mobile-top-bar-height: 40px;
+    --mobile-time-display-height: 40px;
+    --mobile-time-font-size: 2em;
+    --mobile-interaction-height: 60px;
+    --mobile-interaction-btn-height: 60px;
     --mobile-player-card-height: 50px;
-    --mobile-stats-height: 44px;
+    --mobile-stats-height: 60px;
     --mobile-button-size: 36px;
   }
 }
@@ -60,6 +88,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Prevent body scrolling when mobile layout is visible */
+body.mobile-active {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
 }
 
 #app {
@@ -2017,6 +2053,12 @@ h1 {
 
 /* Main container - fills viewport without scrolling */
 .mobile-layout {
+  /* Use fixed positioning to break out of #app container and cover full viewport */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -2026,6 +2068,7 @@ h1 {
   max-height: 100dvh;
   overflow: hidden;
   background: #000;
+  z-index: 100; /* Above other content */
   /* Safe area insets for notched devices */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
@@ -2042,6 +2085,7 @@ h1 {
   align-items: center;
   height: var(--mobile-top-bar-height);
   min-height: var(--mobile-top-bar-height);
+  flex-shrink: 0;
   padding: 0 var(--spacing-sm);
   background: transparent;
 }
@@ -2099,7 +2143,8 @@ h1 {
   align-items: center;
   justify-content: center;
   height: var(--mobile-time-display-height);
-  min-height: var(--mobile-time-display-height);
+  min-height: 0; /* Allow shrinking */
+  flex-shrink: 1;
   padding: 0 var(--spacing-md);
 }
 
@@ -2158,11 +2203,11 @@ h1 {
    ============================================================================= */
 .mobile-interaction-area {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-md);
-  min-height: calc(var(--mobile-interaction-height) + var(--spacing-md) * 2);
+  padding: var(--spacing-sm);
+  min-height: 0; /* Allow shrinking */
 }
 
 .mobile-interaction-btn {
@@ -2224,8 +2269,8 @@ h1 {
   }
 
   .mobile-interaction-area {
-    min-height: auto;
-    padding: var(--spacing-sm);
+    min-height: 0;
+    padding: var(--spacing-xs);
   }
 }
 
@@ -2236,9 +2281,10 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(var(--mobile-player-card-height) + var(--spacing-md) * 2);
-  max-height: 80px;
-  padding: var(--spacing-sm) var(--spacing-md);
+  min-height: 0; /* Allow shrinking */
+  max-height: calc(var(--mobile-player-card-height) + var(--spacing-md));
+  flex-shrink: 1;
+  padding: var(--spacing-xs) var(--spacing-md);
 }
 
 .mobile-player-cards {
@@ -2408,9 +2454,9 @@ h1 {
 /* Landscape: single row, smaller cards */
 @media (orientation: landscape) and (max-height: 500px) {
   .mobile-other-players {
-    min-height: auto;
-    max-height: 55px;
-    padding: var(--spacing-xs) var(--spacing-md);
+    min-height: 0;
+    max-height: calc(var(--mobile-player-card-height) + var(--spacing-xs));
+    padding: var(--spacing-xs) var(--spacing-sm);
   }
 
   .mobile-player-cards {
@@ -2432,24 +2478,24 @@ h1 {
   }
 
   .mobile-player-card {
-    min-width: 45px;
+    min-width: 40px;
     max-width: none;
     flex: 1 1 0;
     height: var(--mobile-player-card-height);
-    padding: var(--spacing-xs);
+    padding: 2px var(--spacing-xs);
   }
 
   .mobile-player-card-name {
-    font-size: 0.6em;
+    font-size: 0.55em;
   }
 
   .mobile-player-card-life {
-    font-size: 1em;
+    font-size: 0.95em;
   }
 
   .mobile-player-card-status {
-    font-size: 0.65em;
-    height: 10px;
+    font-size: 0.6em;
+    height: 8px;
   }
 }
 
@@ -2462,8 +2508,9 @@ h1 {
   justify-content: center;
   align-items: center;
   gap: var(--spacing-xs);
-  height: var(--mobile-stats-height);
-  min-height: var(--mobile-stats-height);
+  height: auto;
+  min-height: 0; /* Allow shrinking */
+  flex-shrink: 0;
   padding: var(--spacing-xs) var(--spacing-md);
   background: rgba(255, 255, 255, 0.03);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -2630,8 +2677,8 @@ h1 {
 @media (orientation: landscape) and (max-height: 500px) {
   .mobile-player-stats {
     flex-direction: row;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-xs) var(--spacing-md);
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
   }
 
   .mobile-player-stats.show-name {
@@ -2647,33 +2694,34 @@ h1 {
   .mobile-stats-row {
     flex: 1;
     justify-content: center;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
   }
 
   .mobile-stat-group {
     flex-direction: row;
-    padding: var(--spacing-xs);
+    padding: 2px var(--spacing-xs);
     min-width: auto;
-    gap: var(--spacing-xs);
+    gap: 2px;
   }
 
   .mobile-stat-header {
     flex-direction: row;
+    gap: 2px;
   }
 
   .mobile-stat-icon {
-    font-size: 0.9em;
+    font-size: 0.85em;
   }
 
   .mobile-stat-value {
-    font-size: 1.3em;
-    min-width: 28px;
+    font-size: 1.1em;
+    min-width: 24px;
   }
 
   .mobile-stat-btn {
-    width: var(--mobile-button-size);
-    height: var(--mobile-button-size);
-    font-size: 1.1em;
+    width: 28px;
+    height: 28px;
+    font-size: 1em;
   }
 }
 
@@ -3193,6 +3241,7 @@ a:focus:not(:focus-visible) {
   background: #111;
   width: 100%;
   max-height: 85vh;
+  max-height: 85dvh;
   border-radius: 20px 20px 0 0;
   display: flex;
   flex-direction: column;
@@ -3523,6 +3572,7 @@ a:focus:not(:focus-visible) {
 @media (orientation: landscape) and (max-height: 500px) {
   .mobile-settings-content {
     max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0;
   }
 
