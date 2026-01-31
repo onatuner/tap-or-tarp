@@ -2204,9 +2204,10 @@ h1 {
 .mobile-interaction-area {
   display: flex;
   flex: 1 1 auto;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  padding-bottom: var(--spacing-xs);
   min-height: 0; /* Allow shrinking */
 }
 
@@ -2270,7 +2271,8 @@ h1 {
 
   .mobile-interaction-area {
     min-height: 0;
-    padding: var(--spacing-xs);
+    padding-top: var(--spacing-sm);
+    padding-bottom: var(--spacing-xs);
   }
 }
 
@@ -2507,11 +2509,11 @@ h1 {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
   height: auto;
   min-height: 0; /* Allow shrinking */
   flex-shrink: 0;
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   background: rgba(255, 255, 255, 0.03);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
