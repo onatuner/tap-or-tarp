@@ -176,70 +176,15 @@
         </div>
       </div>
 
-      <div id="game-screen" style="display: none">
-        <div class="game-header">
-          <div class="game-header-left">
-            <h1 id="game-title-display">Tap or Tarp</h1>
-            <div class="game-code">Game Code: <span id="game-code-display"></span></div>
-          </div>
-        </div>
-
-        <div id="players-container"></div>
-
-        <div class="controls">
-          <button
-            id="start-btn"
-            class="btn btn-control btn-primary"
-            style="display: none"
-            aria-label="Start game"
-          >
-            Start Game
-          </button>
-          <button
-            id="random-start-btn"
-            class="btn btn-control"
-            style="display: none"
-            aria-label="Select random starting player"
-            title="Randomly select starting player"
-          >
-            🎲 Random Start
-          </button>
-          <button id="pass-turn-btn" class="btn btn-control" aria-label="Pass turn to next player">
-            Pass Turn
-          </button>
-          <button
-            id="interrupt-btn"
-            class="btn btn-control"
-            aria-label="Interrupt turn"
-            style="display: none"
-          >
-            Interrupt
-          </button>
-          <button id="pause-btn" class="btn btn-control" aria-label="Pause or resume game">
-            Pause
-          </button>
-          <button id="reset-btn" class="btn btn-control" aria-label="Reset game">Reset</button>
-          <button id="dice-btn" class="btn btn-control" aria-label="Roll dice">
-            🎲 Dice
-          </button>
-          <button id="settings-btn" class="btn btn-control" aria-label="Open settings">
-            Settings
-          </button>
-          <button id="back-to-menu-btn" class="btn btn-control" aria-label="Return to main menu">
-            Back to Menu
-          </button>
-        </div>
-      </div>
-
-      <!-- Mobile Game Screen (New Redesigned Layout) -->
-      <div id="mobile-game-screen" class="mobile-layout" style="display: none" role="main" aria-label="Game screen">
-        <header class="mobile-top-bar" role="banner">
-          <button class="mobile-icon-btn mobile-exit-btn" aria-label="Exit to main menu">
+      <!-- Game Screen (Unified Layout) -->
+      <div id="game-screen" class="game-layout" style="display: none" role="main" aria-label="Game screen">
+        <header class="game-top-bar" role="banner">
+          <button class="game-icon-btn game-exit-btn" aria-label="Exit to main menu">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
           </button>
-          <button class="mobile-icon-btn mobile-settings-btn" aria-label="Open game settings">
+          <button class="game-icon-btn game-settings-btn" aria-label="Open game settings">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="12" cy="12" r="3"/>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -247,224 +192,147 @@
           </button>
         </header>
 
-        <section class="mobile-time-display" aria-label="Game status">
-          <div class="mobile-turn-indicator" role="status" aria-live="polite">YOUR TURN</div>
-          <div class="mobile-time-value" role="timer" aria-live="off" aria-atomic="true">05:23</div>
+        <section class="game-time-display" aria-label="Game status">
+          <div class="game-turn-indicator" role="status" aria-live="polite">YOUR TURN</div>
+          <div class="game-time-value" role="timer" aria-live="off" aria-atomic="true">05:23</div>
         </section>
 
-        <section class="mobile-interaction-area" aria-label="Main action">
-          <button class="mobile-interaction-btn mobile-interaction-btn-pass" aria-label="Pass turn to next player">
+        <section class="game-interaction-area" aria-label="Main action">
+          <button class="game-interaction-btn game-interaction-btn-pass" aria-label="Pass turn to next player">
             PASS TURN
           </button>
         </section>
 
-        <section class="mobile-other-players" aria-label="Other players">
-          <div class="mobile-player-cards" role="list">
+        <section class="game-other-players" aria-label="Other players">
+          <div class="game-player-cards" role="list">
             <!-- Player cards will be inserted here dynamically -->
           </div>
         </section>
 
-        <footer class="mobile-player-stats" aria-label="Your stats">
+        <footer class="game-player-stats" aria-label="Your stats">
           <!-- Player name row (visible in waiting state) -->
-          <div class="mobile-player-name-row">
-            <span class="mobile-player-name-label">You:</span>
-            <span class="mobile-player-name-value">Player 1</span>
+          <div class="game-player-name-row">
+            <span class="game-player-name-label">You:</span>
+            <span class="game-player-name-value">Player 1</span>
           </div>
           <!-- Stats row -->
-          <div class="mobile-stats-row">
-            <div class="mobile-stat-group mobile-stat-life" role="group" aria-label="Life total">
-              <div class="mobile-stat-header">
-                <span class="mobile-stat-icon" aria-hidden="true">&#10084;</span>
-                <span class="mobile-stat-value" aria-live="polite">20</span>
+          <div class="game-stats-row">
+            <div class="game-stat-group game-stat-life" role="group" aria-label="Life total">
+              <div class="game-stat-header">
+                <span class="game-stat-icon" aria-hidden="true">&#10084;</span>
+                <span class="game-stat-value" aria-live="polite">20</span>
               </div>
-              <div class="mobile-stat-controls">
-                <button class="mobile-stat-btn" aria-label="Decrease life by 1">-</button>
-                <button class="mobile-stat-btn" aria-label="Increase life by 1">+</button>
-              </div>
-            </div>
-            <div class="mobile-stat-group mobile-stat-poison" role="group" aria-label="Drunk counter">
-              <div class="mobile-stat-header">
-                <span class="mobile-stat-icon" aria-hidden="true">&#127866;</span>
-                <span class="mobile-stat-value" aria-live="polite">0</span>
-              </div>
-              <div class="mobile-stat-controls">
-                <button class="mobile-stat-btn" aria-label="Decrease drunk counter">-</button>
-                <button class="mobile-stat-btn" aria-label="Increase drunk counter">+</button>
+              <div class="game-stat-controls">
+                <button class="game-stat-btn" aria-label="Decrease life by 1">-</button>
+                <button class="game-stat-btn" aria-label="Increase life by 1">+</button>
               </div>
             </div>
-            <div class="mobile-stat-group mobile-stat-generic" role="group" aria-label="Generic counter">
-              <div class="mobile-stat-header">
-                <span class="mobile-stat-icon" aria-hidden="true">&#11088;</span>
-                <span class="mobile-stat-value" aria-live="polite">0</span>
+            <div class="game-stat-group game-stat-poison" role="group" aria-label="Drunk counter">
+              <div class="game-stat-header">
+                <span class="game-stat-icon" aria-hidden="true">&#127866;</span>
+                <span class="game-stat-value" aria-live="polite">0</span>
               </div>
-              <div class="mobile-stat-controls">
-                <button class="mobile-stat-btn" aria-label="Decrease generic counter">-</button>
-                <button class="mobile-stat-btn" aria-label="Increase generic counter">+</button>
+              <div class="game-stat-controls">
+                <button class="game-stat-btn" aria-label="Decrease drunk counter">-</button>
+                <button class="game-stat-btn" aria-label="Increase drunk counter">+</button>
+              </div>
+            </div>
+            <div class="game-stat-group game-stat-generic" role="group" aria-label="Generic counter">
+              <div class="game-stat-header">
+                <span class="game-stat-icon" aria-hidden="true">&#11088;</span>
+                <span class="game-stat-value" aria-live="polite">0</span>
+              </div>
+              <div class="game-stat-controls">
+                <button class="game-stat-btn" aria-label="Decrease generic counter">-</button>
+                <button class="game-stat-btn" aria-label="Increase generic counter">+</button>
               </div>
             </div>
           </div>
         </footer>
       </div>
 
-      <!-- Desktop Settings Modal -->
-      <div id="settings-modal" style="display: none" class="modal desktop-only-modal">
-        <div class="modal-content">
-          <h2>Game Settings</h2>
-
-          <div class="form-group">
-            <label>Game Code</label>
-            <div class="game-code-display" id="settings-game-code"></div>
-          </div>
-
-          <div class="form-group">
-            <label>Warning Thresholds</label>
-            <p class="form-hint">Audio alerts when time remaining drops below these values</p>
-            <div id="thresholds-container" class="thresholds-container">
-              <div class="threshold-item" data-index="0">
-                <input type="number" class="threshold-input" value="5" min="0.1" step="0.5" />
-                <span class="threshold-unit">min</span>
-                <button type="button" class="btn-threshold-remove" aria-label="Remove threshold">
-                  &times;
-                </button>
-              </div>
-              <div class="threshold-item" data-index="1">
-                <input type="number" class="threshold-input" value="1" min="0.1" step="0.5" />
-                <span class="threshold-unit">min</span>
-                <button type="button" class="btn-threshold-remove" aria-label="Remove threshold">
-                  &times;
-                </button>
-              </div>
-              <div class="threshold-item" data-index="2">
-                <input type="number" class="threshold-input" value="0.5" min="0.1" step="0.1" />
-                <span class="threshold-unit">min</span>
-                <button type="button" class="btn-threshold-remove" aria-label="Remove threshold">
-                  &times;
-                </button>
-              </div>
-            </div>
-            <button type="button" id="add-threshold-btn" class="btn btn-small btn-secondary">
-              + Add Threshold
-            </button>
-          </div>
-
-          <div class="form-group">
-            <label>Your Color</label>
-            <p class="form-hint">Customize your player card color</p>
-            <div id="player-colors-container" class="player-colors-container"></div>
-          </div>
-
-          <div class="form-group">
-            <label for="game-name-input">Rename Game</label>
-            <input
-              type="text"
-              id="game-name-input"
-              placeholder="Enter new game name (optional)"
-              maxlength="50"
-            />
-            <p class="form-hint">Leave empty to keep current name</p>
-          </div>
-
-          <div class="form-group form-group-danger">
-            <label>Danger Zone</label>
-            <button type="button" id="close-lobby-btn" class="btn btn-small btn-danger">
-              Close Lobby
-            </button>
-            <p class="form-hint">This will end the game for all players and close the lobby.</p>
-          </div>
-
-          <div class="modal-actions">
-            <button id="save-settings" class="btn btn-primary" aria-label="Save settings">
-              Save
-            </button>
-            <button id="close-settings" class="btn btn-secondary" aria-label="Close settings">
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mobile Settings Modal (Tabbed) -->
-      <div id="mobile-settings-modal" style="display: none" class="modal mobile-settings-modal">
-        <div class="mobile-settings-content">
-          <div class="mobile-settings-header">
+      <!-- Settings Modal (Unified Tabbed) -->
+      <div id="settings-modal" style="display: none" class="modal settings-modal">
+        <div class="settings-content">
+          <div class="settings-header">
             <h2>Settings</h2>
-            <button class="mobile-settings-close" aria-label="Close">&times;</button>
+            <button class="settings-close" aria-label="Close">&times;</button>
           </div>
 
-          <div class="mobile-settings-tabs" role="tablist" aria-label="Settings sections">
-            <button class="mobile-settings-tab active" data-tab="controls" role="tab" aria-selected="true" aria-controls="panel-controls" id="tab-controls">Controls</button>
-            <button class="mobile-settings-tab" data-tab="thresholds" role="tab" aria-selected="false" aria-controls="panel-thresholds" id="tab-thresholds">Thresholds</button>
-            <button class="mobile-settings-tab" data-tab="more" role="tab" aria-selected="false" aria-controls="panel-more" id="tab-more">More</button>
+          <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+            <button class="settings-tab active" data-tab="controls" role="tab" aria-selected="true" aria-controls="panel-controls" id="tab-controls">Controls</button>
+            <button class="settings-tab" data-tab="thresholds" role="tab" aria-selected="false" aria-controls="panel-thresholds" id="tab-thresholds">Thresholds</button>
+            <button class="settings-tab" data-tab="more" role="tab" aria-selected="false" aria-controls="panel-more" id="tab-more">More</button>
           </div>
 
           <!-- Controls Tab -->
-          <div class="mobile-settings-panel active" data-panel="controls" role="tabpanel" id="panel-controls" aria-labelledby="tab-controls">
-            <div class="mobile-settings-buttons">
-              <button id="mobile-pause-btn" class="mobile-settings-action-btn">
+          <div class="settings-panel active" data-panel="controls" role="tabpanel" id="panel-controls" aria-labelledby="tab-controls">
+            <div class="settings-buttons">
+              <button id="settings-pause-btn" class="settings-action-btn">
                 <span class="action-icon">⏸</span>
                 <span class="action-label">Pause</span>
               </button>
-              <button id="mobile-reset-btn" class="mobile-settings-action-btn mobile-settings-action-btn-secondary">
+              <button id="settings-reset-btn" class="settings-action-btn settings-action-btn-secondary">
                 <span class="action-icon">🔄</span>
                 <span class="action-label">Reset</span>
               </button>
-              <button id="mobile-random-start-btn" class="mobile-settings-action-btn mobile-settings-action-btn-secondary" style="display: none">
+              <button id="settings-random-start-btn" class="settings-action-btn settings-action-btn-secondary" style="display: none">
                 <span class="action-icon">🎲</span>
                 <span class="action-label">Random Start</span>
               </button>
-              <button id="mobile-dice-btn" class="mobile-settings-action-btn mobile-settings-action-btn-secondary">
+              <button id="settings-dice-btn" class="settings-action-btn settings-action-btn-secondary">
                 <span class="action-icon">🎲</span>
                 <span class="action-label">Roll Dice</span>
               </button>
             </div>
 
-            <div class="mobile-settings-section">
-              <label class="mobile-settings-label">Player Color</label>
-              <div id="mobile-color-picker" class="mobile-color-grid">
+            <div class="settings-section">
+              <label class="settings-label">Player Color</label>
+              <div id="settings-color-picker" class="settings-color-grid">
                 <!-- Colors populated by JS -->
               </div>
             </div>
           </div>
 
           <!-- Thresholds Tab -->
-          <div class="mobile-settings-panel" data-panel="thresholds" role="tabpanel" id="panel-thresholds" aria-labelledby="tab-thresholds" hidden>
-            <div class="mobile-settings-section">
-              <label class="mobile-settings-label">Warning Thresholds</label>
-              <p class="mobile-settings-hint">Audio alerts at these times</p>
-              <div id="mobile-thresholds-container" class="mobile-thresholds-list">
+          <div class="settings-panel" data-panel="thresholds" role="tabpanel" id="panel-thresholds" aria-labelledby="tab-thresholds" hidden>
+            <div class="settings-section">
+              <label class="settings-label">Warning Thresholds</label>
+              <p class="settings-hint">Audio alerts at these times</p>
+              <div id="settings-thresholds-container" class="settings-thresholds-list">
                 <!-- Thresholds populated by JS -->
               </div>
-              <button id="mobile-add-threshold-btn" class="mobile-add-btn">+ Add Threshold</button>
+              <button id="settings-add-threshold-btn" class="settings-add-btn">+ Add Threshold</button>
             </div>
           </div>
 
           <!-- More Tab -->
-          <div class="mobile-settings-panel" data-panel="more" role="tabpanel" id="panel-more" aria-labelledby="tab-more" hidden>
-            <div class="mobile-settings-section">
-              <label class="mobile-settings-label">Game Code</label>
-              <div class="mobile-game-code" id="mobile-settings-game-code">ABC123</div>
+          <div class="settings-panel" data-panel="more" role="tabpanel" id="panel-more" aria-labelledby="tab-more" hidden>
+            <div class="settings-section">
+              <label class="settings-label">Game Code</label>
+              <div class="settings-game-code" id="settings-game-code">ABC123</div>
             </div>
 
-            <div class="mobile-settings-section">
-              <label class="mobile-settings-label" for="mobile-game-name-input">Game Name</label>
+            <div class="settings-section">
+              <label class="settings-label" for="settings-game-name-input">Game Name</label>
               <input
                 type="text"
-                id="mobile-game-name-input"
-                class="mobile-settings-input"
+                id="settings-game-name-input"
+                class="settings-input"
                 placeholder="Enter game name"
                 maxlength="50"
               />
             </div>
 
-            <div class="mobile-settings-section mobile-danger-zone">
-              <label class="mobile-settings-label">Danger Zone</label>
-              <button id="mobile-close-lobby-btn" class="mobile-danger-btn">Close Lobby</button>
+            <div class="settings-section settings-danger-zone">
+              <label class="settings-label">Danger Zone</label>
+              <button id="settings-close-lobby-btn" class="settings-danger-btn">Close Lobby</button>
             </div>
           </div>
 
-          <div class="mobile-settings-footer">
-            <button id="mobile-settings-save" class="btn btn-primary">Save</button>
-            <button id="mobile-settings-cancel" class="btn btn-secondary">Cancel</button>
+          <div class="settings-footer">
+            <button id="settings-save-btn" class="btn btn-primary">Save</button>
+            <button id="settings-cancel-btn" class="btn btn-secondary">Cancel</button>
           </div>
         </div>
       </div>
@@ -492,29 +360,29 @@
       <!-- Toast Notifications Container -->
       <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-      <!-- Mobile Player Details Popup -->
-      <div id="mobile-player-popup" class="mobile-player-popup" style="display: none">
-        <div class="mobile-player-popup-content">
-          <div class="mobile-player-popup-header">
-            <span class="mobile-player-popup-name">Player Name</span>
-            <button class="mobile-player-popup-close" aria-label="Close">&times;</button>
+      <!-- Player Details Popup -->
+      <div id="game-player-popup" class="game-player-popup" style="display: none">
+        <div class="game-player-popup-content">
+          <div class="game-player-popup-header">
+            <span class="game-player-popup-name">Player Name</span>
+            <button class="game-player-popup-close" aria-label="Close">&times;</button>
           </div>
-          <div class="mobile-player-popup-body">
-            <div class="mobile-player-popup-stat">
-              <span class="mobile-player-popup-label">Time</span>
-              <span class="mobile-player-popup-value mobile-player-popup-time">05:23</span>
+          <div class="game-player-popup-body">
+            <div class="game-player-popup-stat">
+              <span class="game-player-popup-label">Time</span>
+              <span class="game-player-popup-value game-player-popup-time">05:23</span>
             </div>
-            <div class="mobile-player-popup-stat">
-              <span class="mobile-player-popup-label">Life</span>
-              <span class="mobile-player-popup-value mobile-player-popup-life">20</span>
+            <div class="game-player-popup-stat">
+              <span class="game-player-popup-label">Life</span>
+              <span class="game-player-popup-value game-player-popup-life">20</span>
             </div>
-            <div class="mobile-player-popup-stat">
-              <span class="mobile-player-popup-label">Drunk</span>
-              <span class="mobile-player-popup-value mobile-player-popup-drunk">0</span>
+            <div class="game-player-popup-stat">
+              <span class="game-player-popup-label">Drunk</span>
+              <span class="game-player-popup-value game-player-popup-drunk">0</span>
             </div>
-            <div class="mobile-player-popup-stat">
-              <span class="mobile-player-popup-label">Counter</span>
-              <span class="mobile-player-popup-value mobile-player-popup-generic">0</span>
+            <div class="game-player-popup-stat">
+              <span class="game-player-popup-label">Counter</span>
+              <span class="game-player-popup-value game-player-popup-generic">0</span>
             </div>
           </div>
         </div>

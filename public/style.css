@@ -5,19 +5,19 @@
 }
 
 /* =============================================================================
-   MOBILE LAYOUT CSS CUSTOM PROPERTIES
+   GAME LAYOUT CSS CUSTOM PROPERTIES
    ============================================================================= */
 
 :root {
   /* Portrait values (default) */
-  --mobile-top-bar-height: 44px;
-  --mobile-time-display-height: 50px;
-  --mobile-time-font-size: 2.5em;
-  --mobile-interaction-height: 70px;
-  --mobile-interaction-btn-height: 70px;
-  --mobile-player-card-height: 60px;
-  --mobile-stats-height: 70px;
-  --mobile-button-size: 40px;
+  --top-bar-height: 44px;
+  --time-display-height: 50px;
+  --time-font-size: 2.5em;
+  --interaction-height: 70px;
+  --interaction-btn-height: 70px;
+  --player-card-height: 60px;
+  --stats-height: 70px;
+  --button-size: 40px;
 
   /* Spacing */
   --spacing-xs: 4px;
@@ -34,42 +34,42 @@
 /* Landscape orientation - smaller devices */
 @media (orientation: landscape) and (max-height: 500px) {
   :root {
-    --mobile-top-bar-height: 28px;
-    --mobile-time-display-height: 24px;
-    --mobile-time-font-size: 1.5em;
-    --mobile-interaction-height: 40px;
-    --mobile-interaction-btn-height: 40px;
-    --mobile-player-card-height: 40px;
-    --mobile-stats-height: 40px;
-    --mobile-button-size: 28px;
+    --top-bar-height: 28px;
+    --time-display-height: 24px;
+    --time-font-size: 1.5em;
+    --interaction-height: 40px;
+    --interaction-btn-height: 40px;
+    --player-card-height: 40px;
+    --stats-height: 40px;
+    --button-size: 28px;
   }
 }
 
 /* Very constrained landscape (under 350px height) */
 @media (orientation: landscape) and (max-height: 350px) {
   :root {
-    --mobile-top-bar-height: 24px;
-    --mobile-time-display-height: 20px;
-    --mobile-time-font-size: 1.3em;
-    --mobile-interaction-height: 36px;
-    --mobile-interaction-btn-height: 36px;
-    --mobile-player-card-height: 36px;
-    --mobile-stats-height: 36px;
-    --mobile-button-size: 24px;
+    --top-bar-height: 24px;
+    --time-display-height: 20px;
+    --time-font-size: 1.3em;
+    --interaction-height: 36px;
+    --interaction-btn-height: 36px;
+    --player-card-height: 36px;
+    --stats-height: 36px;
+    --button-size: 24px;
   }
 }
 
 /* Small portrait screens (under 600px height) */
 @media (orientation: portrait) and (max-height: 600px) {
   :root {
-    --mobile-top-bar-height: 40px;
-    --mobile-time-display-height: 40px;
-    --mobile-time-font-size: 2em;
-    --mobile-interaction-height: 60px;
-    --mobile-interaction-btn-height: 60px;
-    --mobile-player-card-height: 50px;
-    --mobile-stats-height: 60px;
-    --mobile-button-size: 36px;
+    --top-bar-height: 40px;
+    --time-display-height: 40px;
+    --time-font-size: 2em;
+    --interaction-height: 60px;
+    --interaction-btn-height: 60px;
+    --player-card-height: 50px;
+    --stats-height: 60px;
+    --button-size: 36px;
   }
 }
 
@@ -90,8 +90,8 @@ body {
   justify-content: center;
 }
 
-/* Prevent body scrolling when mobile layout is visible */
-body.mobile-active {
+/* Prevent body scrolling when game layout is visible */
+body.game-active {
   overflow: hidden;
   position: fixed;
   width: 100%;
@@ -309,44 +309,7 @@ h1 {
   box-shadow: none;
 }
 
-#game-screen {
-  width: 100%;
-  max-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-}
-
-.game-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: #111;
-  border-radius: 10px;
-}
-
-.game-header-left {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.game-header-right {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.game-code {
-  font-size: 1.5em;
-  color: #004d00;
-  font-weight: bold;
-  text-align: left;
-  margin-top: 0;
-}
-
+/* Game code display for settings modal */
 .game-code-display {
   font-size: 1.8em;
   color: #00bb00;
@@ -356,33 +319,6 @@ h1 {
   background: rgba(0, 187, 0, 0.1);
   border-radius: 8px;
   text-align: center;
-}
-
-#players-container {
-  display: grid;
-  gap: 15px;
-  margin-bottom: 30px;
-}
-
-#players-container.players-2 {
-  grid-template-columns: 1fr 1fr;
-}
-
-#players-container.players-3,
-#players-container.players-4 {
-  grid-template-columns: 1fr 1fr;
-}
-
-#players-container.players-5,
-#players-container.players-6,
-#players-container.players-7,
-#players-container.players-8 {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-#players-container.players-7,
-#players-container.players-8 {
-  grid-template-columns: repeat(4, 1fr);
 }
 
 .player-card {
@@ -571,12 +507,6 @@ h1 {
   color: #ff6b6b;
 }
 
-.controls {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  flex-wrap: wrap;
-}
 
 .modal {
   position: fixed;
@@ -765,7 +695,7 @@ h1 {
 
 /* Random player selection highlight */
 .player-card.random-selected,
-.mobile-player-card.random-selected {
+.game-player-card.random-selected {
   animation: random-select-pulse 0.5s ease-out 3;
   border-color: #ffd700 !important;
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.6) !important;
@@ -1076,353 +1006,11 @@ h1 {
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
 }
 
-@media (max-width: 768px) {
-  #players-container {
-    gap: 10px;
-  }
 
-  #players-container.players-2,
-  #players-container.players-3,
-  #players-container.players-4,
-  #players-container.players-5,
-  #players-container.players-6,
-  #players-container.players-7,
-  #players-container.players-8 {
-    grid-template-columns: 1fr;
-  }
-
-  .game-header {
-    display: none;
-  }
-
-  .player-card {
-    padding: 12px;
-    border-width: 2px;
-  }
-
-  .player-name {
-    font-size: 0.9em;
-    margin-bottom: 8px;
-  }
-
-  .player-name input {
-    width: 55%;
-    font-size: 0.9em;
-  }
-
-  .status-badges span {
-    font-size: 0.6em;
-    padding: 2px 5px;
-  }
-
-  .player-time {
-    font-size: 2.2em;
-    margin: 12px 0;
-  }
-
-  .time-controls {
-    margin-bottom: 8px;
-  }
-
-  .time-controls button {
-    padding: 5px 10px;
-    font-size: 0.8em;
-    min-width: 60px;
-  }
-
-  .life-section {
-    padding: 8px;
-    gap: 6px;
-    margin: 8px 0;
-  }
-
-  .life-label {
-    font-size: 0.8em;
-  }
-
-  .life-display {
-    font-size: 1.5em;
-    min-width: 40px;
-  }
-
-  .btn-counter {
-    width: 32px;
-    height: 32px;
-    font-size: 1.2em;
-  }
-
-  .counters-section {
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-    margin-top: 8px;
-  }
-
-  .counter {
-    padding: 6px 8px;
-    gap: 5px;
-    flex: 1;
-    justify-content: center;
-  }
-
-  .counter-icon {
-    width: 30px;
-    height: 30px;
-  }
-
-  .counter-display {
-    font-size: 1em;
-    min-width: 22px;
-  }
-
-  .btn-counter-sm {
-    width: 34px;
-    height: 34px;
-    font-size: 0.9em;
-  }
-
-  .controls {
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .btn-control {
-    width: 100%;
-    max-width: 200px;
-    padding: 10px 20px;
-    font-size: 0.9em;
-  }
-
-  .modal-content {
-    padding: 15px;
-    max-width: 90%;
-  }
-
-  .modal-content h2 {
-    font-size: 1.15em;
-    margin-bottom: 10px;
-  }
-
-  .form-group {
-    margin-bottom: 10px;
-  }
-
-  .form-hint {
-    font-size: 0.75em;
-    margin-bottom: 8px;
-  }
-
-  .thresholds-container {
-    gap: 6px;
-    margin-bottom: 10px;
-  }
-
-  .threshold-item {
-    padding: 6px 10px;
-  }
-
-  .threshold-input {
-    width: 65px;
-    padding: 5px 8px;
-    font-size: 0.95em;
-  }
-
-  .form-group-danger {
-    padding: 10px;
-    margin-top: 10px;
-  }
-}
-
-@media (max-width: 768px) and (orientation: landscape) {
-  #app {
-    padding: 5px;
-    height: 100vh;
-    max-height: 100vh;
-  }
-
-  #game-screen {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    padding: 0;
-    height: calc(100vh - 10px);
-    max-height: calc(100vh - 10px);
-    overflow-y: auto;
-  }
-
-  #players-container {
-    width: 100%;
-    gap: 6px;
-  }
-
-  #players-container.players-2 {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  #players-container.players-3,
-  #players-container.players-4 {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  #players-container.players-5,
-  #players-container.players-6,
-  #players-container.players-7,
-  #players-container.players-8 {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .game-header,
-  .lobby-banner {
-    width: 100%;
-    margin-bottom: 8px;
-  }
-
-  .lobby-banner {
-    padding: 12px;
-  }
-
-  .lobby-banner h2 {
-    font-size: 1.1em;
-    margin-bottom: 5px;
-  }
-
-  .lobby-banner p {
-    font-size: 0.85em;
-  }
-
-  .player-card {
-    padding: 8px;
-    border-width: 2px;
-  }
-
-  .player-name {
-    font-size: 0.8em;
-    margin-bottom: 5px;
-  }
-
-  .player-name input {
-    width: 55%;
-    font-size: 0.8em;
-  }
-
-  .status-badges span {
-    font-size: 0.55em;
-    padding: 2px 4px;
-  }
-
-  .player-time {
-    font-size: 1.6em;
-    margin: 6px 0;
-  }
-
-  .time-controls {
-    margin-bottom: 5px;
-  }
-
-  .time-controls button {
-    padding: 3px 8px;
-    font-size: 0.75em;
-    min-width: 50px;
-  }
-
-  .life-section {
-    padding: 5px;
-    gap: 4px;
-    margin: 5px 0;
-  }
-
-  .life-label {
-    font-size: 0.7em;
-  }
-
-  .life-display {
-    font-size: 1.2em;
-    min-width: 30px;
-  }
-
-  .btn-counter {
-    width: 26px;
-    height: 26px;
-    font-size: 1em;
-  }
-
-  .counters-section {
-    gap: 6px;
-    margin-top: 5px;
-  }
-
-  .counter {
-    padding: 4px 5px;
-    gap: 3px;
-  }
-
-  .counter-icon {
-    width: 26px;
-    height: 26px;
-  }
-
-  .counter-display {
-    font-size: 0.85em;
-    min-width: 18px;
-  }
-
-  .btn-counter-sm {
-    width: 28px;
-    height: 28px;
-    font-size: 0.8em;
-  }
-
-  .dead-banner {
-    font-size: 1.2em;
-    padding: 5px 15px;
-  }
-
-  .controls {
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 5px;
-    justify-content: center;
-  }
-
-  .btn-control {
-    width: auto;
-    min-width: 130px;
-    padding: 10px 16px;
-    font-size: 0.9em;
-  }
-}
-
-@media (max-width: 1024px) {
-  #players-container.players-7,
-  #players-container.players-8 {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .player-card {
-    padding: 25px;
-  }
-
-  .player-time {
-    font-size: 3.2em;
-  }
-
-  .modal-content {
-    padding: 25px;
-    max-width: 450px;
-  }
-}
 
 @media (max-width: 480px) {
   #app {
     padding: 8px;
-  }
-
-  #players-container {
-    gap: 8px;
   }
 
   #main-menu-screen,
@@ -1447,89 +1035,6 @@ h1 {
   .btn-menu {
     padding: 12px 16px;
     font-size: 0.95em;
-  }
-
-  .player-card {
-    padding: 10px;
-    border-width: 2px;
-  }
-
-  .player-time {
-    font-size: 1.8em;
-    margin: 10px 0;
-  }
-
-  .player-time.deciseconds {
-    font-size: 1.5em;
-  }
-
-  .player-name {
-    font-size: 0.85em;
-    margin-bottom: 6px;
-  }
-
-  .player-name input {
-    width: 50%;
-    font-size: 0.85em;
-  }
-
-  .status-badges span {
-    font-size: 0.55em;
-    padding: 2px 4px;
-  }
-
-  .life-section {
-    padding: 6px;
-    gap: 5px;
-    margin: 6px 0;
-  }
-
-  .life-label {
-    font-size: 0.75em;
-  }
-
-  .life-display {
-    font-size: 1.3em;
-    min-width: 35px;
-  }
-
-  .btn-counter {
-    width: 28px;
-    height: 28px;
-    font-size: 1.1em;
-  }
-
-  .btn-counter-sm {
-    width: 30px;
-    height: 30px;
-    font-size: 0.85em;
-  }
-
-  .drunk-icon,
-  .generic-icon {
-    width: 28px;
-    height: 28px;
-  }
-
-  .counter {
-    padding: 5px 6px;
-    gap: 4px;
-  }
-
-  .counter-display {
-    font-size: 0.9em;
-    min-width: 20px;
-  }
-
-  .time-controls button {
-    padding: 4px 8px;
-    font-size: 0.75em;
-    min-width: 55px;
-  }
-
-  .dead-banner {
-    font-size: 1.5em;
-    padding: 8px 20px;
   }
 
   .modal-content {
@@ -1585,6 +1090,8 @@ h1 {
 
   .player-colors-container {
     margin-bottom: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 6px;
   }
 
   .player-color-item {
@@ -1633,101 +1140,9 @@ h1 {
     padding: 12px;
     font-size: 0.9em;
   }
-
-  .player-colors-container {
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-    gap: 6px;
-  }
-
-  .threshold-input {
-    width: 60px;
-    font-size: 0.9em;
-  }
 }
 
-@media (max-width: 375px) {
-  #players-container {
-    gap: 6px;
-  }
-
-  .player-card {
-    padding: 8px;
-  }
-
-  .player-time {
-    font-size: 1.6em;
-    margin: 8px 0;
-  }
-
-  .player-name {
-    font-size: 0.8em;
-    margin-bottom: 5px;
-  }
-
-  .player-name input {
-    width: 45%;
-    font-size: 0.8em;
-  }
-
-  .status-badges span {
-    font-size: 0.5em;
-    padding: 2px 3px;
-  }
-
-  .life-section {
-    padding: 5px;
-    gap: 4px;
-    margin: 5px 0;
-  }
-
-  .life-label {
-    font-size: 0.7em;
-  }
-
-  .life-display {
-    font-size: 1.2em;
-    min-width: 30px;
-  }
-
-  .btn-counter {
-    width: 26px;
-    height: 26px;
-    font-size: 1em;
-  }
-
-  .btn-counter-sm {
-    width: 28px;
-    height: 28px;
-    font-size: 0.8em;
-  }
-
-  .drunk-icon,
-  .generic-icon {
-    width: 26px;
-    height: 26px;
-  }
-
-  .counter {
-    padding: 4px 5px;
-    gap: 3px;
-  }
-
-  .counter-display {
-    font-size: 0.85em;
-    min-width: 18px;
-  }
-
-  .time-controls button {
-    padding: 3px 6px;
-    font-size: 0.7em;
-    min-width: 50px;
-  }
-
-  .dead-banner {
-    font-size: 1.2em;
-    padding: 6px 15px;
-  }
-}
+/* 375px media query removed - unified layout uses game-* classes */
 
 @media (max-width: 768px) and (orientation: landscape) {
   .modal {
@@ -1848,43 +1263,6 @@ h1 {
   #game-name-input {
     padding: 3px 5px;
     font-size: 0.75em;
-  }
-
-  #players-container.players-2,
-  #players-container.players-3,
-  #players-container.players-4 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  #players-container.players-5,
-  #players-container.players-6,
-  #players-container.players-7,
-  #players-container.players-8 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .player-time {
-    font-size: 2.5em;
-    margin: 10px 0;
-  }
-
-  .player-card {
-    padding: 15px;
-  }
-
-  .dead-banner {
-    font-size: 2em;
-    padding: 8px 25px;
-  }
-
-  .game-header {
-    width: 100%;
-    padding: 10px 15px;
-    margin-bottom: 15px;
-  }
-
-  .game-code {
-    font-size: 1.2em;
   }
 }
 
@@ -2071,11 +1449,11 @@ h1 {
 }
 
 /* =============================================================================
-   MOBILE GAME SCREEN LAYOUT
+   UNIFIED GAME SCREEN LAYOUT
    ============================================================================= */
 
 /* Main container - fills viewport without scrolling */
-.mobile-layout {
+.game-layout {
   /* Use fixed positioning to break out of #app container and cover full viewport */
   position: fixed;
   top: 0;
@@ -2102,23 +1480,23 @@ h1 {
 /* =============================================================================
    1. TOP BAR
    ============================================================================= */
-.mobile-top-bar {
+.game-top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: var(--mobile-top-bar-height);
-  min-height: var(--mobile-top-bar-height);
+  height: var(--top-bar-height);
+  min-height: var(--top-bar-height);
   flex-shrink: 0;
   padding: 0 var(--spacing-sm);
   background: transparent;
 }
 
-.mobile-icon-btn {
+.game-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--mobile-top-bar-height);
-  height: var(--mobile-top-bar-height);
+  width: var(--top-bar-height);
+  height: var(--top-bar-height);
   padding: 0;
   background: transparent;
   border: none;
@@ -2130,48 +1508,65 @@ h1 {
   touch-action: manipulation;
 }
 
-.mobile-icon-btn:hover {
+.game-icon-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
 
-.mobile-icon-btn:active {
+.game-icon-btn:active {
   transform: scale(0.95);
 }
 
-.mobile-icon-btn svg {
+.game-icon-btn svg {
   width: 24px;
   height: 24px;
 }
 
 /* Landscape: smaller icons */
 @media (orientation: landscape) and (max-height: 500px) {
-  .mobile-icon-btn {
-    width: var(--mobile-top-bar-height);
-    height: var(--mobile-top-bar-height);
+  .game-icon-btn {
+    width: var(--top-bar-height);
+    height: var(--top-bar-height);
   }
 
-  .mobile-icon-btn svg {
+  .game-icon-btn svg {
     width: 20px;
     height: 20px;
+  }
+}
+
+/* Desktop enhancements for top bar */
+@media (min-width: 769px) {
+  .game-top-bar {
+    padding: 0 var(--spacing-md);
+  }
+
+  .game-icon-btn {
+    width: 48px;
+    height: 48px;
+  }
+
+  .game-icon-btn svg {
+    width: 28px;
+    height: 28px;
   }
 }
 
 /* =============================================================================
    2. TIME DISPLAY
    ============================================================================= */
-.mobile-time-display {
+.game-time-display {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: var(--mobile-time-display-height);
+  height: var(--time-display-height);
   min-height: 0; /* Allow shrinking */
   flex-shrink: 1;
   padding: 0 var(--spacing-md);
 }
 
-.mobile-turn-indicator {
+.game-turn-indicator {
   font-size: 0.75em;
   color: #888;
   text-transform: uppercase;
@@ -2179,8 +1574,8 @@ h1 {
   margin-bottom: 2px;
 }
 
-.mobile-time-value {
-  font-size: var(--mobile-time-font-size);
+.game-time-value {
+  font-size: var(--time-font-size);
   font-weight: bold;
   font-family: "Courier New", monospace;
   color: #fff;
@@ -2190,11 +1585,11 @@ h1 {
 }
 
 /* Time warning states */
-.mobile-time-display.warning .mobile-time-value {
+.game-time-display.warning .game-time-value {
   color: var(--color-warning);
 }
 
-.mobile-time-display.critical .mobile-time-value {
+.game-time-display.critical .game-time-value {
   color: var(--color-danger);
   animation: pulse-time 1s infinite;
 }
@@ -2204,27 +1599,43 @@ h1 {
   50% { opacity: 0.6; }
 }
 
-.mobile-time-display.paused .mobile-time-value {
+.game-time-display.paused .game-time-value {
   color: #888;
 }
 
 /* Landscape: compact turn indicator */
 @media (orientation: landscape) and (max-height: 500px) {
-  .mobile-turn-indicator {
+  .game-turn-indicator {
     font-size: 0.65em;
     margin-bottom: 0;
   }
 
-  .mobile-time-display {
+  .game-time-display {
     flex-direction: row;
     gap: var(--spacing-sm);
+  }
+}
+
+/* Desktop enhancements for time display */
+@media (min-width: 769px) {
+  .game-time-display {
+    height: 70px;
+  }
+
+  .game-turn-indicator {
+    font-size: 0.9em;
+    letter-spacing: 2px;
+  }
+
+  .game-time-value {
+    font-size: 3em;
   }
 }
 
 /* =============================================================================
    3. INTERACTION AREA
    ============================================================================= */
-.mobile-interaction-area {
+.game-interaction-area {
   display: flex;
   flex: 1 1 auto;
   align-items: center;
@@ -2233,10 +1644,10 @@ h1 {
   min-height: 0; /* Allow shrinking */
 }
 
-.mobile-interaction-btn {
+.game-interaction-btn {
   width: 70%;
   max-width: 300px;
-  height: var(--mobile-interaction-btn-height);
+  height: var(--interaction-btn-height);
   padding: 0 var(--spacing-md);
   font-size: 1.4em;
   font-weight: bold;
@@ -2251,32 +1662,32 @@ h1 {
   touch-action: manipulation;
 }
 
-.mobile-interaction-btn:active {
+.game-interaction-btn:active {
   transform: scale(0.95);
 }
 
 /* Button variants */
-.mobile-interaction-btn-pass {
+.game-interaction-btn-pass {
   background: linear-gradient(135deg, var(--color-success) 0%, #16a34a 100%);
   color: #fff;
 }
 
-.mobile-interaction-btn-interrupt {
+.game-interaction-btn-interrupt {
   background: linear-gradient(135deg, #f97316 0%, var(--color-danger) 100%);
   color: #fff;
 }
 
-.mobile-interaction-btn-priority {
+.game-interaction-btn-priority {
   background: linear-gradient(135deg, var(--color-info) 0%, #2563eb 100%);
   color: #fff;
 }
 
-.mobile-interaction-btn-start {
+.game-interaction-btn-start {
   background: linear-gradient(135deg, var(--color-success) 0%, #16a34a 100%);
   color: #fff;
 }
 
-.mobile-interaction-btn:disabled {
+.game-interaction-btn:disabled {
   background: linear-gradient(135deg, #333 0%, #222 100%);
   color: #555;
   cursor: not-allowed;
@@ -2285,32 +1696,47 @@ h1 {
 
 /* Landscape: narrower button */
 @media (orientation: landscape) and (max-height: 500px) {
-  .mobile-interaction-btn {
+  .game-interaction-btn {
     width: 50%;
     max-width: 250px;
     font-size: 1.2em;
   }
 
-  .mobile-interaction-area {
+  .game-interaction-area {
     min-height: 0;
     padding: var(--spacing-xs);
+  }
+}
+
+/* Desktop enhancements for interaction button */
+@media (min-width: 769px) {
+  .game-interaction-btn {
+    max-width: 400px;
+    height: 80px;
+    font-size: 1.6em;
+    border-radius: 16px;
+  }
+
+  .game-interaction-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
   }
 }
 
 /* =============================================================================
    4. OTHER PLAYERS SECTION
    ============================================================================= */
-.mobile-other-players {
+.game-other-players {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 0; /* Allow shrinking */
-  max-height: calc(var(--mobile-player-card-height) + var(--spacing-md));
+  max-height: calc(var(--player-card-height) + var(--spacing-md));
   flex-shrink: 1;
   padding: var(--spacing-xs) var(--spacing-md);
 }
 
-.mobile-player-cards {
+.game-player-cards {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -2321,15 +1747,15 @@ h1 {
 }
 
 /* Dynamic card sizing based on player count (set via JS) */
-.mobile-player-cards[data-player-count="1"] .mobile-player-card { min-width: 100px; max-width: 100px; }
-.mobile-player-cards[data-player-count="2"] .mobile-player-card { min-width: 90px; max-width: 90px; }
-.mobile-player-cards[data-player-count="3"] .mobile-player-card { min-width: 80px; max-width: 80px; }
-.mobile-player-cards[data-player-count="4"] .mobile-player-card { min-width: 70px; max-width: 70px; }
-.mobile-player-cards[data-player-count="5"] .mobile-player-card { min-width: 60px; max-width: 60px; }
-.mobile-player-cards[data-player-count="6"] .mobile-player-card { min-width: 55px; max-width: 55px; }
-.mobile-player-cards[data-player-count="7"] .mobile-player-card { min-width: 55px; max-width: 55px; }
+.game-player-cards[data-player-count="1"] .game-player-card { min-width: 100px; max-width: 100px; }
+.game-player-cards[data-player-count="2"] .game-player-card { min-width: 90px; max-width: 90px; }
+.game-player-cards[data-player-count="3"] .game-player-card { min-width: 80px; max-width: 80px; }
+.game-player-cards[data-player-count="4"] .game-player-card { min-width: 70px; max-width: 70px; }
+.game-player-cards[data-player-count="5"] .game-player-card { min-width: 60px; max-width: 60px; }
+.game-player-cards[data-player-count="6"] .game-player-card { min-width: 55px; max-width: 55px; }
+.game-player-cards[data-player-count="7"] .game-player-card { min-width: 55px; max-width: 55px; }
 
-.mobile-player-card {
+.game-player-card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2337,7 +1763,7 @@ h1 {
   min-width: 55px;
   max-width: 100px;
   flex: 0 0 auto;
-  height: var(--mobile-player-card-height);
+  height: var(--player-card-height);
   padding: var(--spacing-xs) var(--spacing-sm);
   background: rgba(255, 255, 255, 0.05);
   border: 2px solid rgba(255, 255, 255, 0.15);
@@ -2352,7 +1778,7 @@ h1 {
 }
 
 /* Player color applied via inline style --card-color */
-.mobile-player-card {
+.game-player-card {
   background: linear-gradient(135deg,
     color-mix(in srgb, var(--card-color) 10%, transparent) 0%,
     color-mix(in srgb, var(--card-color) 15%, transparent) 100%
@@ -2360,7 +1786,7 @@ h1 {
   border-color: color-mix(in srgb, var(--card-color) 40%, transparent);
 }
 
-.mobile-player-card:hover {
+.game-player-card:hover {
   border-color: color-mix(in srgb, var(--card-color) 60%, transparent);
   background: linear-gradient(135deg,
     color-mix(in srgb, var(--card-color) 15%, transparent) 0%,
@@ -2368,11 +1794,11 @@ h1 {
   );
 }
 
-.mobile-player-card:active {
+.game-player-card:active {
   transform: scale(0.95);
 }
 
-.mobile-player-card.active {
+.game-player-card.active {
   border-color: #ffaa00;
   border-width: 3px;
   background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(255, 140, 0, 0.25) 100%);
@@ -2385,17 +1811,17 @@ h1 {
   50% { box-shadow: 0 0 18px rgba(255, 170, 0, 0.7); }
 }
 
-.mobile-player-card.eliminated {
+.game-player-card.eliminated {
   opacity: 0.5;
   filter: grayscale(0.5);
 }
 
-.mobile-player-card.warning {
+.game-player-card.warning {
   border-color: var(--color-warning);
   box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
 }
 
-.mobile-player-card.critical {
+.game-player-card.critical {
   border-color: var(--color-danger);
   box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
   animation: pulse-card-critical 1s infinite;
@@ -2406,12 +1832,12 @@ h1 {
   50% { box-shadow: 0 0 14px rgba(239, 68, 68, 0.8); }
 }
 
-.mobile-player-card.paused {
+.game-player-card.paused {
   opacity: 0.7;
   border-color: #666;
 }
 
-.mobile-player-card-name {
+.game-player-card-name {
   font-size: 0.65em;
   color: #aaa;
   white-space: nowrap;
@@ -2422,49 +1848,49 @@ h1 {
   line-height: 1.1;
 }
 
-.mobile-player-card-time {
+.game-player-card-time {
   font-size: 0.65em;
   font-family: "Courier New", monospace;
   color: #888;
   line-height: 1;
 }
 
-.mobile-player-card.warning .mobile-player-card-time {
+.game-player-card.warning .game-player-card-time {
   color: var(--color-warning);
 }
 
-.mobile-player-card.critical .mobile-player-card-time {
+.game-player-card.critical .game-player-card-time {
   color: var(--color-danger);
 }
 
-.mobile-player-card-life {
+.game-player-card-life {
   font-size: 1.05em;
   font-weight: bold;
   color: #fff;
   line-height: 1;
 }
 
-.mobile-player-card-status {
+.game-player-card-status {
   font-size: 0.6em;
   line-height: 1;
   height: 10px;
 }
 
 /* Status indicator icons and colors */
-.mobile-player-card-status.status-active {
+.game-player-card-status.status-active {
   color: #ffaa00;
 }
-.mobile-player-card-status.status-paused {
+.game-player-card-status.status-paused {
   color: #888;
 }
-.mobile-player-card-status.status-warning {
+.game-player-card-status.status-warning {
   color: var(--color-warning);
 }
-.mobile-player-card-status.status-critical {
+.game-player-card-status.status-critical {
   color: var(--color-danger);
   animation: blink-status 0.5s infinite;
 }
-.mobile-player-card-status.status-eliminated {
+.game-player-card-status.status-eliminated {
   color: var(--color-danger);
 }
 
@@ -2473,79 +1899,128 @@ h1 {
   50% { opacity: 0.4; }
 }
 
-.mobile-player-card.selectable {
+.game-player-card.selectable {
   border-style: dashed;
   border-color: var(--color-success);
   background: rgba(34, 197, 94, 0.08);
 }
 
-.mobile-player-card.selectable:hover {
+.game-player-card.selectable:hover {
   background: rgba(34, 197, 94, 0.15);
   border-color: var(--color-success);
 }
 
-.mobile-player-card.claimed-other {
+.game-player-card.claimed-other {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
 /* Landscape: single row, smaller cards - centered, not stretched */
 @media (orientation: landscape) and (max-height: 500px) {
-  .mobile-other-players {
+  .game-other-players {
     min-height: 0;
-    max-height: calc(var(--mobile-player-card-height) + var(--spacing-xs));
+    max-height: calc(var(--player-card-height) + var(--spacing-xs));
     padding: var(--spacing-xs) var(--spacing-sm);
   }
 
-  .mobile-player-cards {
+  .game-player-cards {
     flex-wrap: nowrap;
     gap: var(--spacing-xs);
     justify-content: center;
   }
 
   /* Override portrait sizes for landscape - fixed width, centered */
-  .mobile-player-cards[data-player-count="1"] .mobile-player-card,
-  .mobile-player-cards[data-player-count="2"] .mobile-player-card,
-  .mobile-player-cards[data-player-count="3"] .mobile-player-card,
-  .mobile-player-cards[data-player-count="4"] .mobile-player-card,
-  .mobile-player-cards[data-player-count="5"] .mobile-player-card,
-  .mobile-player-cards[data-player-count="6"] .mobile-player-card,
-  .mobile-player-cards[data-player-count="7"] .mobile-player-card {
+  .game-player-cards[data-player-count="1"] .game-player-card,
+  .game-player-cards[data-player-count="2"] .game-player-card,
+  .game-player-cards[data-player-count="3"] .game-player-card,
+  .game-player-cards[data-player-count="4"] .game-player-card,
+  .game-player-cards[data-player-count="5"] .game-player-card,
+  .game-player-cards[data-player-count="6"] .game-player-card,
+  .game-player-cards[data-player-count="7"] .game-player-card {
     min-width: 50px;
     max-width: 65px;
     flex: 0 0 auto;
   }
 
-  .mobile-player-card {
+  .game-player-card {
     min-width: 50px;
     max-width: 65px;
     flex: 0 0 auto;
-    height: var(--mobile-player-card-height);
+    height: var(--player-card-height);
     padding: 2px var(--spacing-xs);
   }
 
-  .mobile-player-card-name {
+  .game-player-card-name {
     font-size: 0.5em;
   }
 
-  .mobile-player-card-time {
+  .game-player-card-time {
     font-size: 0.55em;
   }
 
-  .mobile-player-card-life {
+  .game-player-card-life {
     font-size: 0.85em;
   }
 
-  .mobile-player-card-status {
+  .game-player-card-status {
     font-size: 0.5em;
     height: 8px;
+  }
+}
+
+/* Desktop enhancements for player cards */
+@media (min-width: 769px) {
+  .game-other-players {
+    max-height: calc(var(--player-card-height) * 1.5 + var(--spacing-md));
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .game-player-cards {
+    gap: var(--spacing-md);
+  }
+
+  /* Desktop card sizes - larger and more prominent */
+  .game-player-cards[data-player-count="1"] .game-player-card,
+  .game-player-cards[data-player-count="2"] .game-player-card,
+  .game-player-cards[data-player-count="3"] .game-player-card { min-width: 120px; max-width: 140px; }
+  .game-player-cards[data-player-count="4"] .game-player-card { min-width: 110px; max-width: 130px; }
+  .game-player-cards[data-player-count="5"] .game-player-card,
+  .game-player-cards[data-player-count="6"] .game-player-card,
+  .game-player-cards[data-player-count="7"] .game-player-card { min-width: 100px; max-width: 120px; }
+
+  .game-player-card {
+    height: calc(var(--player-card-height) * 1.3);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: 12px;
+  }
+
+  .game-player-card:hover:not(.claimed-other) {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .game-player-card-name {
+    font-size: 0.8em;
+  }
+
+  .game-player-card-time {
+    font-size: 0.75em;
+  }
+
+  .game-player-card-life {
+    font-size: 1.3em;
+  }
+
+  .game-player-card-status {
+    font-size: 0.7em;
+    height: 14px;
   }
 }
 
 /* =============================================================================
    5. PLAYER STATS (BOTTOM BAR)
    ============================================================================= */
-.mobile-player-stats {
+.game-player-stats {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -2560,7 +2035,7 @@ h1 {
 }
 
 /* Player name row (waiting state only) */
-.mobile-player-name-row {
+.game-player-name-row {
   display: none;
   align-items: center;
   justify-content: center;
@@ -2569,16 +2044,16 @@ h1 {
   padding: 0 var(--spacing-sm);
 }
 
-.mobile-player-stats.show-name .mobile-player-name-row {
+.game-player-stats.show-name .game-player-name-row {
   display: flex;
 }
 
-.mobile-player-name-label {
+.game-player-name-label {
   color: #888;
   font-size: 0.8em;
 }
 
-.mobile-player-name-value {
+.game-player-name-value {
   font-weight: bold;
   color: #fff;
   font-size: 0.95em;
@@ -2588,7 +2063,7 @@ h1 {
   text-overflow: ellipsis;
 }
 
-.mobile-player-name-edit {
+.game-player-name-edit {
   padding: 4px 8px;
   font-size: 0.85em;
   font-weight: bold;
@@ -2600,13 +2075,13 @@ h1 {
   transition: border-color 0.2s;
 }
 
-.mobile-player-name-edit:focus {
+.game-player-name-edit:focus {
   outline: none;
   border-color: var(--color-success);
 }
 
 /* Stats row */
-.mobile-stats-row {
+.game-stats-row {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2614,7 +2089,7 @@ h1 {
   width: 100%;
 }
 
-.mobile-stat-group {
+.game-stat-group {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2625,29 +2100,29 @@ h1 {
   min-width: 80px;
 }
 
-.mobile-stat-header {
+.game-stat-header {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
 }
 
-.mobile-stat-icon {
+.game-stat-icon {
   font-size: 1em;
 }
 
-.mobile-stat-life .mobile-stat-icon {
+.game-stat-life .game-stat-icon {
   color: #ff6b6b;
 }
 
-.mobile-stat-poison .mobile-stat-icon {
+.game-stat-poison .game-stat-icon {
   color: #f0a030;
 }
 
-.mobile-stat-generic .mobile-stat-icon {
+.game-stat-generic .game-stat-icon {
   color: #888;
 }
 
-.mobile-stat-value {
+.game-stat-value {
   font-size: 1.6em;
   font-weight: bold;
   min-width: 35px;
@@ -2656,7 +2131,7 @@ h1 {
   transition: transform 0.15s, color 0.15s;
 }
 
-.mobile-stat-value.value-changed {
+.game-stat-value.value-changed {
   animation: stat-bounce 0.2s ease-out;
 }
 
@@ -2666,34 +2141,34 @@ h1 {
   100% { transform: scale(1); }
 }
 
-.mobile-stat-life .mobile-stat-value {
+.game-stat-life .game-stat-value {
   color: #ff6b6b;
 }
 
-.mobile-stat-poison .mobile-stat-value {
+.game-stat-poison .game-stat-value {
   color: #f0a030;
 }
 
-.mobile-stat-generic .mobile-stat-value {
+.game-stat-generic .game-stat-value {
   color: #aaa;
 }
 
 /* Negative values in red */
-.mobile-stat-value.negative {
+.game-stat-value.negative {
   color: var(--color-danger) !important;
 }
 
-.mobile-stat-controls {
+.game-stat-controls {
   display: flex;
   gap: var(--spacing-xs);
 }
 
-.mobile-stat-btn {
+.game-stat-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--mobile-button-size);
-  height: var(--mobile-button-size);
+  width: var(--button-size);
+  height: var(--button-size);
   padding: 0;
   font-size: 1.3em;
   font-weight: bold;
@@ -2707,72 +2182,103 @@ h1 {
   touch-action: manipulation;
 }
 
-.mobile-stat-btn:hover {
+.game-stat-btn:hover {
   background: linear-gradient(135deg, #444 0%, #333 100%);
   color: #fff;
 }
 
-.mobile-stat-btn:active {
+.game-stat-btn:active {
   transform: scale(0.9);
 }
 
 /* Landscape: horizontal compact layout */
 @media (orientation: landscape) and (max-height: 500px) {
-  .mobile-player-stats {
+  .game-player-stats {
     flex-direction: row;
     gap: var(--spacing-xs);
     padding: var(--spacing-xs) var(--spacing-sm);
   }
 
-  .mobile-player-stats.show-name {
+  .game-player-stats.show-name {
     /* In landscape waiting state, name goes inline */
   }
 
-  .mobile-player-name-row {
+  .game-player-name-row {
     flex: 0 0 auto;
     width: auto;
     padding: 0;
   }
 
-  .mobile-stats-row {
+  .game-stats-row {
     flex: 1;
     justify-content: center;
     gap: var(--spacing-xs);
   }
 
-  .mobile-stat-group {
+  .game-stat-group {
     flex-direction: row;
     padding: 2px var(--spacing-xs);
     min-width: auto;
     gap: 2px;
   }
 
-  .mobile-stat-header {
+  .game-stat-header {
     flex-direction: row;
     gap: 2px;
   }
 
-  .mobile-stat-icon {
+  .game-stat-icon {
     font-size: 0.85em;
   }
 
-  .mobile-stat-value {
+  .game-stat-value {
     font-size: 1.1em;
     min-width: 24px;
   }
 
-  .mobile-stat-btn {
+  .game-stat-btn {
     width: 28px;
     height: 28px;
     font-size: 1em;
   }
 }
 
+/* Desktop enhancements for player stats */
+@media (min-width: 769px) {
+  .game-player-stats {
+    padding: var(--spacing-md);
+  }
+
+  .game-stats-row {
+    gap: var(--spacing-md);
+  }
+
+  .game-stat-group {
+    min-width: 100px;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .game-stat-value {
+    font-size: 2em;
+    min-width: 45px;
+  }
+
+  .game-stat-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5em;
+  }
+
+  .game-stat-btn:hover {
+    transform: scale(1.05);
+  }
+}
+
 /* =============================================================================
    ORIENTATION TRANSITIONS
    ============================================================================= */
-.mobile-layout,
-.mobile-layout * {
+.game-layout,
+.game-layout * {
   transition-property: height, min-height, width, font-size, padding, gap;
   transition-duration: 0.2s;
   transition-timing-function: ease-out;
@@ -2816,12 +2322,12 @@ h1 {
   }
 }
 
-/* Apply enter animation to mobile game screen */
-.mobile-layout.screen-enter {
+/* Apply enter animation to game screen */
+.game-layout.screen-enter {
   animation: screen-fade-in 0.2s ease-out;
 }
 
-.mobile-layout.screen-exit {
+.game-layout.screen-exit {
   animation: screen-slide-out-right 0.2s ease-out forwards;
 }
 
@@ -2830,24 +2336,24 @@ h1 {
    ============================================================================= */
 
 /* Interaction button smooth color transitions */
-.mobile-interaction-btn {
+.game-interaction-btn {
   transition: transform 0.1s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Time display color transitions */
-.mobile-time-value {
+.game-time-value {
   transition: color 0.15s ease;
 }
 
 /* Player card state transitions */
-.mobile-player-card {
+.game-player-card {
   transition: border-color 0.2s ease, background-color 0.2s ease,
               transform 0.1s ease, box-shadow 0.2s ease, opacity 0.3s ease,
               filter 0.3s ease;
 }
 
 /* Smooth elimination fade */
-.mobile-player-card.eliminating {
+.game-player-card.eliminating {
   animation: card-eliminate 0.3s ease-out forwards;
 }
 
@@ -2863,12 +2369,12 @@ h1 {
 }
 
 /* Game paused overlay effect */
-.mobile-layout.game-paused .mobile-other-players {
+.game-layout.game-paused .game-other-players {
   opacity: 0.6;
   transition: opacity 0.2s ease;
 }
 
-.mobile-layout.game-paused .mobile-interaction-area::before {
+.game-layout.game-paused .game-interaction-area::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -2884,7 +2390,7 @@ h1 {
 }
 
 /* Turn change pulse on interaction area */
-.mobile-interaction-area.turn-changed {
+.game-interaction-area.turn-changed {
   animation: turn-pulse 0.3s ease-out;
 }
 
@@ -2899,13 +2405,13 @@ h1 {
    ============================================================================= */
 
 /* Button press feedback */
-.mobile-icon-btn:active,
-.mobile-stat-btn:active,
-.mobile-settings-action-btn:active,
-.mobile-settings-tab:active,
-.mobile-color-option:active,
-.mobile-add-btn:active,
-.mobile-danger-btn:active {
+.game-icon-btn:active,
+.game-stat-btn:active,
+.settings-action-btn:active,
+.settings-tab:active,
+.settings-color-option:active,
+.settings-add-btn:active,
+.settings-danger-btn:active {
   transform: scale(0.92);
 }
 
@@ -2915,7 +2421,7 @@ h1 {
   50% { transform: scale(1.15); }
 }
 
-.mobile-stat-value.value-changed {
+.game-stat-value.value-changed {
   animation: value-bounce 0.2s ease-out;
 }
 
@@ -2931,7 +2437,7 @@ h1 {
   }
 }
 
-.mobile-stat-life.value-flash {
+.game-stat-life.value-flash {
   animation: flash-highlight 0.25s ease-out;
 }
 
@@ -2941,7 +2447,7 @@ h1 {
   50% { background-color: rgba(240, 160, 48, 0.3); }
 }
 
-.mobile-stat-poison.value-flash {
+.game-stat-poison.value-flash {
   animation: flash-poison 0.25s ease-out;
 }
 
@@ -2951,22 +2457,22 @@ h1 {
   50% { background-color: rgba(170, 170, 170, 0.3); }
 }
 
-.mobile-stat-generic.value-flash {
+.game-stat-generic.value-flash {
   animation: flash-generic 0.25s ease-out;
 }
 
 /* Card tap feedback */
-.mobile-player-card:active {
+.game-player-card:active {
   transform: scale(0.97);
 }
 
 /* Settings tab switch indicator slide */
-.mobile-settings-tab {
+.settings-tab {
   position: relative;
   transition: color 0.15s ease;
 }
 
-.mobile-settings-tab::after {
+.settings-tab::after {
   content: "";
   position: absolute;
   bottom: 0;
@@ -2977,7 +2483,7 @@ h1 {
   transition: width 0.15s ease, left 0.15s ease;
 }
 
-.mobile-settings-tab.active::after {
+.settings-tab.active::after {
   width: 100%;
   left: 0;
 }
@@ -2995,7 +2501,7 @@ h1 {
 }
 
 /* Time critical pulse enhancement */
-.mobile-time-display.critical .mobile-time-value {
+.game-time-display.critical .game-time-value {
   animation: time-pulse-critical 0.8s ease-in-out infinite;
 }
 
@@ -3021,14 +2527,14 @@ h1 {
 }
 
 /* Buttons - more prominent focus */
-.mobile-icon-btn:focus-visible,
-.mobile-stat-btn:focus-visible,
-.mobile-interaction-btn:focus-visible,
-.mobile-settings-action-btn:focus-visible,
-.mobile-settings-tab:focus-visible,
-.mobile-color-option:focus-visible,
-.mobile-add-btn:focus-visible,
-.mobile-danger-btn:focus-visible,
+.game-icon-btn:focus-visible,
+.game-stat-btn:focus-visible,
+.game-interaction-btn:focus-visible,
+.settings-action-btn:focus-visible,
+.settings-tab:focus-visible,
+.settings-color-option:focus-visible,
+.settings-add-btn:focus-visible,
+.settings-danger-btn:focus-visible,
 .btn:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
@@ -3036,15 +2542,15 @@ h1 {
 }
 
 /* Player cards */
-.mobile-player-card:focus-visible {
+.game-player-card:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
   box-shadow: 0 0 0 4px rgba(255, 170, 0, 0.4);
 }
 
 /* Input fields */
-.mobile-settings-input:focus-visible,
-.mobile-threshold-input:focus-visible,
+.settings-input:focus-visible,
+.settings-threshold-input:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
   outline: none;
@@ -3060,7 +2566,7 @@ a:focus:not(:focus-visible) {
 }
 
 /* Tab focus indicator */
-.mobile-settings-tab:focus-visible {
+.settings-tab:focus-visible {
   outline: none;
   box-shadow: inset 0 -2px 0 0 #fff, 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
@@ -3086,23 +2592,23 @@ a:focus:not(:focus-visible) {
     scroll-behavior: auto !important;
   }
 
-  .mobile-layout,
-  .mobile-layout * {
+  .game-layout,
+  .game-layout * {
     transition: none !important;
     animation: none !important;
   }
 
   /* Keep essential state indicators visible without animation */
-  .mobile-time-display.critical .mobile-time-value {
+  .game-time-display.critical .game-time-value {
     animation: none !important;
     opacity: 1 !important;
   }
 
-  .mobile-player-card.active {
+  .game-player-card.active {
     animation: none !important;
   }
 
-  .mobile-player-card.critical {
+  .game-player-card.critical {
     animation: none !important;
   }
 }
@@ -3226,21 +2732,21 @@ a:focus:not(:focus-visible) {
 }
 
 /* Game code tap-to-copy styling */
-.mobile-game-code.copyable {
+.settings-game-code.copyable {
   cursor: pointer;
   transition: background-color 0.15s, transform 0.1s;
   position: relative;
 }
 
-.mobile-game-code.copyable:hover {
+.settings-game-code.copyable:hover {
   background: rgba(34, 197, 94, 0.15);
 }
 
-.mobile-game-code.copyable:active {
+.settings-game-code.copyable:active {
   transform: scale(0.98);
 }
 
-.mobile-game-code.copyable::after {
+.settings-game-code.copyable::after {
   content: "Tap to copy";
   position: absolute;
   bottom: -18px;
@@ -3251,7 +2757,7 @@ a:focus:not(:focus-visible) {
   white-space: nowrap;
 }
 
-.mobile-game-code.copied {
+.settings-game-code.copied {
   animation: copy-flash 0.3s ease-out;
 }
 
@@ -3261,26 +2767,26 @@ a:focus:not(:focus-visible) {
 }
 
 /* Time display also copyable in waiting state */
-.mobile-turn-indicator.copyable {
+.game-turn-indicator.copyable {
   cursor: pointer;
   text-decoration: underline;
   text-decoration-style: dashed;
   text-underline-offset: 3px;
 }
 
-.mobile-turn-indicator.copyable:hover {
+.game-turn-indicator.copyable:hover {
   color: var(--color-success);
 }
 
 /* =============================================================================
-   MOBILE SETTINGS MODAL (TABBED)
+   SETTINGS MODAL (TABBED)
    ============================================================================= */
-.mobile-settings-modal {
+.settings-modal {
   align-items: flex-end;
   padding: 0;
 }
 
-.mobile-settings-content {
+.settings-content {
   background: #111;
   width: 100%;
   max-height: 85vh;
@@ -3303,7 +2809,7 @@ a:focus:not(:focus-visible) {
   }
 }
 
-.mobile-settings-header {
+.settings-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -3311,13 +2817,13 @@ a:focus:not(:focus-visible) {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.mobile-settings-header h2 {
+.settings-header h2 {
   margin: 0;
   font-size: 1.2em;
   color: #fff;
 }
 
-.mobile-settings-close {
+.settings-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3333,19 +2839,19 @@ a:focus:not(:focus-visible) {
   transition: background-color 0.15s;
 }
 
-.mobile-settings-close:hover {
+.settings-close:hover {
   background: rgba(255, 255, 255, 0.2);
   color: #fff;
 }
 
 /* Tabs */
-.mobile-settings-tabs {
+.settings-tabs {
   display: flex;
   padding: 0 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.mobile-settings-tab {
+.settings-tab {
   flex: 1;
   padding: 12px 8px;
   background: transparent;
@@ -3358,36 +2864,36 @@ a:focus:not(:focus-visible) {
   transition: color 0.15s, border-color 0.15s;
 }
 
-.mobile-settings-tab:hover {
+.settings-tab:hover {
   color: #ccc;
 }
 
-.mobile-settings-tab.active {
+.settings-tab.active {
   color: var(--color-success);
   border-bottom-color: var(--color-success);
 }
 
 /* Panels */
-.mobile-settings-panel {
+.settings-panel {
   display: none;
   flex: 1;
   overflow-y: auto;
   padding: 16px 20px;
 }
 
-.mobile-settings-panel.active {
+.settings-panel.active {
   display: block;
 }
 
-.mobile-settings-section {
+.settings-section {
   margin-bottom: 20px;
 }
 
-.mobile-settings-section:last-child {
+.settings-section:last-child {
   margin-bottom: 0;
 }
 
-.mobile-settings-label {
+.settings-label {
   display: block;
   color: #888;
   font-size: 0.85em;
@@ -3397,20 +2903,20 @@ a:focus:not(:focus-visible) {
   letter-spacing: 0.5px;
 }
 
-.mobile-settings-hint {
+.settings-hint {
   color: #666;
   font-size: 0.8em;
   margin-bottom: 10px;
 }
 
 /* Action buttons (Pause/Reset) */
-.mobile-settings-buttons {
+.settings-buttons {
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
 }
 
-.mobile-settings-action-btn {
+.settings-action-btn {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -3427,12 +2933,33 @@ a:focus:not(:focus-visible) {
   transition: transform 0.1s, opacity 0.15s;
 }
 
-.mobile-settings-action-btn:active {
+.settings-action-btn:active {
   transform: scale(0.95);
 }
 
-.mobile-settings-action-btn-secondary {
+.settings-action-btn-secondary {
   background: linear-gradient(135deg, #444 0%, #333 100%);
+}
+
+/* Desktop enhancements for settings modal */
+@media (min-width: 769px) {
+  .settings-modal {
+    align-items: center;
+  }
+
+  .settings-content {
+    max-width: 600px;
+    max-height: 80vh;
+    border-radius: 20px;
+  }
+
+  .settings-panel {
+    padding: 20px 24px;
+  }
+
+  .settings-action-btn {
+    padding: 20px 16px;
+  }
 }
 
 .action-icon {
@@ -3444,13 +2971,13 @@ a:focus:not(:focus-visible) {
 }
 
 /* Color picker grid */
-.mobile-color-grid {
+.settings-color-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
 
-.mobile-color-option {
+.settings-color-option {
   aspect-ratio: 1;
   border-radius: 10px;
   cursor: pointer;
@@ -3458,24 +2985,24 @@ a:focus:not(:focus-visible) {
   transition: transform 0.15s, border-color 0.15s;
 }
 
-.mobile-color-option:hover {
+.settings-color-option:hover {
   transform: scale(1.05);
 }
 
-.mobile-color-option.selected {
+.settings-color-option.selected {
   border-color: #fff;
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
 }
 
 /* Thresholds list */
-.mobile-thresholds-list {
+.settings-thresholds-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-bottom: 12px;
 }
 
-.mobile-threshold-item {
+.settings-threshold-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -3484,7 +3011,7 @@ a:focus:not(:focus-visible) {
   border-radius: 8px;
 }
 
-.mobile-threshold-input {
+.settings-threshold-input {
   width: 70px;
   padding: 8px 10px;
   background: rgba(0, 0, 0, 0.3);
@@ -3495,17 +3022,17 @@ a:focus:not(:focus-visible) {
   text-align: center;
 }
 
-.mobile-threshold-input:focus {
+.settings-threshold-input:focus {
   outline: none;
   border-color: var(--color-success);
 }
 
-.mobile-threshold-unit {
+.settings-threshold-unit {
   color: #888;
   font-size: 0.9em;
 }
 
-.mobile-threshold-remove {
+.settings-threshold-remove {
   margin-left: auto;
   width: 28px;
   height: 28px;
@@ -3519,11 +3046,11 @@ a:focus:not(:focus-visible) {
   transition: background-color 0.15s;
 }
 
-.mobile-threshold-remove:hover {
+.settings-threshold-remove:hover {
   background: rgba(239, 68, 68, 0.4);
 }
 
-.mobile-add-btn {
+.settings-add-btn {
   width: 100%;
   padding: 10px;
   background: rgba(255, 255, 255, 0.05);
@@ -3535,13 +3062,13 @@ a:focus:not(:focus-visible) {
   transition: border-color 0.15s, color 0.15s;
 }
 
-.mobile-add-btn:hover {
+.settings-add-btn:hover {
   border-color: var(--color-success);
   color: var(--color-success);
 }
 
-/* Game code display */
-.mobile-game-code {
+/* Game code display in settings */
+.settings-game-code {
   font-size: 1.5em;
   font-weight: bold;
   color: var(--color-success);
@@ -3553,7 +3080,7 @@ a:focus:not(:focus-visible) {
 }
 
 /* Settings input */
-.mobile-settings-input {
+.settings-input {
   width: 100%;
   padding: 12px;
   background: rgba(255, 255, 255, 0.05);
@@ -3563,13 +3090,13 @@ a:focus:not(:focus-visible) {
   font-size: 1em;
 }
 
-.mobile-settings-input:focus {
+.settings-input:focus {
   outline: none;
   border-color: var(--color-success);
 }
 
 /* Danger zone */
-.mobile-danger-zone {
+.settings-danger-zone {
   padding: 16px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
@@ -3577,11 +3104,11 @@ a:focus:not(:focus-visible) {
   margin-top: 20px;
 }
 
-.mobile-danger-zone .mobile-settings-label {
+.settings-danger-zone .settings-label {
   color: var(--color-danger);
 }
 
-.mobile-danger-btn {
+.settings-danger-btn {
   width: 100%;
   padding: 12px;
   background: linear-gradient(135deg, #8b0000 0%, #4d0000 100%);
@@ -3593,12 +3120,12 @@ a:focus:not(:focus-visible) {
   transition: transform 0.1s, opacity 0.15s;
 }
 
-.mobile-danger-btn:active {
+.settings-danger-btn:active {
   transform: scale(0.98);
 }
 
 /* Footer */
-.mobile-settings-footer {
+.settings-footer {
   display: flex;
   gap: 10px;
   padding: 16px 20px;
@@ -3606,29 +3133,29 @@ a:focus:not(:focus-visible) {
   background: rgba(0, 0, 0, 0.2);
 }
 
-.mobile-settings-footer .btn {
+.settings-footer .btn {
   flex: 1;
   padding: 14px;
 }
 
-/* Landscape adjustments for mobile settings */
+/* Landscape adjustments for settings */
 @media (orientation: landscape) and (max-height: 500px) {
-  .mobile-settings-content {
+  .settings-content {
     max-height: 100vh;
     max-height: 100dvh;
     border-radius: 0;
   }
 
-  .mobile-settings-panel {
+  .settings-panel {
     padding: 12px 16px;
   }
 
-  .mobile-settings-buttons {
+  .settings-buttons {
     flex-direction: row;
     margin-bottom: 16px;
   }
 
-  .mobile-settings-action-btn {
+  .settings-action-btn {
     flex-direction: row;
     padding: 12px;
     gap: 8px;
@@ -3638,30 +3165,30 @@ a:focus:not(:focus-visible) {
     font-size: 1.2em;
   }
 
-  .mobile-color-grid {
+  .settings-color-grid {
     grid-template-columns: repeat(6, 1fr);
     gap: 8px;
   }
 
-  .mobile-settings-footer {
+  .settings-footer {
     padding: 10px 16px;
   }
 
-  .mobile-settings-footer .btn {
+  .settings-footer .btn {
     padding: 10px;
   }
 }
 
 /* =============================================================================
-   MOBILE PLAYER DETAILS POPUP
+   PLAYER DETAILS POPUP
    ============================================================================= */
-.mobile-player-popup {
+.game-player-popup {
   position: fixed;
   z-index: 1000;
   pointer-events: none;
 }
 
-.mobile-player-popup-content {
+.game-player-popup-content {
   position: absolute;
   min-width: 140px;
   max-width: 180px;
@@ -3685,7 +3212,7 @@ a:focus:not(:focus-visible) {
   }
 }
 
-.mobile-player-popup-header {
+.game-player-popup-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -3694,7 +3221,7 @@ a:focus:not(:focus-visible) {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.mobile-player-popup-name {
+.game-player-popup-name {
   font-weight: bold;
   font-size: 0.95em;
   color: #fff;
@@ -3704,7 +3231,7 @@ a:focus:not(:focus-visible) {
   flex: 1;
 }
 
-.mobile-player-popup-close {
+.game-player-popup-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3721,49 +3248,49 @@ a:focus:not(:focus-visible) {
   transition: background-color 0.15s, color 0.15s;
 }
 
-.mobile-player-popup-close:hover {
+.game-player-popup-close:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
 
-.mobile-player-popup-body {
+.game-player-popup-body {
   padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.mobile-player-popup-stat {
+.game-player-popup-stat {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.mobile-player-popup-label {
+.game-player-popup-label {
   color: #888;
   font-size: 0.8em;
 }
 
-.mobile-player-popup-value {
+.game-player-popup-value {
   font-weight: bold;
   font-size: 1em;
   color: #fff;
 }
 
-.mobile-player-popup-life {
+.game-player-popup-life {
   color: #ff6b6b;
 }
 
-.mobile-player-popup-drunk {
+.game-player-popup-drunk {
   color: #f0a030;
 }
 
-.mobile-player-popup-generic {
+.game-player-popup-generic {
   color: #aaa;
 }
 
 /* Popup arrow indicator */
-.mobile-player-popup-content::before {
+.game-player-popup-content::before {
   content: "";
   position: absolute;
   width: 12px;
@@ -3779,7 +3306,7 @@ a:focus:not(:focus-visible) {
 }
 
 /* When popup is below the card, arrow points up */
-.mobile-player-popup.popup-above .mobile-player-popup-content::before {
+.game-player-popup.popup-above .game-player-popup-content::before {
   top: auto;
   bottom: -7px;
   transform: rotate(225deg);
@@ -4005,11 +3532,11 @@ a:focus:not(:focus-visible) {
    DEBUG MODE (uncomment for overflow detection)
    ============================================================================= */
 /*
-.mobile-layout.debug-overflow {
+.game-layout.debug-overflow {
   outline: 2px solid red;
 }
 
-.mobile-layout.debug-overflow > * {
+.game-layout.debug-overflow > * {
   outline: 1px dashed blue;
 }
 */

@@ -178,35 +178,31 @@ const screens = {
   menuSettings: document.getElementById("menu-settings-screen"),
   feedback: document.getElementById("feedback-screen"),
   game: document.getElementById("game-screen"),
-  mobileGame: document.getElementById("mobile-game-screen"),
 };
 
-// Mobile UI elements
-const mobileUI = {
-  screen: document.getElementById("mobile-game-screen"),
-  exitBtn: document.querySelector(".mobile-exit-btn"),
-  settingsBtn: document.querySelector(".mobile-settings-btn"),
-  timeDisplay: document.querySelector(".mobile-time-display"),
-  timeValue: document.querySelector(".mobile-time-value"),
-  turnIndicator: document.querySelector(".mobile-turn-indicator"),
-  interactionArea: document.querySelector(".mobile-interaction-area"),
-  interactionBtn: document.querySelector(".mobile-interaction-btn"),
-  otherPlayers: document.querySelector(".mobile-other-players"),
-  playerCards: document.querySelector(".mobile-player-cards"),
-  playerStats: document.querySelector(".mobile-player-stats"),
-  statsRow: document.querySelector(".mobile-stats-row"),
-  lifeStat: document.querySelector(".mobile-stats-row .mobile-stat-life"),
-  poisonStat: document.querySelector(".mobile-stats-row .mobile-stat-poison"),
-  genericStat: document.querySelector(".mobile-stats-row .mobile-stat-generic"),
+// Game UI elements (unified layout)
+const gameUI = {
+  screen: document.getElementById("game-screen"),
+  exitBtn: document.querySelector(".game-exit-btn"),
+  settingsBtn: document.querySelector(".game-settings-btn"),
+  timeDisplay: document.querySelector(".game-time-display"),
+  timeValue: document.querySelector(".game-time-value"),
+  turnIndicator: document.querySelector(".game-turn-indicator"),
+  interactionArea: document.querySelector(".game-interaction-area"),
+  interactionBtn: document.querySelector(".game-interaction-btn"),
+  otherPlayers: document.querySelector(".game-other-players"),
+  playerCards: document.querySelector(".game-player-cards"),
+  playerStats: document.querySelector(".game-player-stats"),
+  statsRow: document.querySelector(".game-stats-row"),
+  lifeStat: document.querySelector(".game-stats-row .game-stat-life"),
+  poisonStat: document.querySelector(".game-stats-row .game-stat-poison"),
+  genericStat: document.querySelector(".game-stats-row .game-stat-generic"),
 };
 
-// Check if we should use mobile layout (based on screen size and touch capability)
-function isMobileDevice() {
-  return window.innerWidth <= 768 || ("ontouchstart" in window && window.innerWidth <= 1024);
+// Check if device supports touch (for haptic feedback and long press behaviors)
+function isTouchDevice() {
+  return "ontouchstart" in window || navigator.maxTouchPoints > 0;
 }
-
-const playersContainer = document.getElementById("players-container");
-const gameCodeDisplay = document.getElementById("game-code-display");
 
 // Main menu buttons
 const menuButtons = {
@@ -257,30 +253,26 @@ const setupForm = {
   gameList: document.getElementById("game-list"),
 };
 
-const controls = {
-  start: document.getElementById("start-btn"),
-  randomStart: document.getElementById("random-start-btn"),
-  passTurn: document.getElementById("pass-turn-btn"),
-  interrupt: document.getElementById("interrupt-btn"),
-  pause: document.getElementById("pause-btn"),
-  reset: document.getElementById("reset-btn"),
-  settings: document.getElementById("settings-btn"),
-  dice: document.getElementById("dice-btn"),
-  backToMenu: document.getElementById("back-to-menu-btn"),
-};
+// Controls are now handled via gameUI and settingsModal
 
 const settingsModal = {
   modal: document.getElementById("settings-modal"),
-  thresholdsContainer: document.getElementById("thresholds-container"),
-  addThresholdBtn: document.getElementById("add-threshold-btn"),
-  playerColorsContainer: document.getElementById("player-colors-container"),
-  save: document.getElementById("save-settings"),
-  close: document.getElementById("close-settings"),
-  closeLobbyBtn: document.getElementById("close-lobby-btn"),
-  gameNameInput: document.getElementById("game-name-input"),
+  closeBtn: document.querySelector(".settings-close"),
+  tabs: document.querySelectorAll(".settings-tab"),
+  panels: document.querySelectorAll(".settings-panel"),
+  pauseBtn: document.getElementById("settings-pause-btn"),
+  resetBtn: document.getElementById("settings-reset-btn"),
+  randomStartBtn: document.getElementById("settings-random-start-btn"),
+  colorPicker: document.getElementById("settings-color-picker"),
+  thresholdsContainer: document.getElementById("settings-thresholds-container"),
+  addThresholdBtn: document.getElementById("settings-add-threshold-btn"),
+  gameCodeDisplay: document.getElementById("settings-game-code"),
+  gameNameInput: document.getElementById("settings-game-name-input"),
+  closeLobbyBtn: document.getElementById("settings-close-lobby-btn"),
+  saveBtn: document.getElementById("settings-save-btn"),
+  cancelBtn: document.getElementById("settings-cancel-btn"),
+  diceBtn: document.getElementById("settings-dice-btn"),
 };
-
-const gameTitleDisplay = document.getElementById("game-title-display");
 
 const colorPickerModal = {
   modal: document.getElementById("color-picker-modal"),
@@ -288,25 +280,7 @@ const colorPickerModal = {
   cancel: document.getElementById("cancel-color-picker"),
 };
 
-// Mobile settings modal elements
-const mobileSettingsModal = {
-  modal: document.getElementById("mobile-settings-modal"),
-  closeBtn: document.querySelector(".mobile-settings-close"),
-  tabs: document.querySelectorAll(".mobile-settings-tab"),
-  panels: document.querySelectorAll(".mobile-settings-panel"),
-  pauseBtn: document.getElementById("mobile-pause-btn"),
-  resetBtn: document.getElementById("mobile-reset-btn"),
-  randomStartBtn: document.getElementById("mobile-random-start-btn"),
-  colorPicker: document.getElementById("mobile-color-picker"),
-  thresholdsContainer: document.getElementById("mobile-thresholds-container"),
-  addThresholdBtn: document.getElementById("mobile-add-threshold-btn"),
-  gameCodeDisplay: document.getElementById("mobile-settings-game-code"),
-  gameNameInput: document.getElementById("mobile-game-name-input"),
-  closeLobbyBtn: document.getElementById("mobile-close-lobby-btn"),
-  saveBtn: document.getElementById("mobile-settings-save"),
-  cancelBtn: document.getElementById("mobile-settings-cancel"),
-  diceBtn: document.getElementById("mobile-dice-btn"),
-};
+// settingsModal merged into settingsModal above
 
 // Dice modal elements
 const diceModal = {
@@ -531,7 +505,7 @@ async function copyGameCode() {
     hapticFeedback("success");
 
     // Add visual feedback to the code display
-    const codeDisplay = document.getElementById("mobile-settings-game-code");
+    const codeDisplay = document.getElementById("settings-game-code");
     if (codeDisplay) {
       codeDisplay.classList.add("copied");
       setTimeout(() => codeDisplay.classList.remove("copied"), 300);
@@ -668,11 +642,6 @@ function handleMessage(message) {
     case "gameRenamed":
       if (gameState && message.data.name) {
         gameState.name = message.data.name;
-        if (message.data.name !== "Game") {
-          gameTitleDisplay.textContent = message.data.name;
-        } else {
-          gameTitleDisplay.textContent = "Tap or Tarp";
-        }
       }
       break;
     case "randomPlayerSelected":
@@ -722,12 +691,12 @@ function highlightRandomSelectedPlayer(playerId) {
     }, 3000);
   }
 
-  // Find and highlight mobile player card
-  const mobileCard = document.querySelector(`.mobile-player-card[data-player-id="${playerId}"]`);
-  if (mobileCard) {
-    mobileCard.classList.add("random-selected");
+  // Find and highlight player card
+  const playerCard = document.querySelector(`.game-player-card[data-player-id="${playerId}"]`);
+  if (playerCard) {
+    playerCard.classList.add("random-selected");
     setTimeout(() => {
-      mobileCard.classList.remove("random-selected");
+      playerCard.classList.remove("random-selected");
     }, 3000);
   }
 }
@@ -1258,48 +1227,24 @@ function renderGame() {
   if (!gameState) return;
 
   // Check if game screen is already visible (avoid full re-render for updates)
-  const isMobile = isMobileDevice();
-  const mobileVisible = isMobile && screens.mobileGame.style.display === "flex";
-  const desktopVisible = !isMobile && screens.game.style.display === "block";
+  const gameVisible = screens.game.style.display === "flex";
 
-  if (mobileVisible) {
-    // Just update the mobile UI without re-rendering
-    updateMobileUI();
-    updateControls();
-    return;
-  }
-
-  if (desktopVisible) {
-    // Update desktop UI without hiding/showing screens
-    updateDesktopPlayerCards();
-    updateControls();
+  if (gameVisible) {
+    // Just update the UI without re-rendering
+    updateGameUI();
     return;
   }
 
   // First time showing game screen - do full render
   hideAllScreens();
 
-  // Show mobile or desktop screen based on device
-  if (isMobile) {
-    document.body.classList.add("mobile-active");
-    screens.mobileGame.style.display = "flex";
-    // Add enter animation class
-    screens.mobileGame.classList.add("screen-enter");
-    setTimeout(() => screens.mobileGame.classList.remove("screen-enter"), 200);
-    updateMobileUI();
-  } else {
-    document.body.classList.remove("mobile-active");
-    screens.game.style.display = "block";
-  }
-
-  gameCodeDisplay.textContent = gameState.id;
-
-  // Update game title with custom name if set
-  if (gameState.name && gameState.name !== "Game") {
-    gameTitleDisplay.textContent = gameState.name;
-  } else {
-    gameTitleDisplay.textContent = "Tap or Tarp";
-  }
+  // Show unified game screen
+  document.body.classList.add("game-active");
+  screens.game.style.display = "flex";
+  // Add enter animation class
+  screens.game.classList.add("screen-enter");
+  setTimeout(() => screens.game.classList.remove("screen-enter"), 200);
+  updateGameUI();
 
   const hasClaimedPlayer = gameState.players.some(p => p.claimedBy === myClientId);
   if (gameState.status === "waiting" && !hasClaimedPlayer) {
@@ -1307,164 +1252,13 @@ function renderGame() {
   } else {
     screens.game.classList.remove("lobby-mode");
   }
-
-  playersContainer.innerHTML = "";
-  playersContainer.className = `players-${gameState.players.length}`;
-
-  gameState.players.forEach(player => {
-    const isActive = player.id === gameState.activePlayer;
-    const card = createPlayerCard(player, isActive);
-    playersContainer.appendChild(card);
-  });
-
-  updateControls();
-}
-
-/**
- * Update desktop player cards in place without rebuilding
- */
-function updateDesktopPlayerCards() {
-  if (!gameState) return;
-
-  const cards = playersContainer.querySelectorAll(".player-card");
-
-  // If card count doesn't match, do a full rebuild
-  if (cards.length !== gameState.players.length) {
-    playersContainer.innerHTML = "";
-    playersContainer.className = `players-${gameState.players.length}`;
-    gameState.players.forEach(player => {
-      const isActive = player.id === gameState.activePlayer;
-      const card = createPlayerCard(player, isActive);
-      playersContainer.appendChild(card);
-    });
-    return;
-  }
-
-  // Update existing cards in place
-  cards.forEach(card => {
-    const playerId = parseInt(card.dataset.playerId);
-    const player = gameState.players.find(p => p.id === playerId);
-    if (!player) return;
-
-    const isActive = player.id === gameState.activePlayer;
-
-    // Update life display
-    const lifeDisplay = card.querySelector(".life-display");
-    if (lifeDisplay) lifeDisplay.textContent = player.life;
-
-    // Update counter displays
-    const counterDisplays = card.querySelectorAll(".counter-display");
-    if (counterDisplays[0]) counterDisplays[0].textContent = player.drunkCounter;
-    if (counterDisplays[1]) counterDisplays[1].textContent = player.genericCounter;
-
-    // Update active state
-    card.classList.toggle("active", isActive);
-  });
 }
 
 function updateTimes() {
   if (!gameState) return;
 
-  const cards = playersContainer.querySelectorAll(".player-card");
-  cards.forEach(card => {
-    const playerId = parseInt(card.dataset.playerId);
-    const player = gameState.players.find(p => p.id === playerId);
-
-    if (player) {
-      const timeDisplay = card.querySelector(".player-time");
-
-      if (player.timeRemaining < CONSTANTS.CRITICAL_THRESHOLD) {
-        timeDisplay.classList.add("deciseconds");
-        timeDisplay.textContent = formatTimeWithDeciseconds(player.timeRemaining);
-      } else {
-        timeDisplay.classList.remove("deciseconds");
-        timeDisplay.textContent = formatTime(player.timeRemaining);
-      }
-
-      card.classList.remove("warning", "critical", "timeout");
-
-      if (player.timeRemaining === 0 && !player.isEliminated) {
-        card.classList.add("timeout");
-      } else if (player.timeRemaining < CONSTANTS.CRITICAL_THRESHOLD) {
-        card.classList.add("critical");
-      } else if (player.timeRemaining < CONSTANTS.WARNING_THRESHOLD_5MIN) {
-        card.classList.add("warning");
-      }
-    }
-  });
-
-  // Also update mobile UI time display
-  if (isMobileDevice()) {
-    updateMobileTimeDisplay();
-  }
-}
-
-function updateControls() {
-  if (!gameState) return;
-
-  controls.pause.textContent = gameState.status === "paused" ? "Resume" : "Pause";
-
-  // Check if current client is active player
-  const activePlayer = gameState.players.find(p => p.id === gameState.activePlayer);
-  const isActivePlayer = activePlayer && activePlayer.claimedBy === myClientId;
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-
-  // Check if all players are claimed
-  const allPlayersClaimed = gameState.players.every(p => p.claimedBy !== null);
-
-  if (gameState.status === "waiting") {
-    controls.start.style.display = "inline-block";
-    controls.start.disabled = !allPlayersClaimed;
-    controls.start.title = allPlayersClaimed ? "" : "All players must be claimed before starting";
-    // Show random start button only in waiting state with at least one claimed player
-    const hasClaimedPlayers = gameState.players.some(p => p.claimedBy !== null);
-    controls.randomStart.style.display = hasClaimedPlayers ? "inline-block" : "none";
-    controls.passTurn.style.display = "none";
-    controls.interrupt.style.display = "none";
-  } else {
-    controls.start.style.display = "none";
-    controls.randomStart.style.display = "none";
-    controls.passTurn.style.display = "inline-block";
-    controls.passTurn.disabled =
-      !isActivePlayer ||
-      (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) ||
-      gameState.status === "paused";
-    if (!controls.passTurn.disabled) {
-      controls.passTurn.classList.add("btn-primary");
-    } else {
-      controls.passTurn.classList.remove("btn-primary");
-    }
-    // Determine which player has priority
-    let priorityPlayerId = null;
-    if (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) {
-      priorityPlayerId = gameState.interruptingPlayers[gameState.interruptingPlayers.length - 1];
-    } else {
-      priorityPlayerId = gameState.activePlayer;
-    }
-
-    const myHasPriority = myPlayer && myPlayer.id === priorityPlayerId;
-    const myInInterruptQueue =
-      myPlayer &&
-      gameState.interruptingPlayers &&
-      gameState.interruptingPlayers.includes(myPlayer.id);
-
-    if (myHasPriority && myInInterruptQueue) {
-      // Player has priority AND is in interrupt queue - show Pass Priority button
-      controls.interrupt.style.display = "inline-block";
-      controls.interrupt.textContent = "Pass Priority";
-      controls.interrupt.disabled = false;
-      controls.interrupt.classList.add("btn-primary");
-    } else if (myPlayer && gameState.status === "running" && !myHasPriority) {
-      // Player doesn't have priority - show Interrupt button
-      controls.interrupt.style.display = "inline-block";
-      controls.interrupt.textContent = "Interrupt";
-      controls.interrupt.disabled = false;
-      controls.interrupt.classList.add("btn-primary");
-    } else {
-      controls.interrupt.style.display = "none";
-      controls.interrupt.classList.remove("btn-primary");
-    }
-  }
+  // Update the unified game UI time display
+  updateTimeDisplay();
 }
 
 function safeSend(message) {
@@ -1584,136 +1378,60 @@ function hideTimeoutModal() {
 }
 
 function showSettingsModal() {
-  // Use mobile settings modal on mobile devices
-  if (isMobileDevice() && mobileSettingsModal.modal) {
-    showMobileSettingsModal();
-    return;
-  }
-
-  // Desktop settings modal
-  // Populate game code
-  const gameCodeDisplay = document.getElementById("settings-game-code");
-  if (gameState && gameState.id) {
-    gameCodeDisplay.textContent = gameState.id;
-  } else {
-    gameCodeDisplay.textContent = "";
-  }
-  // Populate thresholds from game state
-  populateThresholds();
-  // Populate player colors
-  populatePlayerColors();
-  // Populate game name
-  if (gameState && gameState.name) {
-    settingsModal.gameNameInput.value = gameState.name !== "Game" ? gameState.name : "";
-  } else {
-    settingsModal.gameNameInput.value = "";
-  }
-  // Update UI based on owner status
-  updateSettingsOwnerUI();
-  settingsModal.modal.style.display = "flex";
-}
-
-function updateSettingsOwnerUI() {
-  // All players can now edit settings - no owner restrictions
-  const thresholdsContainer = settingsModal.thresholdsContainer;
-  const addBtn = settingsModal.addThresholdBtn;
-
-  const inputs = thresholdsContainer.querySelectorAll(".threshold-input");
-  const removeButtons = thresholdsContainer.querySelectorAll(".btn-threshold-remove");
-
-  inputs.forEach(input => {
-    input.disabled = false;
-    input.style.opacity = "1";
-  });
-
-  removeButtons.forEach(btn => {
-    btn.disabled = false;
-    btn.style.display = "block";
-  });
-
-  addBtn.disabled = false;
-  addBtn.style.display = "inline-block";
-
-  // Update hint text
-  const formGroup = thresholdsContainer.closest(".form-group");
-  const hint = formGroup.querySelector(".form-hint");
-  if (hint) {
-    hint.textContent = "Audio alerts when time remaining drops below these values";
-  }
-}
-
-function hideSettingsModal() {
-  settingsModal.modal.style.display = "none";
-  if (mobileSettingsModal.modal) {
-    mobileSettingsModal.modal.style.display = "none";
-  }
-}
-
-// ============================================================================
-// MOBILE SETTINGS MODAL FUNCTIONS
-// ============================================================================
-
-/**
- * Show the mobile settings modal
- */
-function showMobileSettingsModal() {
-  if (!mobileSettingsModal.modal) return;
+  if (!settingsModal.modal) return;
 
   // Populate game code (make it copyable)
-  if (gameState && mobileSettingsModal.gameCodeDisplay) {
-    mobileSettingsModal.gameCodeDisplay.textContent = gameState.id;
-    mobileSettingsModal.gameCodeDisplay.classList.add("copyable");
+  if (gameState && settingsModal.gameCodeDisplay) {
+    settingsModal.gameCodeDisplay.textContent = gameState.id;
+    settingsModal.gameCodeDisplay.classList.add("copyable");
   }
 
   // Populate game name
-  if (gameState && mobileSettingsModal.gameNameInput) {
-    mobileSettingsModal.gameNameInput.value = (gameState.name && gameState.name !== "Game") ? gameState.name : "";
+  if (gameState && settingsModal.gameNameInput) {
+    settingsModal.gameNameInput.value = (gameState.name && gameState.name !== "Game") ? gameState.name : "";
   }
 
   // Populate thresholds
-  populateMobileThresholds();
+  populateThresholds();
 
   // Populate color picker
-  populateMobileColorPicker();
+  populateColorPicker();
 
   // Update pause button text
-  updateMobilePauseButton();
+  updatePauseButton();
 
   // Show/hide random start button based on game state
-  if (mobileSettingsModal.randomStartBtn && gameState) {
+  if (settingsModal.randomStartBtn && gameState) {
     const isWaiting = gameState.status === "waiting";
     const hasClaimedPlayers = gameState.players.some(p => p.claimedBy !== null);
-    mobileSettingsModal.randomStartBtn.style.display = (isWaiting && hasClaimedPlayers) ? "flex" : "none";
+    settingsModal.randomStartBtn.style.display = (isWaiting && hasClaimedPlayers) ? "flex" : "none";
   }
 
   // Reset to first tab
-  switchMobileSettingsTab("controls");
+  switchSettingsTab("controls");
 
-  mobileSettingsModal.modal.style.display = "flex";
+  settingsModal.modal.style.display = "flex";
 }
 
-/**
- * Hide the mobile settings modal
- */
-function hideMobileSettingsModal() {
-  if (mobileSettingsModal.modal) {
-    mobileSettingsModal.modal.style.display = "none";
+function hideSettingsModal() {
+  if (settingsModal.modal) {
+    settingsModal.modal.style.display = "none";
   }
 }
 
 /**
- * Switch between mobile settings tabs
+ * Switch between settings tabs
  */
-function switchMobileSettingsTab(tabName) {
+function switchSettingsTab(tabName) {
   // Update tab buttons
-  mobileSettingsModal.tabs.forEach(tab => {
+  settingsModal.tabs.forEach(tab => {
     const isActive = tab.dataset.tab === tabName;
     tab.classList.toggle("active", isActive);
     tab.setAttribute("aria-selected", isActive.toString());
   });
 
   // Update panels
-  mobileSettingsModal.panels.forEach(panel => {
+  settingsModal.panels.forEach(panel => {
     const isActive = panel.dataset.panel === tabName;
     panel.classList.toggle("active", isActive);
     panel.hidden = !isActive;
@@ -1721,13 +1439,13 @@ function switchMobileSettingsTab(tabName) {
 }
 
 /**
- * Update the mobile pause button text
+ * Update the pause button text
  */
-function updateMobilePauseButton() {
-  if (!gameState || !mobileSettingsModal.pauseBtn) return;
+function updatePauseButton() {
+  if (!gameState || !settingsModal.pauseBtn) return;
 
-  const labelEl = mobileSettingsModal.pauseBtn.querySelector(".action-label");
-  const iconEl = mobileSettingsModal.pauseBtn.querySelector(".action-icon");
+  const labelEl = settingsModal.pauseBtn.querySelector(".action-label");
+  const iconEl = settingsModal.pauseBtn.querySelector(".action-icon");
 
   if (gameState.status === "paused") {
     if (labelEl) labelEl.textContent = "Resume";
@@ -1739,221 +1457,10 @@ function updateMobilePauseButton() {
 }
 
 /**
- * Populate the mobile thresholds list
+ * Populate the thresholds list
  */
-function populateMobileThresholds() {
-  if (!gameState || !mobileSettingsModal.thresholdsContainer) return;
-
-  const thresholds = gameState.settings?.warningThresholds || [300000, 60000, 30000];
-  mobileSettingsModal.thresholdsContainer.innerHTML = "";
-
-  thresholds.forEach((ms, index) => {
-    const minutes = ms / 60000;
-    addMobileThresholdItem(minutes, index);
-  });
-}
-
-/**
- * Add a threshold item to the mobile list
- */
-function addMobileThresholdItem(value = 1, index = null) {
-  const container = mobileSettingsModal.thresholdsContainer;
-  if (!container) return;
-
-  const item = document.createElement("div");
-  item.className = "mobile-threshold-item";
-  item.dataset.index = index !== null ? index : container.children.length;
-
-  item.innerHTML = `
-    <input type="number" class="mobile-threshold-input" value="${value}" min="0.1" step="0.1" />
-    <span class="mobile-threshold-unit">min</span>
-    <button type="button" class="mobile-threshold-remove" aria-label="Remove">&times;</button>
-  `;
-
-  item.querySelector(".mobile-threshold-remove").addEventListener("click", () => {
-    if (container.children.length > 1) {
-      item.remove();
-    }
-  });
-
-  container.appendChild(item);
-}
-
-/**
- * Get thresholds from mobile UI
- */
-function getMobileThresholdsFromUI() {
-  if (!mobileSettingsModal.thresholdsContainer) return [];
-
-  const inputs = mobileSettingsModal.thresholdsContainer.querySelectorAll(".mobile-threshold-input");
-  const thresholds = [];
-
-  inputs.forEach(input => {
-    const minutes = parseFloat(input.value);
-    if (!isNaN(minutes) && minutes > 0) {
-      thresholds.push(Math.round(minutes * 60000));
-    }
-  });
-
-  return [...new Set(thresholds)].sort((a, b) => b - a);
-}
-
-/**
- * Populate the mobile color picker
- */
-function populateMobileColorPicker() {
-  if (!mobileSettingsModal.colorPicker) return;
-
-  const container = mobileSettingsModal.colorPicker;
-  container.innerHTML = "";
-
-  const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
-  const currentColorId = myPlayer?.color || getPlayerColor(myPlayer || { id: 1 }).id;
-
-  PLAYER_COLORS.forEach(color => {
-    const option = document.createElement("div");
-    option.className = "mobile-color-option" + (color.id === currentColorId ? " selected" : "");
-    option.style.background = `linear-gradient(135deg, ${color.primary} 0%, ${color.secondary} 100%)`;
-    option.title = color.name;
-    option.dataset.colorId = color.id;
-
-    option.addEventListener("click", () => {
-      // Update selection visually
-      container.querySelectorAll(".mobile-color-option").forEach(opt => {
-        opt.classList.remove("selected");
-      });
-      option.classList.add("selected");
-    });
-
-    container.appendChild(option);
-  });
-}
-
-/**
- * Get selected color from mobile picker
- */
-function getMobileSelectedColor() {
-  const selected = mobileSettingsModal.colorPicker?.querySelector(".mobile-color-option.selected");
-  return selected?.dataset.colorId || null;
-}
-
-/**
- * Save mobile settings
- */
-function saveMobileSettings() {
-  // Save thresholds
-  const thresholds = getMobileThresholdsFromUI();
-  if (thresholds.length > 0) {
-    sendUpdateSettings({ warningThresholds: thresholds });
-  }
-
-  // Save game name
-  const newName = mobileSettingsModal.gameNameInput?.value.trim();
-  if (newName) {
-    sendRenameGame(newName);
-  }
-
-  // Save color
-  const selectedColor = getMobileSelectedColor();
-  const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
-  if (selectedColor && myPlayer) {
-    sendUpdatePlayer(myPlayer.id, { color: selectedColor });
-  }
-
-  hideMobileSettingsModal();
-  playClick();
-}
-
-/**
- * Setup mobile settings modal event listeners
- */
-function setupMobileSettingsEventListeners() {
-  if (!mobileSettingsModal.modal) return;
-
-  // Close button
-  mobileSettingsModal.closeBtn?.addEventListener("click", () => {
-    hideMobileSettingsModal();
-    playClick();
-  });
-
-  // Cancel button
-  mobileSettingsModal.cancelBtn?.addEventListener("click", () => {
-    hideMobileSettingsModal();
-    playClick();
-  });
-
-  // Save button
-  mobileSettingsModal.saveBtn?.addEventListener("click", saveMobileSettings);
-
-  // Tab switching
-  mobileSettingsModal.tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      switchMobileSettingsTab(tab.dataset.tab);
-      playClick();
-      hapticFeedback("light");
-    });
-  });
-
-  // Pause button
-  mobileSettingsModal.pauseBtn?.addEventListener("click", () => {
-    sendPause();
-    playPauseResume();
-    updateMobilePauseButton();
-    // Don't close modal, let user see the state change
-    setTimeout(updateMobilePauseButton, 100);
-  });
-
-  // Reset button
-  mobileSettingsModal.resetBtn?.addEventListener("click", () => {
-    if (confirm("Are you sure you want to reset the game?")) {
-      sendReset();
-      hideMobileSettingsModal();
-      playClick();
-    }
-  });
-
-  // Random start button
-  mobileSettingsModal.randomStartBtn?.addEventListener("click", () => {
-    safeSend({ type: "randomStartPlayer", data: {} });
-    hideMobileSettingsModal();
-    playClick();
-  });
-
-  // Dice button
-  mobileSettingsModal.diceBtn?.addEventListener("click", () => {
-    hideMobileSettingsModal();
-    openDiceModal();
-    playClick();
-  });
-
-  // Add threshold button
-  mobileSettingsModal.addThresholdBtn?.addEventListener("click", () => {
-    addMobileThresholdItem(1);
-    playClick();
-  });
-
-  // Close lobby button
-  mobileSettingsModal.closeLobbyBtn?.addEventListener("click", () => {
-    if (confirm("Are you sure you want to close the lobby? This will end the game for all players.")) {
-      sendEndGame();
-      hideMobileSettingsModal();
-      playClick();
-    }
-  });
-
-  // Close on backdrop click
-  mobileSettingsModal.modal?.addEventListener("click", (e) => {
-    if (e.target === mobileSettingsModal.modal) {
-      hideMobileSettingsModal();
-    }
-  });
-
-  // Game code copy
-  mobileSettingsModal.gameCodeDisplay?.addEventListener("click", copyGameCode);
-}
-
 function populateThresholds() {
-  if (!gameState) return;
+  if (!gameState || !settingsModal.thresholdsContainer) return;
 
   const thresholds = gameState.settings?.warningThresholds || [300000, 60000, 30000];
   settingsModal.thresholdsContainer.innerHTML = "";
@@ -1964,19 +1471,24 @@ function populateThresholds() {
   });
 }
 
+/**
+ * Add a threshold item to the list
+ */
 function addThresholdItem(value = 1, index = null) {
   const container = settingsModal.thresholdsContainer;
+  if (!container) return;
+
   const item = document.createElement("div");
-  item.className = "threshold-item";
+  item.className = "settings-threshold-item";
   item.dataset.index = index !== null ? index : container.children.length;
 
   item.innerHTML = `
-    <input type="number" class="threshold-input" value="${value}" min="0.1" step="0.1" />
-    <span class="threshold-unit">min</span>
-    <button type="button" class="btn-threshold-remove" aria-label="Remove threshold">&times;</button>
+    <input type="number" class="settings-threshold-input" value="${value}" min="0.1" step="0.1" />
+    <span class="settings-threshold-unit">min</span>
+    <button type="button" class="settings-threshold-remove" aria-label="Remove">&times;</button>
   `;
 
-  item.querySelector(".btn-threshold-remove").addEventListener("click", () => {
+  item.querySelector(".settings-threshold-remove").addEventListener("click", () => {
     if (container.children.length > 1) {
       item.remove();
     }
@@ -1985,8 +1497,13 @@ function addThresholdItem(value = 1, index = null) {
   container.appendChild(item);
 }
 
+/**
+ * Get thresholds from UI
+ */
 function getThresholdsFromUI() {
-  const inputs = settingsModal.thresholdsContainer.querySelectorAll(".threshold-input");
+  if (!settingsModal.thresholdsContainer) return [];
+
+  const inputs = settingsModal.thresholdsContainer.querySelectorAll(".settings-threshold-input");
   const thresholds = [];
 
   inputs.forEach(input => {
@@ -1996,41 +1513,161 @@ function getThresholdsFromUI() {
     }
   });
 
-  // Sort descending and remove duplicates
   return [...new Set(thresholds)].sort((a, b) => b - a);
 }
 
-function populatePlayerColors() {
-  if (!gameState) return;
+/**
+ * Populate the color picker
+ */
+function populateColorPicker() {
+  if (!settingsModal.colorPicker) return;
 
-  const container = settingsModal.playerColorsContainer;
+  const container = settingsModal.colorPicker;
   container.innerHTML = "";
 
-  // Find the player claimed by this client
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+  const currentColorId = myPlayer?.color || getPlayerColor(myPlayer || { id: 1 }).id;
 
-  if (!myPlayer) {
-    container.innerHTML = '<p class="form-hint">Claim a player to change your color</p>';
-    return;
+  PLAYER_COLORS.forEach(color => {
+    const option = document.createElement("div");
+    option.className = "settings-color-option" + (color.id === currentColorId ? " selected" : "");
+    option.style.background = `linear-gradient(135deg, ${color.primary} 0%, ${color.secondary} 100%)`;
+    option.title = color.name;
+    option.dataset.colorId = color.id;
+
+    option.addEventListener("click", () => {
+      // Update selection visually
+      container.querySelectorAll(".settings-color-option").forEach(opt => {
+        opt.classList.remove("selected");
+      });
+      option.classList.add("selected");
+    });
+
+    container.appendChild(option);
+  });
+}
+
+/**
+ * Get selected color from picker
+ */
+function getSelectedColor() {
+  const selected = settingsModal.colorPicker?.querySelector(".settings-color-option.selected");
+  return selected?.dataset.colorId || null;
+}
+
+/**
+ * Save settings
+ */
+function saveSettings() {
+  // Save thresholds
+  const thresholds = getThresholdsFromUI();
+  if (thresholds.length > 0) {
+    sendUpdateSettings({ warningThresholds: thresholds });
   }
 
-  const color = getPlayerColor(myPlayer);
-  const item = document.createElement("div");
-  item.className = "player-color-item";
-  item.style.background = `linear-gradient(135deg, ${color.primary}22 0%, ${color.secondary}33 100%)`;
-  item.style.borderColor = `${color.primary}55`;
+  // Save game name
+  const newName = settingsModal.gameNameInput?.value.trim();
+  if (newName) {
+    sendRenameGame(newName);
+  }
 
-  item.innerHTML = `
-    <div class="player-color-swatch" style="background: ${color.primary}"></div>
-    <span class="player-color-name">${myPlayer.name}</span>
-    <span class="color-change-hint">Tap to change</span>
-  `;
+  // Save color
+  const selectedColor = getSelectedColor();
+  const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+  if (selectedColor && myPlayer) {
+    sendUpdatePlayer(myPlayer.id, { color: selectedColor });
+  }
 
-  item.addEventListener("click", () => {
-    openColorPicker(myPlayer);
+  hideSettingsModal();
+  playClick();
+}
+
+/**
+ * Setup settings modal event listeners
+ */
+function setupSettingsEventListeners() {
+  if (!settingsModal.modal) return;
+
+  // Close button
+  settingsModal.closeBtn?.addEventListener("click", () => {
+    hideSettingsModal();
+    playClick();
   });
 
-  container.appendChild(item);
+  // Cancel button
+  settingsModal.cancelBtn?.addEventListener("click", () => {
+    hideSettingsModal();
+    playClick();
+  });
+
+  // Save button
+  settingsModal.saveBtn?.addEventListener("click", saveSettings);
+
+  // Tab switching
+  settingsModal.tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      switchSettingsTab(tab.dataset.tab);
+      playClick();
+      hapticFeedback("light");
+    });
+  });
+
+  // Pause button
+  settingsModal.pauseBtn?.addEventListener("click", () => {
+    sendPause();
+    playPauseResume();
+    updatePauseButton();
+    // Don't close modal, let user see the state change
+    setTimeout(updatePauseButton, 100);
+  });
+
+  // Reset button
+  settingsModal.resetBtn?.addEventListener("click", () => {
+    if (confirm("Are you sure you want to reset the game?")) {
+      sendReset();
+      hideSettingsModal();
+      playClick();
+    }
+  });
+
+  // Random start button
+  settingsModal.randomStartBtn?.addEventListener("click", () => {
+    safeSend({ type: "randomStartPlayer", data: {} });
+    hideSettingsModal();
+    playClick();
+  });
+
+  // Dice button
+  settingsModal.diceBtn?.addEventListener("click", () => {
+    hideSettingsModal();
+    openDiceModal();
+    playClick();
+  });
+
+  // Add threshold button
+  settingsModal.addThresholdBtn?.addEventListener("click", () => {
+    addThresholdItem(1);
+    playClick();
+  });
+
+  // Close lobby button
+  settingsModal.closeLobbyBtn?.addEventListener("click", () => {
+    if (confirm("Are you sure you want to close the lobby? This will end the game for all players.")) {
+      sendEndGame();
+      hideSettingsModal();
+      playClick();
+    }
+  });
+
+  // Close on backdrop click
+  settingsModal.modal?.addEventListener("click", (e) => {
+    if (e.target === settingsModal.modal) {
+      hideSettingsModal();
+    }
+  });
+
+  // Game code copy
+  settingsModal.gameCodeDisplay?.addEventListener("click", copyGameCode);
 }
 
 function getPlayerColor(player) {
@@ -2072,26 +1709,8 @@ function openColorPicker(player) {
 function selectColor(colorId) {
   if (selectedPlayerForColor) {
     sendUpdatePlayer(selectedPlayerForColor.id, { color: colorId });
-    // Update the color display immediately (optimistic update)
-    updateColorDisplay(colorId);
   }
   closeColorPicker();
-}
-
-function updateColorDisplay(colorId) {
-  const color = PLAYER_COLORS.find(c => c.id === colorId);
-  if (!color) return;
-
-  const container = settingsModal.playerColorsContainer;
-  const item = container.querySelector(".player-color-item");
-  if (item) {
-    item.style.background = `linear-gradient(135deg, ${color.primary}22 0%, ${color.secondary}33 100%)`;
-    item.style.borderColor = `${color.primary}55`;
-    const swatch = item.querySelector(".player-color-swatch");
-    if (swatch) {
-      swatch.style.background = color.primary;
-    }
-  }
 }
 
 function closeColorPicker() {
@@ -2103,8 +1722,8 @@ function hideAllScreens() {
   Object.values(screens).forEach(screen => {
     if (screen) screen.style.display = "none";
   });
-  // Remove mobile-active class when hiding screens
-  document.body.classList.remove("mobile-active");
+  // Remove game-active class when hiding screens
+  document.body.classList.remove("game-active");
 }
 
 function showScreen(screenName) {
@@ -2330,88 +1949,8 @@ setupForm.joinBtn.addEventListener("click", () => {
   }
 });
 
-controls.pause.addEventListener("click", () => {
-  sendPause();
-  playPauseResume();
-});
-
-controls.reset.addEventListener("click", () => {
-  if (confirm("Are you sure you want to reset the game?")) {
-    sendReset();
-    playClick();
-  }
-});
-
-controls.settings.addEventListener("click", () => {
-  showSettingsModal();
-  playClick();
-});
-
-controls.backToMenu.addEventListener("click", () => {
-  if (
-    confirm(
-      "Are you sure you want to return to the main menu? This will disconnect you from the current game."
-    )
-  ) {
-    backToMenu();
-  }
-});
-
-settingsModal.save.addEventListener("click", () => {
-  // Any player can change warning thresholds
-  const thresholds = getThresholdsFromUI();
-  if (thresholds.length > 0) {
-    sendUpdateSettings({ warningThresholds: thresholds });
-  }
-
-  // Check if game name is being renamed
-  const newName = settingsModal.gameNameInput.value.trim();
-  if (newName) {
-    sendRenameGame(newName);
-  }
-
-  hideSettingsModal();
-  playClick();
-});
-
-settingsModal.close.addEventListener("click", () => {
-  hideSettingsModal();
-  playClick();
-});
-
-settingsModal.closeLobbyBtn.addEventListener("click", () => {
-  if (
-    confirm("Are you sure you want to close the lobby? This will end the game for all players.")
-  ) {
-    sendEndGame();
-    hideSettingsModal();
-    playClick();
-  }
-});
-
-settingsModal.addThresholdBtn.addEventListener("click", () => {
-  addThresholdItem(1);
-  playClick();
-});
-
 colorPickerModal.cancel.addEventListener("click", () => {
   closeColorPicker();
-  playClick();
-});
-
-controls.start.addEventListener("click", () => {
-  sendStart();
-  playClick();
-});
-
-controls.randomStart.addEventListener("click", () => {
-  safeSend({ type: "randomStartPlayer", data: {} });
-  playClick();
-});
-
-// Dice button
-controls.dice.addEventListener("click", () => {
-  openDiceModal();
   playClick();
 });
 
@@ -2445,31 +1984,6 @@ diceModal.modal?.addEventListener("click", e => {
 // Click dice toast to dismiss
 diceToast.element?.addEventListener("click", () => {
   hideDiceToast();
-});
-
-controls.passTurn.addEventListener("click", () => {
-  sendPassTurn();
-});
-
-controls.interrupt.addEventListener("click", () => {
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-
-  // Determine which player has priority
-  let priorityPlayerId = null;
-  if (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) {
-    priorityPlayerId = gameState.interruptingPlayers[gameState.interruptingPlayers.length - 1];
-  } else {
-    priorityPlayerId = gameState.activePlayer;
-  }
-
-  const myHasPriority = myPlayer && myPlayer.id === priorityPlayerId;
-
-  if (myHasPriority) {
-    safeSend({ type: "passPriority", data: {} });
-  } else {
-    safeSend({ type: "interrupt", data: {} });
-  }
-  playClick();
 });
 
 timeoutModal.acknowledge.addEventListener("click", () => {
@@ -2584,30 +2098,30 @@ window.addEventListener("click", () => {
 });
 
 // ============================================================================
-// MOBILE UI FUNCTIONS
+// GAME UI FUNCTIONS
 // ============================================================================
 
 /**
- * Update the entire mobile UI based on current game state
+ * Update the entire game UI based on current game state
  */
-function updateMobileUI() {
-  if (!gameState || !mobileUI.screen) return;
+function updateGameUI() {
+  if (!gameState || !gameUI.screen) return;
 
   // Update game paused state class
   const isPaused = gameState.status === "paused";
-  mobileUI.screen.classList.toggle("game-paused", isPaused);
+  gameUI.screen.classList.toggle("game-paused", isPaused);
 
-  updateMobileTimeDisplay();
-  updateMobileInteractionButton();
-  updateMobileOtherPlayers();
-  updateMobilePlayerStats();
+  updateTimeDisplay();
+  updateInteractionButton();
+  updateOtherPlayers();
+  updatePlayerStats();
 }
 
 /**
- * Update the mobile time display with current player's time and state
+ * Update the time display with current player's time and state
  */
-function updateMobileTimeDisplay() {
-  if (!gameState || !mobileUI.timeValue) return;
+function updateTimeDisplay() {
+  if (!gameState || !gameUI.timeValue) return;
 
   const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayer);
@@ -2615,56 +2129,56 @@ function updateMobileTimeDisplay() {
   const isPaused = gameState.status === "paused";
 
   // Remove all state classes
-  mobileUI.timeDisplay.classList.remove("warning", "critical", "paused");
+  gameUI.timeDisplay.classList.remove("warning", "critical", "paused");
 
   if (isWaiting) {
     // Show game code in waiting state (copyable)
-    mobileUI.turnIndicator.textContent = `Code: ${gameState.id}`;
-    mobileUI.turnIndicator.classList.add("copyable");
+    gameUI.turnIndicator.textContent = `Code: ${gameState.id}`;
+    gameUI.turnIndicator.classList.add("copyable");
     const claimedCount = gameState.players.filter(p => p.claimedBy !== null).length;
-    mobileUI.timeValue.textContent = `Waiting (${claimedCount}/${gameState.players.length})`;
+    gameUI.timeValue.textContent = `Waiting (${claimedCount}/${gameState.players.length})`;
   } else if (isPaused) {
-    mobileUI.turnIndicator.textContent = "GAME PAUSED";
-    mobileUI.turnIndicator.classList.remove("copyable");
-    mobileUI.timeValue.textContent = "--:--";
-    mobileUI.timeDisplay.classList.add("paused");
+    gameUI.turnIndicator.textContent = "GAME PAUSED";
+    gameUI.turnIndicator.classList.remove("copyable");
+    gameUI.timeValue.textContent = "--:--";
+    gameUI.timeDisplay.classList.add("paused");
   } else if (myPlayer) {
-    mobileUI.turnIndicator.classList.remove("copyable");
+    gameUI.turnIndicator.classList.remove("copyable");
     // Show time and turn indicator
     const isMyTurn = myPlayer.id === gameState.activePlayer;
     const timeRemaining = myPlayer.timeRemaining;
 
     // Update turn indicator
     if (isMyTurn) {
-      mobileUI.turnIndicator.textContent = "YOUR TURN";
+      gameUI.turnIndicator.textContent = "YOUR TURN";
     } else if (activePlayer) {
-      mobileUI.turnIndicator.textContent = `${activePlayer.name}'s Turn`;
+      gameUI.turnIndicator.textContent = `${activePlayer.name}'s Turn`;
     }
 
     // Update time display with appropriate format and state
     if (timeRemaining < CONSTANTS.CRITICAL_THRESHOLD) {
-      mobileUI.timeValue.textContent = formatTimeWithDeciseconds(timeRemaining);
-      mobileUI.timeDisplay.classList.add("critical");
+      gameUI.timeValue.textContent = formatTimeWithDeciseconds(timeRemaining);
+      gameUI.timeDisplay.classList.add("critical");
     } else if (timeRemaining < CONSTANTS.WARNING_THRESHOLD_1MIN) {
-      mobileUI.timeValue.textContent = formatTime(timeRemaining);
-      mobileUI.timeDisplay.classList.add("warning");
+      gameUI.timeValue.textContent = formatTime(timeRemaining);
+      gameUI.timeDisplay.classList.add("warning");
     } else {
-      mobileUI.timeValue.textContent = formatTime(timeRemaining);
+      gameUI.timeValue.textContent = formatTime(timeRemaining);
     }
   } else {
     // No claimed player, show active player's time
     if (activePlayer) {
-      mobileUI.turnIndicator.textContent = `${activePlayer.name}'s Turn`;
-      mobileUI.timeValue.textContent = formatTime(activePlayer.timeRemaining);
+      gameUI.turnIndicator.textContent = `${activePlayer.name}'s Turn`;
+      gameUI.timeValue.textContent = formatTime(activePlayer.timeRemaining);
     }
   }
 }
 
 /**
- * Update the mobile interaction button based on game state
+ * Update the interaction button based on game state
  */
-function updateMobileInteractionButton() {
-  if (!gameState || !mobileUI.interactionBtn) return;
+function updateInteractionButton() {
+  if (!gameState || !gameUI.interactionBtn) return;
 
   const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayer);
@@ -2687,56 +2201,56 @@ function updateMobileInteractionButton() {
     gameState.interruptingPlayers.includes(myPlayer.id);
 
   // Remove all variant classes
-  mobileUI.interactionBtn.classList.remove(
-    "mobile-interaction-btn-pass",
-    "mobile-interaction-btn-interrupt",
-    "mobile-interaction-btn-priority",
-    "mobile-interaction-btn-start"
+  gameUI.interactionBtn.classList.remove(
+    "game-interaction-btn-pass",
+    "game-interaction-btn-interrupt",
+    "game-interaction-btn-priority",
+    "game-interaction-btn-start"
   );
 
   if (isWaiting) {
     // Start Game button
-    mobileUI.interactionBtn.textContent = "START GAME";
-    mobileUI.interactionBtn.classList.add("mobile-interaction-btn-start");
-    mobileUI.interactionBtn.disabled = !allPlayersClaimed;
-    mobileUI.interactionBtn.setAttribute("aria-label", allPlayersClaimed ? "Start the game" : "Waiting for all players to join");
+    gameUI.interactionBtn.textContent = "START GAME";
+    gameUI.interactionBtn.classList.add("game-interaction-btn-start");
+    gameUI.interactionBtn.disabled = !allPlayersClaimed;
+    gameUI.interactionBtn.setAttribute("aria-label", allPlayersClaimed ? "Start the game" : "Waiting for all players to join");
   } else if (isPaused) {
     // Resume button
-    mobileUI.interactionBtn.textContent = "RESUME";
-    mobileUI.interactionBtn.classList.add("mobile-interaction-btn-start");
-    mobileUI.interactionBtn.disabled = false;
-    mobileUI.interactionBtn.setAttribute("aria-label", "Resume the game");
+    gameUI.interactionBtn.textContent = "RESUME";
+    gameUI.interactionBtn.classList.add("game-interaction-btn-start");
+    gameUI.interactionBtn.disabled = false;
+    gameUI.interactionBtn.setAttribute("aria-label", "Resume the game");
   } else if (myHasPriority && myInInterruptQueue) {
     // Pass Priority button (player has priority and is in interrupt queue)
-    mobileUI.interactionBtn.textContent = "PASS PRIORITY";
-    mobileUI.interactionBtn.classList.add("mobile-interaction-btn-priority");
-    mobileUI.interactionBtn.disabled = false;
-    mobileUI.interactionBtn.setAttribute("aria-label", "Pass priority to next player");
+    gameUI.interactionBtn.textContent = "PASS PRIORITY";
+    gameUI.interactionBtn.classList.add("game-interaction-btn-priority");
+    gameUI.interactionBtn.disabled = false;
+    gameUI.interactionBtn.setAttribute("aria-label", "Pass priority to next player");
   } else if (isMyTurn && (!gameState.interruptingPlayers || gameState.interruptingPlayers.length === 0)) {
     // Pass Turn button (active player, no interrupts)
-    mobileUI.interactionBtn.textContent = "PASS TURN";
-    mobileUI.interactionBtn.classList.add("mobile-interaction-btn-pass");
-    mobileUI.interactionBtn.disabled = false;
-    mobileUI.interactionBtn.setAttribute("aria-label", "Pass turn to next player");
+    gameUI.interactionBtn.textContent = "PASS TURN";
+    gameUI.interactionBtn.classList.add("game-interaction-btn-pass");
+    gameUI.interactionBtn.disabled = false;
+    gameUI.interactionBtn.setAttribute("aria-label", "Pass turn to next player");
   } else if (myPlayer && !myHasPriority) {
     // Interrupt button (not my turn or someone else has priority)
-    mobileUI.interactionBtn.textContent = "INTERRUPT";
-    mobileUI.interactionBtn.classList.add("mobile-interaction-btn-interrupt");
-    mobileUI.interactionBtn.disabled = false;
-    mobileUI.interactionBtn.setAttribute("aria-label", "Interrupt and take priority");
+    gameUI.interactionBtn.textContent = "INTERRUPT";
+    gameUI.interactionBtn.classList.add("game-interaction-btn-interrupt");
+    gameUI.interactionBtn.disabled = false;
+    gameUI.interactionBtn.setAttribute("aria-label", "Interrupt and take priority");
   } else {
     // Disabled state (no claimed player or waiting for something)
-    mobileUI.interactionBtn.textContent = "WAITING...";
-    mobileUI.interactionBtn.disabled = true;
-    mobileUI.interactionBtn.setAttribute("aria-label", "Waiting for game action");
+    gameUI.interactionBtn.textContent = "WAITING...";
+    gameUI.interactionBtn.disabled = true;
+    gameUI.interactionBtn.setAttribute("aria-label", "Waiting for game action");
   }
 }
 
 /**
- * Update the mobile other players section with compact cards
+ * Update the other players section with compact cards
  */
-function updateMobileOtherPlayers() {
-  if (!gameState || !mobileUI.playerCards) return;
+function updateOtherPlayers() {
+  if (!gameState || !gameUI.playerCards) return;
 
   const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
   const isWaiting = gameState.status === "waiting";
@@ -2749,10 +2263,10 @@ function updateMobileOtherPlayers() {
     : gameState.players.filter(p => p.claimedBy !== myClientId);
 
   // Set player count for CSS-based sizing
-  mobileUI.playerCards.dataset.playerCount = playersToShow.length;
+  gameUI.playerCards.dataset.playerCount = playersToShow.length;
 
   // Check if we can update in place (same players)
-  const existingCards = mobileUI.playerCards.querySelectorAll(".mobile-player-card");
+  const existingCards = gameUI.playerCards.querySelectorAll(".game-player-card");
   const existingIds = Array.from(existingCards).map(c => parseInt(c.dataset.playerId));
   const newIds = playersToShow.map(p => p.id);
   const canUpdateInPlace = existingIds.length === newIds.length &&
@@ -2768,11 +2282,11 @@ function updateMobileOtherPlayers() {
       const isActive = player.id === gameState.activePlayer;
 
       // Update life
-      const lifeSpan = card.querySelector(".mobile-player-card-life");
+      const lifeSpan = card.querySelector(".game-player-card-life");
       if (lifeSpan) lifeSpan.textContent = player.life;
 
       // Update time
-      const timeSpan = card.querySelector(".mobile-player-card-time");
+      const timeSpan = card.querySelector(".game-player-card-time");
       if (timeSpan) {
         timeSpan.textContent = formatTimeCompact(player.timeRemaining);
       }
@@ -2791,11 +2305,11 @@ function updateMobileOtherPlayers() {
       }
 
       // Update status indicator
-      const statusSpan = card.querySelector(".mobile-player-card-status");
+      const statusSpan = card.querySelector(".game-player-card-status");
       if (statusSpan) {
         const status = getPlayerStatusIcon(player, isActive, isPaused);
         statusSpan.textContent = status.icon;
-        statusSpan.className = "mobile-player-card-status";
+        statusSpan.className = "game-player-card-status";
         if (status.class) statusSpan.classList.add(status.class);
       }
     });
@@ -2803,11 +2317,11 @@ function updateMobileOtherPlayers() {
   }
 
   // Need to rebuild cards
-  mobileUI.playerCards.innerHTML = "";
+  gameUI.playerCards.innerHTML = "";
 
   playersToShow.forEach(player => {
     const card = document.createElement("div");
-    card.className = "mobile-player-card";
+    card.className = "game-player-card";
     card.dataset.playerId = player.id;
     card.setAttribute("role", "listitem");
     card.setAttribute("tabindex", "0");
@@ -2847,23 +2361,23 @@ function updateMobileOtherPlayers() {
 
     // Name
     const nameSpan = document.createElement("span");
-    nameSpan.className = "mobile-player-card-name";
+    nameSpan.className = "game-player-card-name";
     nameSpan.textContent = player.name;
     nameSpan.title = player.name; // Full name on hover
 
     // Time display (compact format)
     const timeSpan = document.createElement("span");
-    timeSpan.className = "mobile-player-card-time";
+    timeSpan.className = "game-player-card-time";
     timeSpan.textContent = formatTimeCompact(player.timeRemaining);
 
     // Life total
     const lifeSpan = document.createElement("span");
-    lifeSpan.className = "mobile-player-card-life";
+    lifeSpan.className = "game-player-card-life";
     lifeSpan.textContent = player.life;
 
     // Status indicator - show most important status
     const statusSpan = document.createElement("span");
-    statusSpan.className = "mobile-player-card-status";
+    statusSpan.className = "game-player-card-status";
 
     const status = getPlayerStatusIcon(player, isActive, isPaused);
     statusSpan.textContent = status.icon;
@@ -2894,7 +2408,7 @@ function updateMobileOtherPlayers() {
       }
     });
 
-    mobileUI.playerCards.appendChild(card);
+    gameUI.playerCards.appendChild(card);
   });
 }
 
@@ -2941,15 +2455,15 @@ function getPlayerStatusIcon(player, isActive, isPaused) {
  * Show player details popup near the tapped card
  */
 function showPlayerDetailsPopup(player, cardElement) {
-  const popup = document.getElementById("mobile-player-popup");
+  const popup = document.getElementById("game-player-popup");
   if (!popup) return;
 
   // Update popup content
-  const nameEl = popup.querySelector(".mobile-player-popup-name");
-  const timeEl = popup.querySelector(".mobile-player-popup-time");
-  const lifeEl = popup.querySelector(".mobile-player-popup-life");
-  const drunkEl = popup.querySelector(".mobile-player-popup-drunk");
-  const genericEl = popup.querySelector(".mobile-player-popup-generic");
+  const nameEl = popup.querySelector(".game-player-popup-name");
+  const timeEl = popup.querySelector(".game-player-popup-time");
+  const lifeEl = popup.querySelector(".game-player-popup-life");
+  const drunkEl = popup.querySelector(".game-player-popup-drunk");
+  const genericEl = popup.querySelector(".game-player-popup-generic");
 
   if (nameEl) nameEl.textContent = player.name;
   if (timeEl) timeEl.textContent = formatTime(player.timeRemaining);
@@ -2959,7 +2473,7 @@ function showPlayerDetailsPopup(player, cardElement) {
 
   // Position popup near the card
   const cardRect = cardElement.getBoundingClientRect();
-  const popupContent = popup.querySelector(".mobile-player-popup-content");
+  const popupContent = popup.querySelector(".game-player-popup-content");
 
   // Show popup to calculate its dimensions
   popup.style.display = "block";
@@ -2987,7 +2501,7 @@ function showPlayerDetailsPopup(player, cardElement) {
   popupContent.style.top = `${top}px`;
 
   // Close button handler
-  const closeBtn = popup.querySelector(".mobile-player-popup-close");
+  const closeBtn = popup.querySelector(".game-player-popup-close");
   if (closeBtn) {
     closeBtn.onclick = (e) => {
       e.stopPropagation();
@@ -3008,7 +2522,7 @@ function showPlayerDetailsPopup(player, cardElement) {
  * Hide the player details popup
  */
 function hidePlayerDetailsPopup() {
-  const popup = document.getElementById("mobile-player-popup");
+  const popup = document.getElementById("game-player-popup");
   if (popup) {
     popup.style.display = "none";
   }
@@ -3020,8 +2534,8 @@ function hidePlayerDetailsPopup() {
  * Handle clicks outside the popup to close it
  */
 function handlePopupOutsideClick(e) {
-  const popup = document.getElementById("mobile-player-popup");
-  const popupContent = popup?.querySelector(".mobile-player-popup-content");
+  const popup = document.getElementById("game-player-popup");
+  const popupContent = popup?.querySelector(".game-player-popup-content");
 
   if (popup && popupContent && !popupContent.contains(e.target)) {
     hidePlayerDetailsPopup();
@@ -3032,40 +2546,40 @@ function handlePopupOutsideClick(e) {
 const prevStatValues = { life: null, drunk: null, generic: null };
 
 /**
- * Update the mobile player stats bar with current player's life and counters
+ * Update the player stats bar with current player's life and counters
  */
-function updateMobilePlayerStats() {
-  if (!gameState || !mobileUI.playerStats) return;
+function updatePlayerStats() {
+  if (!gameState || !gameUI.playerStats) return;
 
   const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
   const isWaiting = gameState.status === "waiting";
 
   // Show/hide name row based on waiting state
   if (isWaiting && myPlayer) {
-    mobileUI.playerStats.classList.add("show-name");
+    gameUI.playerStats.classList.add("show-name");
   } else {
-    mobileUI.playerStats.classList.remove("show-name");
+    gameUI.playerStats.classList.remove("show-name");
   }
 
   // Update player name display
-  const nameValueEl = mobileUI.playerStats.querySelector(".mobile-player-name-value");
+  const nameValueEl = gameUI.playerStats.querySelector(".game-player-name-value");
   if (nameValueEl && myPlayer) {
     nameValueEl.textContent = myPlayer.name;
   }
 
   if (!myPlayer) {
     // Dim stats and reset to default values when no player claimed
-    mobileUI.playerStats.style.opacity = "0.5";
+    gameUI.playerStats.style.opacity = "0.5";
 
     // Reset displayed values to defaults
-    const lifeValue = mobileUI.lifeStat?.querySelector(".mobile-stat-value");
+    const lifeValue = gameUI.lifeStat?.querySelector(".game-stat-value");
     if (lifeValue) {
       lifeValue.textContent = "20";
       lifeValue.classList.remove("negative");
     }
-    const poisonValue = mobileUI.poisonStat?.querySelector(".mobile-stat-value");
+    const poisonValue = gameUI.poisonStat?.querySelector(".game-stat-value");
     if (poisonValue) poisonValue.textContent = "0";
-    const genericValue = mobileUI.genericStat?.querySelector(".mobile-stat-value");
+    const genericValue = gameUI.genericStat?.querySelector(".game-stat-value");
     if (genericValue) genericValue.textContent = "0";
 
     // Reset cached values
@@ -3075,10 +2589,10 @@ function updateMobilePlayerStats() {
     return;
   }
 
-  mobileUI.playerStats.style.opacity = "1";
+  gameUI.playerStats.style.opacity = "1";
 
   // Update life display with animation
-  const lifeValue = mobileUI.lifeStat?.querySelector(".mobile-stat-value");
+  const lifeValue = gameUI.lifeStat?.querySelector(".game-stat-value");
   if (lifeValue) {
     updateStatValue(lifeValue, myPlayer.life, prevStatValues.life);
     prevStatValues.life = myPlayer.life;
@@ -3087,14 +2601,14 @@ function updateMobilePlayerStats() {
   }
 
   // Update poison/drunk counter display with animation
-  const poisonValue = mobileUI.poisonStat?.querySelector(".mobile-stat-value");
+  const poisonValue = gameUI.poisonStat?.querySelector(".game-stat-value");
   if (poisonValue) {
     updateStatValue(poisonValue, myPlayer.drunkCounter, prevStatValues.drunk);
     prevStatValues.drunk = myPlayer.drunkCounter;
   }
 
   // Update generic counter display with animation
-  const genericValue = mobileUI.genericStat?.querySelector(".mobile-stat-value");
+  const genericValue = gameUI.genericStat?.querySelector(".game-stat-value");
   if (genericValue) {
     updateStatValue(genericValue, myPlayer.genericCounter, prevStatValues.generic);
     prevStatValues.generic = myPlayer.genericCounter;
@@ -3115,7 +2629,7 @@ function updateStatValue(element, newValue, oldValue) {
     element.classList.add("value-changed");
 
     // Also flash the parent stat group
-    const statGroup = element.closest(".mobile-stat-group");
+    const statGroup = element.closest(".game-stat-group");
     if (statGroup) {
       statGroup.classList.remove("value-flash");
       void statGroup.offsetWidth;
@@ -3131,9 +2645,9 @@ function updateStatValue(element, newValue, oldValue) {
 }
 
 /**
- * Handle mobile interaction button click
+ * Handle interaction button click
  */
-function handleMobileInteractionClick() {
+function handleInteractionClick() {
   if (!gameState) return;
 
   const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
@@ -3172,14 +2686,14 @@ function handleMobileInteractionClick() {
 }
 
 /**
- * Setup mobile UI event listeners
+ * Setup game UI event listeners
  */
-function setupMobileEventListeners() {
-  if (!mobileUI.screen) return;
+function setupGameEventListeners() {
+  if (!gameUI.screen) return;
 
   // Exit button
-  if (mobileUI.exitBtn) {
-    mobileUI.exitBtn.addEventListener("click", () => {
+  if (gameUI.exitBtn) {
+    gameUI.exitBtn.addEventListener("click", () => {
       if (
         confirm(
           "Are you sure you want to return to the main menu? This will disconnect you from the current game."
@@ -3191,39 +2705,39 @@ function setupMobileEventListeners() {
   }
 
   // Settings button
-  if (mobileUI.settingsBtn) {
-    mobileUI.settingsBtn.addEventListener("click", () => {
+  if (gameUI.settingsBtn) {
+    gameUI.settingsBtn.addEventListener("click", () => {
       showSettingsModal();
       playClick();
     });
   }
 
   // Interaction button
-  if (mobileUI.interactionBtn) {
-    mobileUI.interactionBtn.addEventListener("click", handleMobileInteractionClick);
+  if (gameUI.interactionBtn) {
+    gameUI.interactionBtn.addEventListener("click", handleInteractionClick);
   }
 
   // Turn indicator - tap to copy game code in waiting state
-  if (mobileUI.turnIndicator) {
-    mobileUI.turnIndicator.addEventListener("click", () => {
-      if (mobileUI.turnIndicator.classList.contains("copyable")) {
+  if (gameUI.turnIndicator) {
+    gameUI.turnIndicator.addEventListener("click", () => {
+      if (gameUI.turnIndicator.classList.contains("copyable")) {
         copyGameCode();
       }
     });
   }
 
   // Player stats buttons
-  setupMobileStatButtons();
+  setupStatButtons();
 }
 
 /**
- * Setup the +/- buttons for mobile player stats
+ * Setup the +/- buttons for player stats
  */
-function setupMobileStatButtons() {
-  if (!mobileUI.playerStats) return;
+function setupStatButtons() {
+  if (!gameUI.playerStats) return;
 
   // Life controls
-  const lifeControls = mobileUI.lifeStat?.querySelectorAll(".mobile-stat-btn");
+  const lifeControls = gameUI.lifeStat?.querySelectorAll(".game-stat-btn");
   if (lifeControls && lifeControls.length === 2) {
     lifeControls[0].addEventListener("click", () => {
       const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
@@ -3244,7 +2758,7 @@ function setupMobileStatButtons() {
   }
 
   // Poison/Drunk controls
-  const poisonControls = mobileUI.poisonStat?.querySelectorAll(".mobile-stat-btn");
+  const poisonControls = gameUI.poisonStat?.querySelectorAll(".game-stat-btn");
   if (poisonControls && poisonControls.length === 2) {
     poisonControls[0].addEventListener("click", () => {
       const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
@@ -3265,7 +2779,7 @@ function setupMobileStatButtons() {
   }
 
   // Generic counter controls
-  const genericControls = mobileUI.genericStat?.querySelectorAll(".mobile-stat-btn");
+  const genericControls = gameUI.genericStat?.querySelectorAll(".game-stat-btn");
   if (genericControls && genericControls.length === 2) {
     genericControls[0].addEventListener("click", () => {
       const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
@@ -3286,16 +2800,16 @@ function setupMobileStatButtons() {
   }
 }
 
-// Initialize mobile event listeners
-setupMobileEventListeners();
-setupMobileSettingsEventListeners();
+// Initialize game event listeners
+setupGameEventListeners();
+setupSettingsEventListeners();
 
 // Handle orientation changes to ensure layout recalculates
 window.addEventListener("orientationchange", () => {
   // Wait for the orientation change to complete
   setTimeout(() => {
-    if (gameState && isMobileDevice() && screens.mobileGame.style.display !== "none") {
-      updateMobileUI();
+    if (gameState && screens.game.style.display !== "none") {
+      updateGameUI();
     }
   }, 100);
 });
@@ -3305,8 +2819,8 @@ let resizeTimeout;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(() => {
-    if (gameState && isMobileDevice() && screens.mobileGame.style.display !== "none") {
-      updateMobileUI();
+    if (gameState && screens.game.style.display !== "none") {
+      updateGameUI();
     }
   }, 150);
 });
