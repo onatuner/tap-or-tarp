@@ -1915,6 +1915,75 @@ h1 {
   cursor: not-allowed;
 }
 
+/* ==================== */
+/* TARGETING SYSTEM     */
+/* ==================== */
+
+/* Targeted player card styling */
+.player-card.targeted,
+.game-player-card.targeted {
+  border-color: var(--color-danger, #ef4444);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+/* Awaiting priority - pulsing border */
+.player-card.awaiting-priority,
+.game-player-card.awaiting-priority {
+  animation: awaiting-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes awaiting-pulse {
+  0%, 100% {
+    border-color: var(--color-danger, #ef4444);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    border-color: #ff6b6b;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+  }
+}
+
+/* Original player (during targeting resolution) */
+.player-card.original-player,
+.game-player-card.original-player {
+  border-color: var(--color-primary);
+  opacity: 0.7;
+}
+
+/* Selectable target hint during selection */
+.player-card.selectable-target,
+.game-player-card.selectable-target {
+  cursor: pointer;
+  border-style: dashed;
+  border-color: var(--color-danger, #ef4444);
+}
+
+.player-card.selectable-target:hover,
+.game-player-card.selectable-target:hover {
+  border-color: var(--color-danger, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Target button variants */
+.game-interaction-btn-target {
+  background: var(--color-danger, #ef4444);
+  border-color: var(--color-danger, #ef4444);
+}
+
+.game-interaction-btn-confirm {
+  background: var(--color-danger, #ef4444);
+  border-color: var(--color-danger, #ef4444);
+}
+
+/* Mobile adjustments for targeting */
+@media (max-width: 768px) {
+  .player-card.targeted,
+  .game-player-card.targeted {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  }
+}
+
 /* Landscape: single row, smaller cards - centered, not stretched */
 @media (orientation: landscape) and (max-height: 500px) {
   .game-other-players {

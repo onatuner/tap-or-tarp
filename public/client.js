@@ -650,6 +650,21 @@ function handleMessage(message) {
     case "diceRolled":
       handleDiceRolled(message.data);
       break;
+    case "targetingUpdated":
+      handleTargetingUpdated(message.data);
+      break;
+    case "targetingStarted":
+      handleTargetingStarted(message.data);
+      break;
+    case "priorityPassed":
+      handlePriorityPassed(message.data);
+      break;
+    case "targetingComplete":
+      handleTargetingComplete(message.data);
+      break;
+    case "targetingCanceled":
+      handleTargetingCanceled(message.data);
+      break;
   }
 }
 
@@ -740,6 +755,242 @@ function handleDiceRolled(data) {
 
   // Play dice sound
   playDiceSound();
+}
+
+// ============================================================================
+// TARGETING SYSTEM HANDLERS
+// ============================================================================
+
+/**
+ * Get player name by player ID
+ * @param {number} playerId - Player ID
+ * @returns {string} Player name
+ */
+function getPlayerNameById(playerId) {
+  if (!gameState || !gameState.players) return `Player ${playerId}`;
+  const player = gameState.players.find(p => p.id === playerId);
+  return player ? player.name : `Player ${playerId}`;
+}
+
+/**
+ * Handle targeting state update
+ * @param {object} data - Targeting state data
+ */
+function handleTargetingUpdated(data) {
+  if (!gameState) return;
+
+  gameState.targetingState = data.targetingState;
+  gameState.targetedPlayers = data.targetedPlayers || [];
+  gameState.awaitingPriority = data.awaitingPriority || [];
+  gameState.originalActivePlayer = data.originalActivePlayer;
+  gameState.activePlayer = data.activePlayer;
+
+  updatePlayerCardTargetingStates();
+  updateInteractionButton();
+}
+
+/**
+ * Handle targeting started (resolution phase begins)
+ * @param {object} data - Targeting started data
+ */
+function handleTargetingStarted(data) {
+  if (!gameState) return;
+
+  gameState.targetingState = CONSTANTS.TARGETING.STATES.RESOLVING;
+  gameState.targetedPlayers = data.targets || [];
+  gameState.awaitingPriority = data.awaitingPriority || [];
+  gameState.originalActivePlayer = data.originalPlayer;
+  gameState.activePlayer = data.activePlayer;
+
+  const activeName = getPlayerNameById(data.activePlayer);
+  showToast(`Waiting for ${activeName} to respond...`, "info");
+
+  updatePlayerCardTargetingStates();
+  updateInteractionButton();
+}
+
+/**
+ * Handle priority passed by a targeted player
+ * @param {object} data - Priority passed data
+ */
+function handlePriorityPassed(data) {
+  if (!gameState) return;
+
+  const passedName = getPlayerNameById(data.passedBy);
+  showToast(`${passedName} passed priority`, "info");
+
+  gameState.awaitingPriority = data.awaitingPriority || [];
+  gameState.activePlayer = data.activePlayer;
+
+  updatePlayerCardTargetingStates();
+  updateInteractionButton();
+}
+
+/**
+ * Handle targeting complete (all targets passed)
+ * @param {object} data - Targeting complete data
+ */
+function handleTargetingComplete(data) {
+  if (!gameState) return;
+
+  gameState.targetingState = CONSTANTS.TARGETING.STATES.NONE;
+  gameState.targetedPlayers = [];
+  gameState.awaitingPriority = [];
+  gameState.originalActivePlayer = null;
+  gameState.activePlayer = data.activePlayer;
+
+  showToast("All players passed. Resuming...", "success");
+
+  updatePlayerCardTargetingStates();
+  updateInteractionButton();
+}
+
+/**
+ * Handle targeting canceled
+ * @param {object} data - Targeting canceled data
+ */
+function handleTargetingCanceled(data) {
+  if (!gameState) return;
+
+  gameState.targetingState = CONSTANTS.TARGETING.STATES.NONE;
+  gameState.targetedPlayers = [];
+  gameState.awaitingPriority = [];
+  gameState.originalActivePlayer = null;
+  gameState.activePlayer = data.activePlayer;
+
+  showToast("Targeting canceled", "info");
+
+  updatePlayerCardTargetingStates();
+  updateInteractionButton();
+}
+
+/**
+ * Update player card visual states for targeting
+ */
+function updatePlayerCardTargetingStates() {
+  if (!gameState) return;
+
+  // Update small player cards
+  document.querySelectorAll(".game-player-card").forEach(card => {
+    const playerId = parseInt(card.dataset.playerId);
+    updateCardTargetingClasses(card, playerId);
+  });
+
+  // Update large player cards (desktop/waiting view)
+  document.querySelectorAll(".player-card").forEach(card => {
+    const playerId = parseInt(card.dataset.playerId);
+    updateCardTargetingClasses(card, playerId);
+  });
+}
+
+/**
+ * Update targeting classes on a card
+ * @param {HTMLElement} card - Card element
+ * @param {number} playerId - Player ID
+ */
+function updateCardTargetingClasses(card, playerId) {
+  if (!card || isNaN(playerId)) return;
+
+  // Remove all targeting classes
+  card.classList.remove("targeted", "awaiting-priority", "original-player", "selectable-target");
+
+  if (!gameState) return;
+
+  // Add targeted class
+  if (gameState.targetedPlayers && gameState.targetedPlayers.includes(playerId)) {
+    card.classList.add("targeted");
+  }
+
+  // Add awaiting priority class
+  if (gameState.awaitingPriority && gameState.awaitingPriority.includes(playerId)) {
+    card.classList.add("awaiting-priority");
+  }
+
+  // Add original player class
+  if (gameState.originalActivePlayer === playerId) {
+    card.classList.add("original-player");
+  }
+
+  // Add selectable target class during selection mode
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  const isMyTurn = myPlayer && myPlayer.id === gameState.activePlayer;
+  const isSelecting = gameState.targetingState === CONSTANTS.TARGETING.STATES.SELECTING;
+  const isNone = !gameState.targetingState || gameState.targetingState === CONSTANTS.TARGETING.STATES.NONE;
+
+  if ((isSelecting || isNone) && isMyTurn && myPlayer && playerId !== myPlayer.id) {
+    const player = gameState.players.find(p => p.id === playerId);
+    if (player && !player.isEliminated) {
+      card.classList.add("selectable-target");
+    }
+  }
+}
+
+/**
+ * Send toggle target message
+ * @param {number} playerId - Player ID to toggle as target
+ */
+function sendToggleTarget(playerId) {
+  safeSend({ type: "toggleTarget", data: { playerId } });
+}
+
+/**
+ * Send confirm targets message
+ */
+function sendConfirmTargets() {
+  safeSend({ type: "confirmTargets", data: {} });
+}
+
+/**
+ * Send pass target priority message
+ */
+function sendPassTargetPriority() {
+  safeSend({ type: "passTargetPriority", data: {} });
+}
+
+/**
+ * Send cancel targeting message
+ */
+function sendCancelTargeting() {
+  safeSend({ type: "cancelTargeting", data: {} });
+}
+
+/**
+ * Handle player card click for targeting
+ * @param {number} playerId - Player ID that was clicked
+ * @returns {boolean} Whether the click was handled for targeting
+ */
+function handlePlayerCardTargetClick(playerId) {
+  if (!gameState || gameState.status !== "running") return false;
+
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  if (!myPlayer) return false;
+
+  const isMyTurn = myPlayer.id === gameState.activePlayer;
+  const targetingState = gameState.targetingState || CONSTANTS.TARGETING.STATES.NONE;
+  const isSelecting = targetingState === CONSTANTS.TARGETING.STATES.SELECTING;
+  const isNone = targetingState === CONSTANTS.TARGETING.STATES.NONE;
+  const isResolving = targetingState === CONSTANTS.TARGETING.STATES.RESOLVING;
+
+  // Can't click during resolution
+  if (isResolving) return true; // Handled but no action
+
+  // During selection mode or normal gameplay, active player can target others
+  if ((isSelecting || isNone) && isMyTurn) {
+    // Can't target self
+    if (playerId === myPlayer.id) return false;
+
+    // Can't target eliminated players
+    const targetPlayer = gameState.players.find(p => p.id === playerId);
+    if (!targetPlayer || targetPlayer.isEliminated) return false;
+
+    // Toggle this player as target
+    sendToggleTarget(playerId);
+    playClick();
+    hapticFeedback("light");
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -1195,7 +1446,7 @@ function createPlayerCard(player, isActive) {
   countersSection.appendChild(genericCounterEl);
   card.appendChild(countersSection);
 
-  // Click to claim/unclaim in waiting phase
+  // Click to claim/unclaim in waiting phase or toggle target
   card.addEventListener("click", () => {
     if (isWaiting) {
       if (isMyPlayer) {
@@ -1204,6 +1455,9 @@ function createPlayerCard(player, isActive) {
         sendClaim(player.id);
       }
       playClick();
+    } else if (gameState && gameState.status === "running") {
+      // Handle targeting clicks during game
+      handlePlayerCardTargetClick(player.id);
     }
   });
 
@@ -2189,7 +2443,15 @@ function updateInteractionButton() {
   const isPaused = gameState.status === "paused";
   const allPlayersClaimed = gameState.players.every(p => p.claimedBy !== null);
 
-  // Determine who has priority
+  // Targeting state checks
+  const targetingState = gameState.targetingState || CONSTANTS.TARGETING.STATES.NONE;
+  const isSelecting = targetingState === CONSTANTS.TARGETING.STATES.SELECTING;
+  const isResolving = targetingState === CONSTANTS.TARGETING.STATES.RESOLVING;
+  const targetCount = (gameState.targetedPlayers || []).length;
+  const myAwaitingPriority = myPlayer && (gameState.awaitingPriority || []).includes(myPlayer.id);
+  const isOriginalPlayer = myPlayer && gameState.originalActivePlayer === myPlayer.id;
+
+  // Determine who has priority (for interrupt system)
   let priorityPlayerId = null;
   if (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) {
     priorityPlayerId = gameState.interruptingPlayers[gameState.interruptingPlayers.length - 1];
@@ -2207,7 +2469,9 @@ function updateInteractionButton() {
     "game-interaction-btn-pass",
     "game-interaction-btn-interrupt",
     "game-interaction-btn-priority",
-    "game-interaction-btn-start"
+    "game-interaction-btn-start",
+    "game-interaction-btn-target",
+    "game-interaction-btn-confirm"
   );
 
   if (isWaiting) {
@@ -2222,6 +2486,46 @@ function updateInteractionButton() {
     gameUI.interactionBtn.classList.add("game-interaction-btn-start");
     gameUI.interactionBtn.disabled = false;
     gameUI.interactionBtn.setAttribute("aria-label", "Resume the game");
+  } else if (isSelecting) {
+    // Target selection mode
+    if (isMyTurn) {
+      if (targetCount === 0) {
+        gameUI.interactionBtn.textContent = "SELECT TARGETS";
+        gameUI.interactionBtn.classList.add("game-interaction-btn-target");
+        gameUI.interactionBtn.disabled = true;
+        gameUI.interactionBtn.setAttribute("aria-label", "Tap other players to select targets");
+      } else {
+        const label = targetCount === 1 ? "TARGET PLAYER" : `TARGET ${targetCount} PLAYERS`;
+        gameUI.interactionBtn.textContent = label;
+        gameUI.interactionBtn.classList.add("game-interaction-btn-confirm");
+        gameUI.interactionBtn.disabled = false;
+        gameUI.interactionBtn.setAttribute("aria-label", "Confirm selected targets");
+      }
+    } else {
+      gameUI.interactionBtn.textContent = "SELECTING...";
+      gameUI.interactionBtn.disabled = true;
+      gameUI.interactionBtn.setAttribute("aria-label", "Waiting for target selection");
+    }
+  } else if (isResolving) {
+    // Target resolution mode
+    if (myAwaitingPriority && isMyTurn) {
+      gameUI.interactionBtn.textContent = "PASS PRIORITY";
+      gameUI.interactionBtn.classList.add("game-interaction-btn-priority");
+      gameUI.interactionBtn.disabled = false;
+      gameUI.interactionBtn.setAttribute("aria-label", "Pass priority to next player");
+    } else if (myAwaitingPriority) {
+      gameUI.interactionBtn.textContent = "WAITING...";
+      gameUI.interactionBtn.disabled = true;
+      gameUI.interactionBtn.setAttribute("aria-label", "Waiting for your turn");
+    } else if (isOriginalPlayer) {
+      gameUI.interactionBtn.textContent = "WAITING...";
+      gameUI.interactionBtn.disabled = true;
+      gameUI.interactionBtn.setAttribute("aria-label", "Waiting for responses");
+    } else {
+      gameUI.interactionBtn.textContent = "RESOLVING...";
+      gameUI.interactionBtn.disabled = true;
+      gameUI.interactionBtn.setAttribute("aria-label", "Resolving targeting");
+    }
   } else if (myHasPriority && myInInterruptQueue) {
     // Pass Priority button (player has priority and is in interrupt queue)
     gameUI.interactionBtn.textContent = "PASS PRIORITY";
@@ -2294,7 +2598,7 @@ function updateOtherPlayers() {
       }
 
       // Update state classes
-      card.classList.remove("active", "eliminated", "paused", "critical", "warning");
+      card.classList.remove("active", "eliminated", "paused", "critical", "warning", "targeted", "awaiting-priority", "original-player", "selectable-target");
       if (isActive && !isPaused) card.classList.add("active");
       if (player.isEliminated) {
         card.classList.add("eliminated");
@@ -2305,6 +2609,9 @@ function updateOtherPlayers() {
       } else if (player.timeRemaining < CONSTANTS.WARNING_THRESHOLD_1MIN) {
         card.classList.add("warning");
       }
+
+      // Update targeting classes
+      updateCardTargetingClasses(card, playerId);
 
       // Update status indicator
       const statusSpan = card.querySelector(".game-player-card-status");
@@ -2361,6 +2668,9 @@ function updateOtherPlayers() {
       }
     }
 
+    // Apply targeting classes
+    updateCardTargetingClasses(card, player.id);
+
     // Name
     const nameSpan = document.createElement("span");
     nameSpan.className = "game-player-card-name";
@@ -2405,8 +2715,12 @@ function updateOtherPlayers() {
           playClick();
         }
       } else {
-        // In game - show player details popup
-        showPlayerDetailsPopup(player, card);
+        // In game - check for targeting first
+        const targetingHandled = handlePlayerCardTargetClick(player.id);
+        if (!targetingHandled) {
+          // Not in targeting mode - show player details popup
+          showPlayerDetailsPopup(player, card);
+        }
       }
     });
 
@@ -2655,8 +2969,16 @@ function handleInteractionClick() {
   const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
   const isWaiting = gameState.status === "waiting";
   const isPaused = gameState.status === "paused";
+  const isMyTurn = myPlayer && myPlayer.id === gameState.activePlayer;
 
-  // Determine who has priority
+  // Targeting state checks
+  const targetingState = gameState.targetingState || CONSTANTS.TARGETING.STATES.NONE;
+  const isSelecting = targetingState === CONSTANTS.TARGETING.STATES.SELECTING;
+  const isResolving = targetingState === CONSTANTS.TARGETING.STATES.RESOLVING;
+  const targetCount = (gameState.targetedPlayers || []).length;
+  const myAwaitingPriority = myPlayer && (gameState.awaitingPriority || []).includes(myPlayer.id);
+
+  // Determine who has priority (for interrupt system)
   let priorityPlayerId = null;
   if (gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0) {
     priorityPlayerId = gameState.interruptingPlayers[gameState.interruptingPlayers.length - 1];
@@ -2674,6 +2996,12 @@ function handleInteractionClick() {
   } else if (isPaused) {
     sendPause(); // Toggle pause to resume
     playPauseResume();
+  } else if (isSelecting && isMyTurn && targetCount > 0) {
+    // Confirm targets
+    sendConfirmTargets();
+  } else if (isResolving && myAwaitingPriority && isMyTurn) {
+    // Pass target priority
+    sendPassTargetPriority();
   } else if (myHasPriority && myInInterruptQueue) {
     safeSend({ type: "passPriority", data: {} });
   } else if (myPlayer && myPlayer.id === gameState.activePlayer && (!gameState.interruptingPlayers || gameState.interruptingPlayers.length === 0)) {

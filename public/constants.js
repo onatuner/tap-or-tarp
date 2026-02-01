@@ -16,4 +16,13 @@ window.CONSTANTS = {
   // Client storage
   TOKEN_STORAGE_KEY: "tapOrTarpReconnectTokens",
   TOKEN_MAX_AGE: 60 * 60 * 1000,
+
+  // Targeting system
+  TARGETING: {
+    STATES: {
+      NONE: "none",
+      SELECTING: "selecting",
+      RESOLVING: "resolving",
+    },
+  },
 };
