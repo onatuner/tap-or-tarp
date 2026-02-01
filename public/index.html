@@ -195,6 +195,15 @@
           >
             Start Game
           </button>
+          <button
+            id="random-start-btn"
+            class="btn btn-control"
+            style="display: none"
+            aria-label="Select random starting player"
+            title="Randomly select starting player"
+          >
+            🎲 Random Start
+          </button>
           <button id="pass-turn-btn" class="btn btn-control" aria-label="Pass turn to next player">
             Pass Turn
           </button>
@@ -210,6 +219,9 @@
             Pause
           </button>
           <button id="reset-btn" class="btn btn-control" aria-label="Reset game">Reset</button>
+          <button id="dice-btn" class="btn btn-control" aria-label="Roll dice">
+            🎲 Dice
+          </button>
           <button id="settings-btn" class="btn btn-control" aria-label="Open settings">
             Settings
           </button>
@@ -396,6 +408,14 @@
                 <span class="action-icon">🔄</span>
                 <span class="action-label">Reset</span>
               </button>
+              <button id="mobile-random-start-btn" class="mobile-settings-action-btn mobile-settings-action-btn-secondary" style="display: none">
+                <span class="action-icon">🎲</span>
+                <span class="action-label">Random Start</span>
+              </button>
+              <button id="mobile-dice-btn" class="mobile-settings-action-btn mobile-settings-action-btn-secondary">
+                <span class="action-icon">🎲</span>
+                <span class="action-label">Roll Dice</span>
+              </button>
             </div>
 
             <div class="mobile-settings-section">
@@ -497,6 +517,66 @@
               <span class="mobile-player-popup-value mobile-player-popup-generic">0</span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+      <!-- Dice Rolling Modal -->
+      <div id="dice-modal" class="modal" style="display: none" role="dialog" aria-labelledby="dice-modal-title" aria-modal="true">
+        <div class="modal-content dice-modal-content">
+          <h2 id="dice-modal-title">Roll Dice</h2>
+
+          <div class="dice-selector">
+            <label for="dice-sides-select">Number of sides</label>
+            <select id="dice-sides-select" class="dice-select">
+              <option value="2">D2 (Coin flip)</option>
+              <option value="4">D4</option>
+              <option value="6" selected>D6</option>
+              <option value="8">D8</option>
+              <option value="10">D10</option>
+              <option value="12">D12</option>
+              <option value="20">D20</option>
+              <option value="custom">Custom...</option>
+            </select>
+
+            <div id="dice-custom-container" class="dice-custom-container" style="display: none">
+              <label for="dice-custom-input">Enter number of sides</label>
+              <input
+                type="number"
+                id="dice-custom-input"
+                class="dice-custom-input"
+                min="1"
+                max="999"
+                placeholder="1-999"
+              >
+              <span class="dice-custom-hint">Enter a value between 1 and 999</span>
+            </div>
+          </div>
+
+          <div id="dice-last-result" class="dice-last-result" style="display: none">
+            <span class="dice-result-label">Last roll:</span>
+            <span id="dice-result-display" class="dice-result-display"></span>
+          </div>
+
+          <div class="modal-actions">
+            <button id="roll-dice-btn" class="btn btn-primary dice-roll-btn">
+              🎲 Roll
+            </button>
+            <button id="close-dice-modal" class="btn btn-secondary">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dice Result Toast -->
+      <div id="dice-toast" class="dice-toast" style="display: none" role="alert" aria-live="polite">
+        <div class="dice-toast-content">
+          <div class="dice-toast-header">
+            <span class="dice-roller-name"></span>
+            <span class="dice-roll-info">rolled a D<span class="dice-sides-display"></span></span>
+          </div>
+          <div class="dice-result-large"></div>
         </div>
       </div>
     </div>

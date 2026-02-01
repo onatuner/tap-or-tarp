@@ -417,7 +417,7 @@ describe("Persistence", () => {
         },
         {
           id: "BAD01",
-          state: null, // Invalid state
+          state: {}, // Missing required id field will cause fromState to throw
         },
       ];
       const mockStorage = {
@@ -428,8 +428,33 @@ describe("Persistence", () => {
 
       await loadSessions();
 
-      // Should continue loading despite errors
+      // Should continue loading despite errors - the missing id will cause restoration to fail
       expect(metrics.recordStorageOperation).toHaveBeenCalledWith("load", "error");
+    });
+
+    test("should filter out sessions with null state", async () => {
+      const savedSessions = [
+        {
+          id: "GOOD01",
+          state: { id: "GOOD01", mode: "casual", players: [], settings: { playerCount: 2 } },
+        },
+        {
+          id: "BAD01",
+          state: null, // Null state should be filtered out
+        },
+      ];
+      const mockStorage = {
+        loadAll: jest.fn(() => savedSessions),
+      };
+      mockServerState.storage = mockStorage;
+      mockServerState.gameSessions.clear();
+
+      await loadSessions();
+
+      // Only the good session should be loaded, null state is filtered out
+      expect(mockServerState.gameSessions.size).toBe(1);
+      expect(mockServerState.gameSessions.has("GOOD01")).toBe(true);
+      expect(mockServerState.gameSessions.has("BAD01")).toBe(false);
     });
 
     test("should handle loadAll errors gracefully", async () => {

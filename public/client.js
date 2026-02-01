@@ -259,12 +259,13 @@ const setupForm = {
 
 const controls = {
   start: document.getElementById("start-btn"),
+  randomStart: document.getElementById("random-start-btn"),
   passTurn: document.getElementById("pass-turn-btn"),
   interrupt: document.getElementById("interrupt-btn"),
   pause: document.getElementById("pause-btn"),
   reset: document.getElementById("reset-btn"),
   settings: document.getElementById("settings-btn"),
-
+  dice: document.getElementById("dice-btn"),
   backToMenu: document.getElementById("back-to-menu-btn"),
 };
 
@@ -295,6 +296,7 @@ const mobileSettingsModal = {
   panels: document.querySelectorAll(".mobile-settings-panel"),
   pauseBtn: document.getElementById("mobile-pause-btn"),
   resetBtn: document.getElementById("mobile-reset-btn"),
+  randomStartBtn: document.getElementById("mobile-random-start-btn"),
   colorPicker: document.getElementById("mobile-color-picker"),
   thresholdsContainer: document.getElementById("mobile-thresholds-container"),
   addThresholdBtn: document.getElementById("mobile-add-threshold-btn"),
@@ -303,6 +305,27 @@ const mobileSettingsModal = {
   closeLobbyBtn: document.getElementById("mobile-close-lobby-btn"),
   saveBtn: document.getElementById("mobile-settings-save"),
   cancelBtn: document.getElementById("mobile-settings-cancel"),
+  diceBtn: document.getElementById("mobile-dice-btn"),
+};
+
+// Dice modal elements
+const diceModal = {
+  modal: document.getElementById("dice-modal"),
+  select: document.getElementById("dice-sides-select"),
+  customContainer: document.getElementById("dice-custom-container"),
+  customInput: document.getElementById("dice-custom-input"),
+  rollBtn: document.getElementById("roll-dice-btn"),
+  closeBtn: document.getElementById("close-dice-modal"),
+  lastResult: document.getElementById("dice-last-result"),
+  resultDisplay: document.getElementById("dice-result-display"),
+};
+
+// Dice toast element
+const diceToast = {
+  element: document.getElementById("dice-toast"),
+  rollerName: null,
+  sidesDisplay: null,
+  resultLarge: null,
 };
 
 // Available player colors
@@ -652,6 +675,254 @@ function handleMessage(message) {
         }
       }
       break;
+    case "randomPlayerSelected":
+      handleRandomPlayerSelected(message.data);
+      break;
+    case "diceRolled":
+      handleDiceRolled(message.data);
+      break;
+  }
+}
+
+/**
+ * Handle random player selection
+ * @param {object} data - Contains playerId and playerName
+ */
+function handleRandomPlayerSelected(data) {
+  const { playerId, playerName } = data;
+
+  // Show toast notification
+  showToast(`🎲 ${playerName} selected as starting player!`, "info", 3000);
+
+  // Highlight the selected player card
+  highlightRandomSelectedPlayer(playerId);
+
+  // Update game state if available
+  if (gameState) {
+    gameState.activePlayer = playerId;
+  }
+}
+
+/**
+ * Highlight the randomly selected player card with animation
+ * @param {number} playerId - Player ID to highlight
+ */
+function highlightRandomSelectedPlayer(playerId) {
+  // Remove previous highlights
+  document.querySelectorAll(".player-card.random-selected").forEach(card => {
+    card.classList.remove("random-selected");
+  });
+
+  // Find and highlight the selected player card (desktop)
+  const desktopCard = document.querySelector(`.player-card[data-player-id="${playerId}"]`);
+  if (desktopCard) {
+    desktopCard.classList.add("random-selected");
+    setTimeout(() => {
+      desktopCard.classList.remove("random-selected");
+    }, 3000);
+  }
+
+  // Find and highlight mobile player card
+  const mobileCard = document.querySelector(`.mobile-player-card[data-player-id="${playerId}"]`);
+  if (mobileCard) {
+    mobileCard.classList.add("random-selected");
+    setTimeout(() => {
+      mobileCard.classList.remove("random-selected");
+    }, 3000);
+  }
+}
+
+// ============================================================================
+// DICE ROLLING FEATURE
+// ============================================================================
+
+let diceToastTimeout = null;
+
+/**
+ * Initialize dice toast element references
+ */
+function initDiceToast() {
+  if (diceToast.element) {
+    diceToast.rollerName = diceToast.element.querySelector(".dice-roller-name");
+    diceToast.sidesDisplay = diceToast.element.querySelector(".dice-sides-display");
+    diceToast.resultLarge = diceToast.element.querySelector(".dice-result-large");
+  }
+}
+
+/**
+ * Handle dice rolled message from server
+ * @param {object} data - Contains playerName, sides, result
+ */
+function handleDiceRolled(data) {
+  const { playerName, sides, result } = data;
+
+  // Show toast to all players
+  showDiceToast(playerName, sides, result);
+
+  // Update the modal if open
+  if (diceModal.modal && diceModal.modal.style.display !== "none") {
+    if (diceModal.lastResult) {
+      diceModal.lastResult.style.display = "block";
+    }
+    if (diceModal.resultDisplay) {
+      diceModal.resultDisplay.textContent = result;
+    }
+  }
+
+  // Play dice sound
+  playDiceSound();
+}
+
+/**
+ * Show the dice result toast
+ */
+function showDiceToast(playerName, sides, result) {
+  if (!diceToast.element) return;
+
+  // Initialize element references if needed
+  if (!diceToast.rollerName) {
+    initDiceToast();
+  }
+
+  // Update content
+  if (diceToast.rollerName) diceToast.rollerName.textContent = playerName;
+  if (diceToast.sidesDisplay) diceToast.sidesDisplay.textContent = sides;
+  if (diceToast.resultLarge) diceToast.resultLarge.textContent = result;
+
+  // Clear any existing timeout
+  if (diceToastTimeout) {
+    clearTimeout(diceToastTimeout);
+  }
+
+  // Show toast
+  diceToast.element.style.display = "block";
+  // Force reflow for animation
+  void diceToast.element.offsetWidth;
+  diceToast.element.classList.add("visible");
+
+  // Auto-hide after 3 seconds
+  diceToastTimeout = setTimeout(() => {
+    hideDiceToast();
+  }, 3000);
+}
+
+/**
+ * Hide the dice result toast
+ */
+function hideDiceToast() {
+  if (!diceToast.element) return;
+
+  diceToast.element.classList.remove("visible");
+
+  // Remove display after animation
+  setTimeout(() => {
+    if (diceToast.element) {
+      diceToast.element.style.display = "none";
+    }
+  }, 300);
+}
+
+/**
+ * Open the dice modal
+ */
+function openDiceModal() {
+  if (!diceModal.modal) return;
+  diceModal.modal.style.display = "flex";
+  // Reset to default if custom was selected
+  if (diceModal.select && diceModal.select.value === "custom") {
+    diceModal.select.value = "6";
+    if (diceModal.customContainer) {
+      diceModal.customContainer.style.display = "none";
+    }
+  }
+  // Focus the select
+  setTimeout(() => diceModal.select?.focus(), 100);
+}
+
+/**
+ * Close the dice modal
+ */
+function closeDiceModal() {
+  if (!diceModal.modal) return;
+  diceModal.modal.style.display = "none";
+}
+
+/**
+ * Handle dice select change - show/hide custom input
+ */
+function handleDiceSelectChange() {
+  const value = diceModal.select?.value;
+  if (value === "custom") {
+    if (diceModal.customContainer) {
+      diceModal.customContainer.style.display = "block";
+      diceModal.customInput?.focus();
+    }
+  } else {
+    if (diceModal.customContainer) {
+      diceModal.customContainer.style.display = "none";
+    }
+  }
+}
+
+/**
+ * Get the number of sides to roll
+ * @returns {number|null} Number of sides or null if invalid
+ */
+function getDiceSides() {
+  const selectValue = diceModal.select?.value;
+
+  if (selectValue === "custom") {
+    const customValue = parseInt(diceModal.customInput?.value, 10);
+    if (isNaN(customValue) || customValue < 1 || customValue > 999) {
+      showToast("Please enter a valid number between 1 and 999", "error");
+      return null;
+    }
+    return customValue;
+  }
+
+  return parseInt(selectValue, 10);
+}
+
+/**
+ * Send dice roll to server
+ */
+function sendRollDice() {
+  const sides = getDiceSides();
+  if (sides === null) return;
+
+  // Add rolling animation
+  if (diceModal.rollBtn) {
+    diceModal.rollBtn.classList.add("rolling");
+    setTimeout(() => diceModal.rollBtn.classList.remove("rolling"), 450);
+  }
+
+  // Send to server
+  safeSend({ type: "rollDice", data: { sides } });
+}
+
+/**
+ * Play dice roll sound effect
+ */
+function playDiceSound() {
+  if (!audioEnabled || !audioContext) return;
+
+  try {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
+
+    gainNode.gain.setValueAtTime(0.3 * volume, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+  } catch (e) {
+    // Audio not supported or blocked
   }
 }
 
@@ -1145,10 +1416,14 @@ function updateControls() {
     controls.start.style.display = "inline-block";
     controls.start.disabled = !allPlayersClaimed;
     controls.start.title = allPlayersClaimed ? "" : "All players must be claimed before starting";
+    // Show random start button only in waiting state with at least one claimed player
+    const hasClaimedPlayers = gameState.players.some(p => p.claimedBy !== null);
+    controls.randomStart.style.display = hasClaimedPlayers ? "inline-block" : "none";
     controls.passTurn.style.display = "none";
     controls.interrupt.style.display = "none";
   } else {
     controls.start.style.display = "none";
+    controls.randomStart.style.display = "none";
     controls.passTurn.style.display = "inline-block";
     controls.passTurn.disabled =
       !isActivePlayer ||
@@ -1404,6 +1679,13 @@ function showMobileSettingsModal() {
   // Update pause button text
   updateMobilePauseButton();
 
+  // Show/hide random start button based on game state
+  if (mobileSettingsModal.randomStartBtn && gameState) {
+    const isWaiting = gameState.status === "waiting";
+    const hasClaimedPlayers = gameState.players.some(p => p.claimedBy !== null);
+    mobileSettingsModal.randomStartBtn.style.display = (isWaiting && hasClaimedPlayers) ? "flex" : "none";
+  }
+
   // Reset to first tab
   switchMobileSettingsTab("controls");
 
@@ -1628,6 +1910,20 @@ function setupMobileSettingsEventListeners() {
       hideMobileSettingsModal();
       playClick();
     }
+  });
+
+  // Random start button
+  mobileSettingsModal.randomStartBtn?.addEventListener("click", () => {
+    safeSend({ type: "randomStartPlayer", data: {} });
+    hideMobileSettingsModal();
+    playClick();
+  });
+
+  // Dice button
+  mobileSettingsModal.diceBtn?.addEventListener("click", () => {
+    hideMobileSettingsModal();
+    openDiceModal();
+    playClick();
   });
 
   // Add threshold button
@@ -2106,6 +2402,49 @@ colorPickerModal.cancel.addEventListener("click", () => {
 controls.start.addEventListener("click", () => {
   sendStart();
   playClick();
+});
+
+controls.randomStart.addEventListener("click", () => {
+  safeSend({ type: "randomStartPlayer", data: {} });
+  playClick();
+});
+
+// Dice button
+controls.dice.addEventListener("click", () => {
+  openDiceModal();
+  playClick();
+});
+
+// Dice modal events
+diceModal.closeBtn?.addEventListener("click", () => {
+  closeDiceModal();
+});
+
+diceModal.select?.addEventListener("change", () => {
+  handleDiceSelectChange();
+});
+
+diceModal.rollBtn?.addEventListener("click", () => {
+  sendRollDice();
+});
+
+diceModal.customInput?.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    sendRollDice();
+  }
+});
+
+// Close dice modal on backdrop click
+diceModal.modal?.addEventListener("click", e => {
+  if (e.target === diceModal.modal) {
+    closeDiceModal();
+  }
+});
+
+// Click dice toast to dismiss
+diceToast.element?.addEventListener("click", () => {
+  hideDiceToast();
 });
 
 controls.passTurn.addEventListener("click", () => {
