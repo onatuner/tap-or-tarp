@@ -1259,6 +1259,8 @@ function updateTimes() {
 
   // Update the unified game UI time display
   updateTimeDisplay();
+  // Update other players' time in the small cards
+  updateOtherPlayers();
 }
 
 function safeSend(message) {
