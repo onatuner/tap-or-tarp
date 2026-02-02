@@ -186,6 +186,7 @@ const gameUI = {
   exitBtn: document.querySelector(".game-exit-btn"),
   settingsBtn: document.querySelector(".game-settings-btn"),
   diceBtn: document.querySelector(".game-dice-btn"),
+  playOrderBtn: document.querySelector(".game-play-order-btn"),
   timeDisplay: document.querySelector(".game-time-display"),
   timeValue: document.querySelector(".game-time-value"),
   turnIndicator: document.querySelector(".game-turn-indicator"),
@@ -648,6 +649,9 @@ function handleMessage(message) {
     case "randomPlayerSelected":
       handleRandomPlayerSelected(message.data);
       break;
+    case "playOrderRolled":
+      handlePlayOrderRolled(message.data);
+      break;
     case "diceRolled":
       handleDiceRolled(message.data);
       break;
@@ -715,6 +719,79 @@ function highlightRandomSelectedPlayer(playerId) {
       playerCard.classList.remove("random-selected");
     }, 3000);
   }
+}
+
+/**
+ * Handle play order rolled event
+ * @param {object} data - Contains rolls array and newOrder
+ */
+function handlePlayOrderRolled(data) {
+  const { rolls, newOrder } = data;
+
+  // Build message showing all rolls
+  const rollMessages = rolls.map(r => {
+    const rollStr = r.rolls.length > 1
+      ? `${r.rolls.join(" → ")} (tiebreaker)`
+      : `${r.finalRoll}`;
+    return `${r.position}. ${r.playerName}: ${rollStr}`;
+  }).join("\n");
+
+  // Show toast with results
+  showToast(`🎲 Play Order Decided!\n${rollMessages}`, "info", 6000);
+
+  // Update local game state with new player order
+  if (gameState && newOrder) {
+    // Reorder players array to match server order
+    const reorderedPlayers = [];
+    for (const playerId of newOrder) {
+      const player = gameState.players.find(p => p.id === playerId);
+      if (player) {
+        reorderedPlayers.push(player);
+      }
+    }
+    // Add any remaining players (unclaimed)
+    for (const player of gameState.players) {
+      if (!reorderedPlayers.includes(player)) {
+        reorderedPlayers.push(player);
+      }
+    }
+    gameState.players = reorderedPlayers;
+
+    // Set first player as active
+    if (newOrder.length > 0) {
+      gameState.activePlayer = newOrder[0];
+    }
+
+    // Re-render player cards with new order
+    updateOtherPlayers();
+  }
+
+  // Highlight players in order with staggered animation
+  rolls.forEach((roll, index) => {
+    setTimeout(() => {
+      highlightRandomSelectedPlayer(roll.playerId);
+    }, index * 500);
+  });
+}
+
+/**
+ * Send roll play order request to server
+ */
+function sendRollPlayOrder() {
+  safeSend({ type: "rollPlayOrder", data: {} });
+}
+
+/**
+ * Update play order button visibility based on game state
+ */
+function updatePlayOrderButtonVisibility() {
+  if (!gameUI.playOrderBtn || !gameState) return;
+
+  const isWaiting = gameState.status === "waiting";
+  const claimedCount = gameState.players.filter(p => p.claimedBy).length;
+  const hasEnoughPlayers = claimedCount >= 2;
+
+  gameUI.playOrderBtn.style.display = (isWaiting && hasEnoughPlayers) ? "flex" : "none";
 }
 
 // ============================================================================
@@ -2383,6 +2460,7 @@ function updateGameUI() {
   updateInteractionButton();
   updateOtherPlayers();
   updatePlayerStats();
+  updatePlayOrderButtonVisibility();
 }
 
 /**
@@ -3145,6 +3223,14 @@ function setupGameEventListeners() {
   if (gameUI.diceBtn) {
     gameUI.diceBtn.addEventListener("click", () => {
       openDiceModal();
+      playClick();
+    });
+  }
+
+  // Play order button
+  if (gameUI.playOrderBtn) {
+    gameUI.playOrderBtn.addEventListener("click", () => {
+      sendRollPlayOrder();
       playClick();
     });
   }
