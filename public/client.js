@@ -185,11 +185,13 @@ const gameUI = {
   screen: document.getElementById("game-screen"),
   exitBtn: document.querySelector(".game-exit-btn"),
   settingsBtn: document.querySelector(".game-settings-btn"),
+  diceBtn: document.querySelector(".game-dice-btn"),
   timeDisplay: document.querySelector(".game-time-display"),
   timeValue: document.querySelector(".game-time-value"),
   turnIndicator: document.querySelector(".game-turn-indicator"),
   interactionArea: document.querySelector(".game-interaction-area"),
   interactionBtn: document.querySelector(".game-interaction-btn"),
+  cancelTargetingBtn: document.querySelector(".game-cancel-targeting-btn"),
   otherPlayers: document.querySelector(".game-other-players"),
   playerCards: document.querySelector(".game-player-cards"),
   playerStats: document.querySelector(".game-player-stats"),
@@ -271,7 +273,6 @@ const settingsModal = {
   closeLobbyBtn: document.getElementById("settings-close-lobby-btn"),
   saveBtn: document.getElementById("settings-save-btn"),
   cancelBtn: document.getElementById("settings-cancel-btn"),
-  diceBtn: document.getElementById("settings-dice-btn"),
 };
 
 const colorPickerModal = {
@@ -1911,13 +1912,6 @@ function setupSettingsEventListeners() {
     playClick();
   });
 
-  // Dice button
-  settingsModal.diceBtn?.addEventListener("click", () => {
-    hideSettingsModal();
-    openDiceModal();
-    playClick();
-  });
-
   // Add threshold button
   settingsModal.addThresholdBtn?.addEventListener("click", () => {
     addThresholdItem(1);
@@ -2533,6 +2527,15 @@ function updateInteractionButton() {
     "game-interaction-btn-confirm"
   );
 
+  // Show cancel targeting button only during selection mode when it's my turn
+  if (gameUI.cancelTargetingBtn) {
+    if (isSelecting && isMyTurn) {
+      gameUI.cancelTargetingBtn.style.display = "block";
+    } else {
+      gameUI.cancelTargetingBtn.style.display = "none";
+    }
+  }
+
   if (isWaiting) {
     // Start Game button
     gameUI.interactionBtn.textContent = "START GAME";
@@ -3134,6 +3137,22 @@ function setupGameEventListeners() {
   if (gameUI.settingsBtn) {
     gameUI.settingsBtn.addEventListener("click", () => {
       showSettingsModal();
+      playClick();
+    });
+  }
+
+  // Dice button
+  if (gameUI.diceBtn) {
+    gameUI.diceBtn.addEventListener("click", () => {
+      openDiceModal();
+      playClick();
+    });
+  }
+
+  // Cancel targeting button
+  if (gameUI.cancelTargetingBtn) {
+    gameUI.cancelTargetingBtn.addEventListener("click", () => {
+      sendCancelTargeting();
       playClick();
     });
   }

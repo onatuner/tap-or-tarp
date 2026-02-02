@@ -1976,6 +1976,31 @@ h1 {
   border-color: var(--color-danger, #ef4444);
 }
 
+/* Cancel targeting button */
+.game-cancel-targeting-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  padding: 8px 16px;
+  font-size: 0.9em;
+  font-weight: 600;
+  background: rgba(100, 100, 100, 0.8);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  touch-action: manipulation;
+}
+
+.game-cancel-targeting-btn:hover {
+  background: rgba(120, 120, 120, 0.9);
+}
+
+.game-cancel-targeting-btn:active {
+  transform: scale(0.95);
+}
+
 /* Mobile adjustments for targeting */
 @media (max-width: 768px) {
   .player-card.targeted,
