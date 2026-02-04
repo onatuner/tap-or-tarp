@@ -977,34 +977,69 @@ function updateCardTargetingClasses(card, playerId) {
   if (!card || isNaN(playerId)) return;
 
   // Remove all targeting classes
-  card.classList.remove("targeted", "awaiting-priority", "original-player", "selectable-target");
+  card.classList.remove(
+    "targeted",
+    "awaiting-priority",
+    "original-player",
+    "selectable-target",
+    "not-selectable",
+    "currently-responding"
+  );
+  card.removeAttribute("data-queue-position");
 
   if (!gameState) return;
 
-  // Add targeted class
-  if (gameState.targetedPlayers && gameState.targetedPlayers.includes(playerId)) {
-    card.classList.add("targeted");
-  }
-
-  // Add awaiting priority class
-  if (gameState.awaitingPriority && gameState.awaitingPriority.includes(playerId)) {
-    card.classList.add("awaiting-priority");
-  }
-
-  // Add original player class
-  if (gameState.originalActivePlayer === playerId) {
-    card.classList.add("original-player");
-  }
-
-  // Add selectable target class during selection mode
   const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
   const isMyTurn = myPlayer && myPlayer.id === gameState.activePlayer;
   const isSelecting = gameState.targetingState === CONSTANTS.TARGETING.STATES.SELECTING;
-  const isNone = !gameState.targetingState || gameState.targetingState === CONSTANTS.TARGETING.STATES.NONE;
+  const isResolving = gameState.targetingState === CONSTANTS.TARGETING.STATES.RESOLVING;
+  const targetPlayer = gameState.players.find(p => p.id === playerId);
 
-  if ((isSelecting || isNone) && isMyTurn && myPlayer && playerId !== myPlayer.id) {
-    const player = gameState.players.find(p => p.id === playerId);
-    if (player && !player.isEliminated) {
+  // During SELECTING state
+  if (isSelecting && isMyTurn) {
+    // Already targeted
+    if (gameState.targetedPlayers && gameState.targetedPlayers.includes(playerId)) {
+      card.classList.add("targeted");
+    }
+    // Can be selected (not self, not eliminated)
+    else if (myPlayer && playerId !== myPlayer.id && targetPlayer && !targetPlayer.isEliminated) {
+      card.classList.add("selectable-target");
+    }
+    // Cannot be selected
+    else {
+      card.classList.add("not-selectable");
+    }
+  }
+
+  // During RESOLVING state
+  if (isResolving) {
+    // Add targeted class to all targeted players
+    if (gameState.targetedPlayers && gameState.targetedPlayers.includes(playerId)) {
+      card.classList.add("targeted");
+    }
+
+    // Add awaiting priority and queue position
+    if (gameState.awaitingPriority && gameState.awaitingPriority.includes(playerId)) {
+      const queuePosition = gameState.awaitingPriority.indexOf(playerId) + 1;
+      card.classList.add("awaiting-priority");
+      card.setAttribute("data-queue-position", queuePosition);
+
+      // First in queue is currently responding
+      if (queuePosition === 1) {
+        card.classList.add("currently-responding");
+      }
+    }
+
+    // Original player (who initiated targeting)
+    if (gameState.originalActivePlayer === playerId) {
+      card.classList.add("original-player");
+    }
+  }
+
+  // In NONE state but active player can see selectable targets
+  const isNone = !gameState.targetingState || gameState.targetingState === CONSTANTS.TARGETING.STATES.NONE;
+  if (isNone && isMyTurn && myPlayer && playerId !== myPlayer.id) {
+    if (targetPlayer && !targetPlayer.isEliminated) {
       card.classList.add("selectable-target");
     }
   }
@@ -1037,6 +1072,69 @@ function sendPassTargetPriority() {
  */
 function sendCancelTargeting() {
   safeSend({ type: "cancelTargeting", data: {} });
+}
+
+/**
+ * Show or hide targeting instructions banner
+ * @param {string|null} message - Message to show, or null to hide
+ */
+function updateTargetingInstructions(message) {
+  let banner = document.getElementById("targeting-instructions");
+
+  if (!message) {
+    if (banner) banner.remove();
+    return;
+  }
+
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "targeting-instructions";
+    banner.className = "targeting-instructions-banner";
+    document.body.appendChild(banner);
+  }
+
+  banner.textContent = message;
+}
+
+/**
+ * Update the targeting queue display
+ */
+function updateTargetingQueue() {
+  let queueDisplay = document.getElementById("targeting-queue");
+
+  if (!gameState || gameState.targetingState !== CONSTANTS.TARGETING.STATES.RESOLVING) {
+    if (queueDisplay) queueDisplay.remove();
+    return;
+  }
+
+  if (!queueDisplay) {
+    queueDisplay = document.createElement("div");
+    queueDisplay.id = "targeting-queue";
+    queueDisplay.className = "targeting-queue";
+    document.body.appendChild(queueDisplay);
+  }
+
+  const awaitingPlayers = (gameState.awaitingPriority || [])
+    .map(id => gameState.players.find(p => p.id === id))
+    .filter(Boolean);
+
+  if (awaitingPlayers.length === 0) {
+    queueDisplay.remove();
+    return;
+  }
+
+  queueDisplay.innerHTML = `
+    <div class="queue-header">Response Queue</div>
+    <div class="queue-list">
+      ${awaitingPlayers.map((player, index) => `
+        <div class="queue-item ${index === 0 ? 'current' : ''}">
+          <span class="queue-position">${index + 1}</span>
+          <span class="queue-name">${player.name}</span>
+          ${index === 0 ? '<span class="queue-status">Responding...</span>' : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
 /**
@@ -2502,6 +2600,41 @@ function updateGameUI() {
   updateOtherPlayers();
   updatePlayerStats();
   updatePlayOrderButtonVisibility();
+  updateTargetingUI();
+}
+
+/**
+ * Update targeting-related UI elements (instructions banner and queue)
+ */
+function updateTargetingUI() {
+  if (!gameState) {
+    updateTargetingInstructions(null);
+    updateTargetingQueue();
+    return;
+  }
+
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  const isMyTurn = myPlayer && myPlayer.id === gameState.activePlayer;
+
+  // Update targeting instructions
+  if (gameState.targetingState === CONSTANTS.TARGETING.STATES.SELECTING && isMyTurn) {
+    const targetCount = gameState.targetedPlayers?.length || 0;
+    updateTargetingInstructions(
+      `Select players to target (${targetCount} selected) - Tap to toggle, then Confirm`
+    );
+  } else if (gameState.targetingState === CONSTANTS.TARGETING.STATES.RESOLVING) {
+    const awaitingCount = gameState.awaitingPriority?.length || 0;
+    if (myPlayer && gameState.awaitingPriority?.includes(myPlayer.id)) {
+      updateTargetingInstructions("Your turn to respond - Pass Priority when ready");
+    } else {
+      updateTargetingInstructions(`Waiting for ${awaitingCount} player(s) to respond...`);
+    }
+  } else {
+    updateTargetingInstructions(null);
+  }
+
+  // Update targeting queue
+  updateTargetingQueue();
 }
 
 /**
