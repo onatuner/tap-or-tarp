@@ -98,6 +98,53 @@ body.game-active {
   height: 100%;
 }
 
+/* Connection status indicator */
+.connection-status {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #333;
+  border-radius: 20px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10000;
+  font-size: 0.85em;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.connection-status.hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px);
+  pointer-events: none;
+}
+
+.connection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  animation: pulse 1.5s infinite;
+}
+
+.connection-status.connected .connection-dot {
+  background: #22c55e;
+  animation: none;
+}
+
+.connection-status.disconnected .connection-dot {
+  background: #ef4444;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 #app {
   width: 100%;
   max-width: 1200px;

@@ -8,6 +8,106 @@ const volume = 0.5;
 let myClientId = null;
 let pendingReconnect = null; // Track pending reconnection attempt for token cleanup on failure
 let wakeLock = null; // Screen wake lock to prevent screen timeout during gameplay
+let isConnected = false; // Track WebSocket connection state
+
+// Connection status UI element
+const connectionStatus = {
+  element: document.getElementById("connection-status"),
+  dot: null,
+  text: null,
+};
+
+// Initialize connection status elements after DOM ready
+function initConnectionStatus() {
+  if (connectionStatus.element) {
+    connectionStatus.dot = connectionStatus.element.querySelector(".connection-dot");
+    connectionStatus.text = connectionStatus.element.querySelector(".connection-text");
+  }
+}
+
+function showConnectionStatus(state, message) {
+  if (!connectionStatus.element) return;
+
+  connectionStatus.element.classList.remove("hidden", "connected", "disconnected");
+  connectionStatus.element.classList.add(state);
+  if (connectionStatus.text) {
+    connectionStatus.text.textContent = message;
+  }
+
+  // Auto-hide when connected after 2 seconds
+  if (state === "connected") {
+    setTimeout(() => {
+      if (isConnected) {
+        connectionStatus.element.classList.add("hidden");
+      }
+    }, 2000);
+  }
+}
+
+function hideConnectionStatus() {
+  if (connectionStatus.element) {
+    connectionStatus.element.classList.add("hidden");
+  }
+}
+
+// Show a toast message (works better than alert in PWA standalone mode)
+function showToast(message, duration = 3000) {
+  // Check if a toast container exists, if not create one
+  let toastContainer = document.getElementById("toast-container");
+  if (!toastContainer) {
+    toastContainer = document.createElement("div");
+    toastContainer.id = "toast-container";
+    toastContainer.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10001;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    `;
+    document.body.appendChild(toastContainer);
+  }
+
+  const toast = document.createElement("div");
+  toast.style.cssText = `
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    max-width: 300px;
+    text-align: center;
+    animation: toastFadeIn 0.2s ease-out;
+    border: 1px solid #444;
+  `;
+  toast.textContent = message;
+  toastContainer.appendChild(toast);
+
+  // Add animation keyframes if not already added
+  if (!document.getElementById("toast-styles")) {
+    const style = document.createElement("style");
+    style.id = "toast-styles";
+    style.textContent = `
+      @keyframes toastFadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes toastFadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-10px); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  setTimeout(() => {
+    toast.style.animation = "toastFadeOut 0.2s ease-out forwards";
+    setTimeout(() => toast.remove(), 200);
+  }, duration);
+}
 
 // ============================================================================
 // SCREEN WAKE LOCK MANAGEMENT
@@ -533,11 +633,18 @@ function getMyPlayerId() {
 
 function connect() {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+
+  // Show connecting status
+  isConnected = false;
+  showConnectionStatus("", "Connecting...");
+
   ws = new WebSocket(`${protocol}//${window.location.host}`);
 
   ws.onopen = () => {
     console.log("Connected to server");
+    isConnected = true;
     reconnectAttempts = 0;
+    showConnectionStatus("connected", "Connected");
   };
 
   ws.onmessage = event => {
@@ -551,18 +658,22 @@ function connect() {
 
   ws.onclose = () => {
     console.log("Disconnected from server");
+    isConnected = false;
     const delay = Math.min(
       CONSTANTS.RECONNECT_INITIAL_DELAY * Math.pow(2, reconnectAttempts),
       CONSTANTS.RECONNECT_MAX_DELAY
     );
     reconnectAttempts++;
     console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts})`);
+    showConnectionStatus("disconnected", `Reconnecting... (${reconnectAttempts})`);
     if (reconnectTimeout) clearTimeout(reconnectTimeout);
     reconnectTimeout = setTimeout(connect, delay);
   };
 
   ws.onerror = error => {
     console.error("WebSocket error:", error);
+    isConnected = false;
+    showConnectionStatus("disconnected", "Connection error");
   };
 }
 
@@ -1758,11 +1869,13 @@ function safeSend(message) {
       ws.send(JSON.stringify(message));
     } catch (e) {
       console.error("Failed to send message:", e.message);
-      alert("Failed to send message. Please try again.");
+      showToast("Failed to send message. Please try again.");
     }
   } else {
     console.error("WebSocket not connected. State:", ws ? ws.readyState : "no socket");
-    alert("Not connected to server. Please wait and try again.");
+    showToast("Not connected to server. Please wait...");
+    // Show the connection status indicator so user can see connection state
+    showConnectionStatus("disconnected", "Not connected");
   }
 }
 
@@ -3548,4 +3661,8 @@ window.addEventListener("resize", () => {
   }, 150);
 });
 
+// Initialize connection status UI elements
+initConnectionStatus();
+
+// Connect to server
 connect();
