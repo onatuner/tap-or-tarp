@@ -29,7 +29,9 @@ function showConnectionStatus(state, message) {
   if (!connectionStatus.element) return;
 
   connectionStatus.element.classList.remove("hidden", "connected", "disconnected");
-  connectionStatus.element.classList.add(state);
+  if (state) {
+    connectionStatus.element.classList.add(state);
+  }
   if (connectionStatus.text) {
     connectionStatus.text.textContent = message;
   }
