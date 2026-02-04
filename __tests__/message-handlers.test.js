@@ -31,6 +31,7 @@ jest.mock("../lib/lock", () => ({
 // Create mock serverState
 const mockServerState = {
   gameSessions: new Map(),
+  gameViewers: new Map(),
   storage: null,
   isAsyncStorageMode: false,
   isRedisPrimaryMode: false,
@@ -42,6 +43,24 @@ const mockServerState = {
   hasSession: jest.fn(),
   getSessionIds: jest.fn(() => new Set()),
   getAllSessions: jest.fn(() => []),
+  addViewer: jest.fn((gameId, clientId) => {
+    if (!mockServerState.gameViewers.has(gameId)) {
+      mockServerState.gameViewers.set(gameId, new Set());
+    }
+    mockServerState.gameViewers.get(gameId).add(clientId);
+    return mockServerState.gameViewers.get(gameId).size;
+  }),
+  removeViewer: jest.fn((gameId, clientId) => {
+    if (mockServerState.gameViewers.has(gameId)) {
+      mockServerState.gameViewers.get(gameId).delete(clientId);
+      if (mockServerState.gameViewers.get(gameId).size === 0) {
+        mockServerState.gameViewers.delete(gameId);
+      }
+      return mockServerState.gameViewers.get(gameId)?.size || 0;
+    }
+    return 0;
+  }),
+  getViewerCount: jest.fn(gameId => mockServerState.gameViewers.get(gameId)?.size || 0),
 };
 
 jest.mock("../lib/server/state", () => ({

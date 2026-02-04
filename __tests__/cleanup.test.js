@@ -33,6 +33,7 @@ jest.mock("../lib/server/persistence", () => ({
 // Create mock serverState
 const mockServerState = {
   gameSessions: new Map(),
+  gameViewers: new Map(),
   storage: null,
   isAsyncStorageMode: false,
   isRedisPrimaryMode: false,
@@ -41,6 +42,24 @@ const mockServerState = {
   setSession: jest.fn((id, session) => mockServerState.gameSessions.set(id, session)),
   getSessionCount: jest.fn(() => mockServerState.gameSessions.size),
   getAllSessions: jest.fn(() => mockServerState.gameSessions.entries()),
+  addViewer: jest.fn((gameId, clientId) => {
+    if (!mockServerState.gameViewers.has(gameId)) {
+      mockServerState.gameViewers.set(gameId, new Set());
+    }
+    mockServerState.gameViewers.get(gameId).add(clientId);
+    return mockServerState.gameViewers.get(gameId).size;
+  }),
+  removeViewer: jest.fn((gameId, clientId) => {
+    if (mockServerState.gameViewers.has(gameId)) {
+      mockServerState.gameViewers.get(gameId).delete(clientId);
+      if (mockServerState.gameViewers.get(gameId).size === 0) {
+        mockServerState.gameViewers.delete(gameId);
+      }
+      return mockServerState.gameViewers.get(gameId)?.size || 0;
+    }
+    return 0;
+  }),
+  getViewerCount: jest.fn(gameId => mockServerState.gameViewers.get(gameId)?.size || 0),
 };
 
 jest.mock("../lib/server/state", () => ({
@@ -60,6 +79,7 @@ describe("Cleanup", () => {
 
     // Reset mock state
     mockServerState.gameSessions.clear();
+    mockServerState.gameViewers.clear();
     mockServerState.storage = null;
     mockServerState.isAsyncStorageMode = false;
     mockServerState.isRedisPrimaryMode = false;

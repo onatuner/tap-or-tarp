@@ -1344,11 +1344,52 @@ function createPlayerCard(player, isActive) {
   const nameInput = document.createElement("input");
   nameInput.type = "text";
   nameInput.value = player.name;
-  nameInput.addEventListener("change", e => {
-    sendUpdatePlayer(player.id, { name: e.target.value });
-  });
+  nameInput.maxLength = 20;
+
+  // Stop all events from bubbling to card
   nameInput.addEventListener("click", e => {
     e.stopPropagation();
+  });
+
+  nameInput.addEventListener("mousedown", e => {
+    e.stopPropagation();
+  });
+
+  nameInput.addEventListener("touchstart", e => {
+    e.stopPropagation();
+  }, { passive: true });
+
+  nameInput.addEventListener("focus", e => {
+    e.stopPropagation();
+    // Select all text on focus for easy replacement
+    nameInput.select();
+  });
+
+  // Handle name change
+  nameInput.addEventListener("change", e => {
+    const newName = e.target.value.trim();
+    if (newName && newName !== player.name) {
+      sendUpdatePlayer(player.id, { name: newName });
+      // Add visual feedback
+      nameInput.classList.add("saving");
+      setTimeout(() => nameInput.classList.remove("saving"), 500);
+    } else if (!newName) {
+      // Revert to original if empty
+      e.target.value = player.name;
+    }
+  });
+
+  // Handle Enter key to submit and Escape to cancel
+  nameInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      nameInput.blur(); // Trigger change event
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      nameInput.value = player.name; // Revert
+      nameInput.blur();
+    }
   });
 
   const statusSpan = document.createElement("span");

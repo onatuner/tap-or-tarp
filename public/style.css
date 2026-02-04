@@ -448,27 +448,70 @@ h1 {
   border-color: #ffd700;
 }
 
+/* Player name input - make it look editable */
 .player-name {
+  position: relative;
   font-size: 1.2em;
   font-weight: bold;
   margin-bottom: 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 4px;
 }
 
 .player-name input {
   background: transparent;
   border: none;
+  border-bottom: 1px solid transparent;
   color: #fff;
   font-size: 1em;
-  font-weight: bold;
+  font-weight: 600;
+  padding: 2px 4px;
+  margin: 0;
   width: 70%;
+  max-width: 120px;
+  cursor: text;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  border-radius: 2px;
+}
+
+.player-name input:hover {
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .player-name input:focus {
+  border-bottom-color: var(--color-primary, #3b82f6);
+  background: rgba(255, 255, 255, 0.1);
   outline: none;
-  border-bottom: 2px solid #004d00;
+}
+
+/* Edit hint icon - appears on hover */
+.player-name::after {
+  content: "\270F"; /* pencil icon */
+  position: absolute;
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  font-size: 10px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.5));
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.player-name:hover::after {
+  opacity: 0.7;
+}
+
+.player-name:focus-within::after {
+  opacity: 0;
+}
+
+/* Saving indicator */
+.player-name input.saving {
+  border-bottom-color: var(--color-success, #22c55e);
 }
 
 .player-time {
@@ -2157,21 +2200,34 @@ h1 {
   text-overflow: ellipsis;
 }
 
+/* Game view player name edit - make it look editable */
 .game-player-name-edit {
-  padding: 4px 8px;
-  font-size: 0.85em;
-  font-weight: bold;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
   color: #fff;
-  max-width: 150px;
-  transition: border-color 0.2s;
+  font-size: 0.85em;
+  font-weight: 600;
+  padding: 2px 4px;
+  width: 100%;
+  max-width: 100px;
+  cursor: text;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.game-player-name-edit:hover {
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .game-player-name-edit:focus {
+  border-bottom-color: var(--color-primary, #3b82f6);
+  background: rgba(255, 255, 255, 0.1);
   outline: none;
-  border-color: var(--color-success);
+}
+
+.game-player-name-edit.saving {
+  border-bottom-color: var(--color-success, #22c55e);
 }
 
 /* Stats row */
