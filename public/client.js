@@ -937,9 +937,6 @@ function handleTargetingStarted(data) {
   gameState.originalActivePlayer = data.originalPlayer;
   gameState.activePlayer = data.activePlayer;
 
-  const activeName = getPlayerNameById(data.activePlayer);
-  showToast(`Waiting for ${activeName} to respond...`, "info");
-
   updatePlayerCardTargetingStates();
   updateInteractionButton();
   updateTimeDisplay();
@@ -951,9 +948,6 @@ function handleTargetingStarted(data) {
  */
 function handlePriorityPassed(data) {
   if (!gameState) return;
-
-  const passedName = getPlayerNameById(data.passedBy);
-  showToast(`${passedName} passed priority`, "info");
 
   // Ensure targeting state remains resolving during priority passing
   gameState.targetingState = CONSTANTS.TARGETING.STATES.RESOLVING;
@@ -978,8 +972,6 @@ function handleTargetingComplete(data) {
   gameState.originalActivePlayer = null;
   gameState.activePlayer = data.activePlayer;
 
-  showToast("All players passed. Resuming...", "success");
-
   updatePlayerCardTargetingStates();
   updateInteractionButton();
   updateTimeDisplay();
@@ -997,8 +989,6 @@ function handleTargetingCanceled(data) {
   gameState.awaitingPriority = [];
   gameState.originalActivePlayer = null;
   gameState.activePlayer = data.activePlayer;
-
-  showToast("Targeting canceled", "info");
 
   updatePlayerCardTargetingStates();
   updateInteractionButton();
