@@ -154,22 +154,25 @@ describe("Cleanup", () => {
       expect(mockServerState.gameSessions.has("TEST01")).toBe(false);
     });
 
-    test("should delete from sync storage", async () => {
+    test("should mark session as closed and save to sync storage", async () => {
       const mockStorage = {
-        delete: jest.fn(),
+        save: jest.fn(),
       };
       mockServerState.storage = mockStorage;
       session.lastActivity = Date.now() - CONSTANTS.EMPTY_SESSION_THRESHOLD - 1000;
 
       await cleanupSessions();
 
-      expect(mockStorage.delete).toHaveBeenCalledWith("TEST01");
-      expect(metrics.recordStorageOperation).toHaveBeenCalledWith("delete", "success");
+      // Session should be marked as closed and saved
+      expect(mockStorage.save).toHaveBeenCalledWith(
+        "TEST01",
+        expect.objectContaining({ isClosed: true })
+      );
     });
 
-    test("should delete from async storage", async () => {
+    test("should mark session as closed and save to async storage", async () => {
       const mockStorage = {
-        delete: jest.fn(() => Promise.resolve()),
+        save: jest.fn(() => Promise.resolve()),
       };
       mockServerState.storage = mockStorage;
       mockServerState.isAsyncStorageMode = true;
@@ -177,12 +180,16 @@ describe("Cleanup", () => {
 
       await cleanupSessions();
 
-      expect(mockStorage.delete).toHaveBeenCalledWith("TEST01");
+      // Session should be marked as closed and saved
+      expect(mockStorage.save).toHaveBeenCalledWith(
+        "TEST01",
+        expect.objectContaining({ isClosed: true })
+      );
     });
 
     test("should unsubscribe from channels on async storage", async () => {
       const mockStorage = {
-        delete: jest.fn(() => Promise.resolve()),
+        save: jest.fn(() => Promise.resolve()),
         unsubscribe: jest.fn(() => Promise.resolve()),
       };
       mockServerState.storage = mockStorage;
@@ -194,18 +201,20 @@ describe("Cleanup", () => {
       expect(mockStorage.unsubscribe).toHaveBeenCalledWith("broadcast:TEST01");
     });
 
-    test("should handle storage delete errors gracefully", async () => {
+    test("should handle storage save errors gracefully during cleanup", async () => {
       const mockStorage = {
-        delete: jest.fn(() => {
-          throw new Error("Delete failed");
+        save: jest.fn(() => {
+          throw new Error("Save failed");
         }),
       };
       mockServerState.storage = mockStorage;
       session.lastActivity = Date.now() - CONSTANTS.EMPTY_SESSION_THRESHOLD - 1000;
 
+      // Should not throw - handles error gracefully
       await cleanupSessions();
 
-      expect(metrics.recordStorageOperation).toHaveBeenCalledWith("delete", "error");
+      // Session should still be removed from memory
+      expect(mockServerState.gameSessions.has("TEST01")).toBe(false);
     });
 
     test("should cleanup session interval", async () => {

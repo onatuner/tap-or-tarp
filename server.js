@@ -365,10 +365,52 @@ async function startServer() {
     serverState.setStorage(createStorage("memory"), false, false);
   }
 
+  // Verify storage is working
+  if (serverState.storage) {
+    try {
+      const testId = `_persistence_test_${Date.now()}`;
+      const testState = { test: true, timestamp: Date.now() };
+
+      if (serverState.isAsyncStorageMode) {
+        await serverState.storage.save(testId, testState);
+        const loaded = await serverState.storage.load(testId);
+        await serverState.storage.delete(testId);
+        if (!loaded) {
+          logger.error("Storage verification FAILED - save/load cycle broken");
+        } else {
+          logger.info("Storage verification passed");
+        }
+      } else {
+        serverState.storage.save(testId, testState);
+        const loaded = serverState.storage.load(testId);
+        serverState.storage.delete(testId);
+        if (!loaded) {
+          logger.error("Storage verification FAILED - save/load cycle broken");
+        } else {
+          logger.info("Storage verification passed");
+        }
+      }
+    } catch (error) {
+      logger.error({ error: error.message, stack: error.stack }, "Storage verification threw error");
+    }
+  }
+
   // Load persisted sessions
   logger.info("Loading persisted sessions...");
   await loadSessions();
   logger.info(`Loaded ${serverState.getSessionCount()} sessions from storage`);
+
+  // Verify feedback storage
+  if (serverState.storage && serverState.storage.loadAllFeedbacks) {
+    try {
+      const feedbacks = serverState.isAsyncStorageMode
+        ? await serverState.storage.loadAllFeedbacks()
+        : serverState.storage.loadAllFeedbacks();
+      logger.info({ feedbackCount: feedbacks.length }, "Feedback entries in storage");
+    } catch (error) {
+      logger.error({ error: error.message }, "Failed to verify feedback storage");
+    }
+  }
 
   // Start persistence timer
   serverState.persistenceTimer = setInterval(async () => {
