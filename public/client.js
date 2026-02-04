@@ -1185,68 +1185,9 @@ function sendCancelTargeting() {
   safeSend({ type: "cancelTargeting", data: {} });
 }
 
-/**
- * Show or hide targeting instructions banner
- * @param {string|null} message - Message to show, or null to hide
- */
-function updateTargetingInstructions(message) {
-  let banner = document.getElementById("targeting-instructions");
-
-  if (!message) {
-    if (banner) banner.remove();
-    return;
-  }
-
-  if (!banner) {
-    banner = document.createElement("div");
-    banner.id = "targeting-instructions";
-    banner.className = "targeting-instructions-banner";
-    document.body.appendChild(banner);
-  }
-
-  banner.textContent = message;
-}
-
-/**
- * Update the targeting queue display
- */
-function updateTargetingQueue() {
-  let queueDisplay = document.getElementById("targeting-queue");
-
-  if (!gameState || gameState.targetingState !== CONSTANTS.TARGETING.STATES.RESOLVING) {
-    if (queueDisplay) queueDisplay.remove();
-    return;
-  }
-
-  if (!queueDisplay) {
-    queueDisplay = document.createElement("div");
-    queueDisplay.id = "targeting-queue";
-    queueDisplay.className = "targeting-queue";
-    document.body.appendChild(queueDisplay);
-  }
-
-  const awaitingPlayers = (gameState.awaitingPriority || [])
-    .map(id => gameState.players.find(p => p.id === id))
-    .filter(Boolean);
-
-  if (awaitingPlayers.length === 0) {
-    queueDisplay.remove();
-    return;
-  }
-
-  queueDisplay.innerHTML = `
-    <div class="queue-header">Response Queue</div>
-    <div class="queue-list">
-      ${awaitingPlayers.map((player, index) => `
-        <div class="queue-item ${index === 0 ? 'current' : ''}">
-          <span class="queue-position">${index + 1}</span>
-          <span class="queue-name">${player.name}</span>
-          ${index === 0 ? '<span class="queue-status">Responding...</span>' : ''}
-        </div>
-      `).join('')}
-    </div>
-  `;
-}
+// Targeting instructions and queue display removed - functions kept as no-ops for compatibility
+function updateTargetingInstructions() {}
+function updateTargetingQueue() {}
 
 /**
  * Handle player card click for targeting
