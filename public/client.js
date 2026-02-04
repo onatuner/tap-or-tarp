@@ -2919,6 +2919,8 @@ function updateOtherPlayers() {
       const player = playersToShow.find(p => p.id === playerId);
       if (!player) return;
 
+      const isClaimed = player.claimedBy !== null;
+      const isMyPlayer = player.claimedBy === myClientId;
       const isActive = player.id === gameState.activePlayer;
 
       // Update life
@@ -2931,8 +2933,15 @@ function updateOtherPlayers() {
         timeSpan.textContent = formatTimeCompact(player.timeRemaining);
       }
 
-      // Update state classes
-      card.classList.remove("active", "eliminated", "paused", "critical", "warning", "targeted", "awaiting-priority", "original-player", "selectable-target");
+      // Update name (in case it changed)
+      const nameSpan = card.querySelector(".game-player-card-name");
+      if (nameSpan && nameSpan.textContent !== player.name) {
+        nameSpan.textContent = player.name;
+        nameSpan.title = player.name;
+      }
+
+      // Update state classes (including selectable/claimed-other)
+      card.classList.remove("active", "eliminated", "paused", "critical", "warning", "targeted", "awaiting-priority", "original-player", "selectable-target", "selectable", "claimed-other");
       if (isActive && !isPaused) card.classList.add("active");
       if (player.isEliminated) {
         card.classList.add("eliminated");
@@ -2942,6 +2951,15 @@ function updateOtherPlayers() {
         card.classList.add("critical");
       } else if (player.timeRemaining < CONSTANTS.WARNING_THRESHOLD_1MIN) {
         card.classList.add("warning");
+      }
+
+      // Waiting state - selectable/claimed styling
+      if (isWaiting) {
+        if (!isClaimed) {
+          card.classList.add("selectable");
+        } else if (!isMyPlayer) {
+          card.classList.add("claimed-other");
+        }
       }
 
       // Update targeting classes
