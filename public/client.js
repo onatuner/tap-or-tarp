@@ -574,12 +574,14 @@ function getMyPlayerId() {
 
 function connect() {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = `${protocol}//${window.location.host}`;
 
   // Show connecting status
   isConnected = false;
   showConnectionStatus("", "Connecting...");
 
-  ws = new WebSocket(`${protocol}//${window.location.host}`);
+  console.log("Attempting WebSocket connection to:", wsUrl);
+  ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
     console.log("Connected to server");
