@@ -50,65 +50,6 @@ function hideConnectionStatus() {
   }
 }
 
-// Show a toast message (works better than alert in PWA standalone mode)
-function showToast(message, duration = 3000) {
-  // Check if a toast container exists, if not create one
-  let toastContainer = document.getElementById("toast-container");
-  if (!toastContainer) {
-    toastContainer = document.createElement("div");
-    toastContainer.id = "toast-container";
-    toastContainer.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10001;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      pointer-events: none;
-    `;
-    document.body.appendChild(toastContainer);
-  }
-
-  const toast = document.createElement("div");
-  toast.style.cssText = `
-    background: rgba(0, 0, 0, 0.9);
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 0.9em;
-    max-width: 300px;
-    text-align: center;
-    animation: toastFadeIn 0.2s ease-out;
-    border: 1px solid #444;
-  `;
-  toast.textContent = message;
-  toastContainer.appendChild(toast);
-
-  // Add animation keyframes if not already added
-  if (!document.getElementById("toast-styles")) {
-    const style = document.createElement("style");
-    style.id = "toast-styles";
-    style.textContent = `
-      @keyframes toastFadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes toastFadeOut {
-        from { opacity: 1; transform: translateY(0); }
-        to { opacity: 0; transform: translateY(-10px); }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  setTimeout(() => {
-    toast.style.animation = "toastFadeOut 0.2s ease-out forwards";
-    setTimeout(() => toast.remove(), 200);
-  }, duration);
-}
-
 // ============================================================================
 // SCREEN WAKE LOCK MANAGEMENT
 // ============================================================================
