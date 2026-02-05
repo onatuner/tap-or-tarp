@@ -296,6 +296,7 @@
             <button class="settings-tab active" data-tab="controls" role="tab" aria-selected="true" aria-controls="panel-controls" id="tab-controls">Controls</button>
             <button class="settings-tab" data-tab="thresholds" role="tab" aria-selected="false" aria-controls="panel-thresholds" id="tab-thresholds">Thresholds</button>
             <button class="settings-tab" data-tab="more" role="tab" aria-selected="false" aria-controls="panel-more" id="tab-more">More</button>
+            <button class="settings-tab" data-tab="admin" role="tab" aria-selected="false" aria-controls="panel-admin" id="tab-admin" style="display: none">Admin</button>
           </div>
 
           <!-- Controls Tab -->
@@ -365,6 +366,42 @@
             <div class="settings-section settings-danger-zone">
               <label class="settings-label">Danger Zone</label>
               <button id="settings-close-lobby-btn" class="settings-danger-btn">Close Lobby</button>
+            </div>
+          </div>
+
+          <!-- Admin Tab (Owner Only) -->
+          <div class="settings-panel" data-panel="admin" role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" hidden>
+            <p class="settings-hint settings-warning">Use these controls to correct mistakes during gameplay.</p>
+
+            <div class="settings-section admin-section">
+              <label class="settings-label">Player Management</label>
+              <div class="admin-player-select">
+                <label class="settings-hint" for="admin-player-dropdown">Select Player:</label>
+                <select id="admin-player-dropdown" class="settings-input"></select>
+              </div>
+
+              <div class="admin-actions">
+                <button id="admin-revive-btn" class="settings-action-btn settings-action-btn-secondary">
+                  <span class="action-icon">💚</span>
+                  <span class="action-label">Revive</span>
+                </button>
+                <button id="admin-kick-btn" class="settings-action-btn settings-action-btn-danger">
+                  <span class="action-icon">🚫</span>
+                  <span class="action-label">Kick</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-section admin-section">
+              <label class="settings-label">Add Time to Player</label>
+              <div class="admin-time-controls">
+                <input type="number" id="admin-time-input" class="settings-input" min="1" max="60" value="5" />
+                <span class="settings-input-suffix">minutes</span>
+                <button id="admin-add-time-btn" class="settings-action-btn settings-action-btn-secondary">
+                  <span class="action-icon">⏱️</span>
+                  <span class="action-label">Add</span>
+                </button>
+              </div>
             </div>
           </div>
 

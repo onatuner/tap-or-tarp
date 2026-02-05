@@ -319,6 +319,14 @@ const settingsModal = {
   closeLobbyBtn: document.getElementById("settings-close-lobby-btn"),
   saveBtn: document.getElementById("settings-save-btn"),
   cancelBtn: document.getElementById("settings-cancel-btn"),
+  // Admin controls
+  adminTab: document.getElementById("tab-admin"),
+  adminPanel: document.getElementById("panel-admin"),
+  adminPlayerDropdown: document.getElementById("admin-player-dropdown"),
+  adminReviveBtn: document.getElementById("admin-revive-btn"),
+  adminKickBtn: document.getElementById("admin-kick-btn"),
+  adminTimeInput: document.getElementById("admin-time-input"),
+  adminAddTimeBtn: document.getElementById("admin-add-time-btn"),
 };
 
 const colorPickerModal = {
@@ -697,6 +705,10 @@ function handleMessage(message) {
       loadFeedbacks();
       break;
     case "gameEnded":
+      backToMenu();
+      break;
+    case "kicked":
+      alert("You have been kicked from the game.");
       backToMenu();
       break;
     case "gameComplete":
@@ -1903,6 +1915,19 @@ function sendRenameGame(newName) {
   safeSend({ type: "renameGame", data: { name: newName } });
 }
 
+// Admin controls
+function sendAdminRevive(playerId) {
+  safeSend({ type: "adminRevive", data: { playerId } });
+}
+
+function sendAdminKick(playerId) {
+  safeSend({ type: "adminKick", data: { playerId } });
+}
+
+function sendAdminAddTime(playerId, minutes) {
+  safeSend({ type: "adminAddTime", data: { playerId, minutes } });
+}
+
 function sendFeedback(feedbackText) {
   safeSend({ type: "feedback", data: { text: feedbackText } });
 }
@@ -1982,6 +2007,14 @@ function showSettingsModal() {
     const hasClaimedPlayers = gameState.players.some(p => p.claimedBy !== null);
     settingsModal.randomStartBtn.style.display = (isWaiting && hasClaimedPlayers) ? "flex" : "none";
   }
+
+  // Show admin tab for all players
+  if (settingsModal.adminTab) {
+    settingsModal.adminTab.style.display = "";
+  }
+
+  // Populate admin dropdown
+  populateAdminPlayerDropdown();
 
   // Reset to first tab
   switchSettingsTab("controls");
@@ -2090,6 +2123,30 @@ function getThresholdsFromUI() {
   });
 
   return [...new Set(thresholds)].sort((a, b) => b - a);
+}
+
+/**
+ * Populate the admin player dropdown with all players
+ */
+function populateAdminPlayerDropdown() {
+  const dropdown = settingsModal.adminPlayerDropdown;
+  if (!dropdown || !gameState) return;
+
+  dropdown.innerHTML = "";
+
+  gameState.players.forEach(player => {
+    const option = document.createElement("option");
+    option.value = player.id;
+    let label = player.name;
+    if (player.isEliminated) {
+      label += " (Eliminated)";
+    }
+    if (!player.claimedBy) {
+      label += " (Unclaimed)";
+    }
+    option.textContent = label;
+    dropdown.appendChild(option);
+  });
 }
 
 /**
@@ -2252,6 +2309,32 @@ function setupSettingsEventListeners() {
 
   // Game code copy
   settingsModal.gameCodeDisplay?.addEventListener("click", copyGameCode);
+
+  // Admin controls
+  settingsModal.adminReviveBtn?.addEventListener("click", () => {
+    const playerId = parseInt(settingsModal.adminPlayerDropdown?.value, 10);
+    if (playerId) {
+      sendAdminRevive(playerId);
+      playClick();
+    }
+  });
+
+  settingsModal.adminKickBtn?.addEventListener("click", () => {
+    const playerId = parseInt(settingsModal.adminPlayerDropdown?.value, 10);
+    if (playerId && confirm("Are you sure you want to kick this player?")) {
+      sendAdminKick(playerId);
+      playClick();
+    }
+  });
+
+  settingsModal.adminAddTimeBtn?.addEventListener("click", () => {
+    const playerId = parseInt(settingsModal.adminPlayerDropdown?.value, 10);
+    const minutes = parseInt(settingsModal.adminTimeInput?.value, 10);
+    if (playerId && minutes > 0) {
+      sendAdminAddTime(playerId, minutes);
+      playClick();
+    }
+  });
 }
 
 function getPlayerColor(player) {
@@ -3053,12 +3136,25 @@ function updateOtherPlayers() {
       if (isActive && !isPaused) card.classList.add("active");
       if (player.isEliminated) {
         card.classList.add("eliminated");
-      } else if (isPaused) {
-        card.classList.add("paused");
-      } else if (player.timeRemaining < CONSTANTS.CRITICAL_THRESHOLD) {
-        card.classList.add("critical");
-      } else if (player.timeRemaining < CONSTANTS.WARNING_THRESHOLD_1MIN) {
-        card.classList.add("warning");
+        // Add dead banner if not present
+        if (!card.querySelector(".game-player-card-dead-banner")) {
+          const deadBanner = document.createElement("div");
+          deadBanner.className = "game-player-card-dead-banner";
+          deadBanner.textContent = "DEAD";
+          card.appendChild(deadBanner);
+        }
+      } else {
+        // Remove dead banner if present
+        const existingBanner = card.querySelector(".game-player-card-dead-banner");
+        if (existingBanner) existingBanner.remove();
+
+        if (isPaused) {
+          card.classList.add("paused");
+        } else if (player.timeRemaining < CONSTANTS.CRITICAL_THRESHOLD) {
+          card.classList.add("critical");
+        } else if (player.timeRemaining < CONSTANTS.WARNING_THRESHOLD_1MIN) {
+          card.classList.add("warning");
+        }
       }
 
       // Waiting state - selectable/claimed styling
@@ -3111,6 +3207,11 @@ function updateOtherPlayers() {
 
     if (player.isEliminated) {
       card.classList.add("eliminated");
+      // Add dead banner
+      const deadBanner = document.createElement("div");
+      deadBanner.className = "game-player-card-dead-banner";
+      deadBanner.textContent = "DEAD";
+      card.appendChild(deadBanner);
     } else if (isPaused) {
       card.classList.add("paused");
     } else if (player.timeRemaining < CONSTANTS.CRITICAL_THRESHOLD) {
