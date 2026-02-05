@@ -234,6 +234,7 @@ const gameUI = {
   timeDisplay: document.querySelector(".game-time-display"),
   timeValue: document.querySelector(".game-time-value"),
   turnIndicator: document.querySelector(".game-turn-indicator"),
+  deadBanner: document.querySelector(".game-dead-banner"),
   interactionArea: document.querySelector(".game-interaction-area"),
   interactionBtn: document.querySelector(".game-interaction-btn"),
   cancelTargetingBtn: document.querySelector(".game-cancel-targeting-btn"),
@@ -2831,6 +2832,12 @@ function updateTimeDisplay() {
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayer);
   const isWaiting = gameState.status === "waiting";
   const isPaused = gameState.status === "paused";
+
+  // Show/hide dead banner for eliminated players
+  if (gameUI.deadBanner) {
+    const isEliminated = myPlayer && myPlayer.isEliminated;
+    gameUI.deadBanner.style.display = isEliminated ? "" : "none";
+  }
 
   // Remove all state classes
   gameUI.timeDisplay.classList.remove("warning", "critical", "paused", "my-action");
