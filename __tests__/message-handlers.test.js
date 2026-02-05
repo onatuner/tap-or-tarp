@@ -42,6 +42,7 @@ const mockServerState = {
   deleteSession: jest.fn(),
   hasSession: jest.fn(),
   getSessionIds: jest.fn(() => new Set()),
+  getSessionCount: jest.fn(() => 0),
   getAllSessions: jest.fn(() => []),
   addViewer: jest.fn((gameId, clientId) => {
     if (!mockServerState.gameViewers.has(gameId)) {
