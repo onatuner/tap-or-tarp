@@ -228,6 +228,7 @@ const gameUI = {
   screen: document.getElementById("game-screen"),
   exitBtn: document.querySelector(".game-exit-btn"),
   settingsBtn: document.querySelector(".game-settings-btn"),
+  pauseBtn: document.querySelector(".game-pause-btn"),
   diceBtn: document.querySelector(".game-dice-btn"),
   playOrderBtn: document.querySelector(".game-play-order-btn"),
   timeDisplay: document.querySelector(".game-time-display"),
@@ -312,6 +313,7 @@ const settingsModal = {
   colorPicker: document.getElementById("settings-color-picker"),
   thresholdsContainer: document.getElementById("settings-thresholds-container"),
   addThresholdBtn: document.getElementById("settings-add-threshold-btn"),
+  bonusTimeInput: document.getElementById("settings-bonus-time"),
   gameCodeDisplay: document.getElementById("settings-game-code"),
   gameNameInput: document.getElementById("settings-game-name-input"),
   closeLobbyBtn: document.getElementById("settings-close-lobby-btn"),
@@ -902,6 +904,40 @@ function updatePlayOrderButtonVisibility() {
   const hasEnoughPlayers = claimedCount >= 2;
 
   gameUI.playOrderBtn.style.display = (isWaiting && hasEnoughPlayers) ? "flex" : "none";
+}
+
+/**
+ * Update header pause button visibility and icon based on game state
+ * Only visible to game owner during active gameplay
+ */
+function updateHeaderPauseButton() {
+  const pauseBtn = gameUI.pauseBtn;
+  if (!pauseBtn || !gameState) return;
+
+  // Only show for game owner during active game
+  const myPlayer = gameState.players?.find(p => p.claimedBy === myClientId);
+  const isOwner = myPlayer?.id === 1;
+  const isGameActive = gameState.status === "running" || gameState.status === "paused";
+
+  pauseBtn.style.display = (isOwner && isGameActive) ? "" : "none";
+
+  // Update icon based on state
+  if (gameState.status === "paused") {
+    pauseBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
+        <polygon points="5,3 19,12 5,21" />
+      </svg>
+    `;
+    pauseBtn.setAttribute("aria-label", "Resume game");
+  } else {
+    pauseBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <rect x="6" y="4" width="4" height="16" rx="1" />
+        <rect x="14" y="4" width="4" height="16" rx="1" />
+      </svg>
+    `;
+    pauseBtn.setAttribute("aria-label", "Pause game");
+  }
 }
 
 // ============================================================================
@@ -1928,6 +1964,12 @@ function showSettingsModal() {
   // Populate thresholds
   populateThresholds();
 
+  // Populate bonus time
+  if (settingsModal.bonusTimeInput && gameState) {
+    const bonusSeconds = (gameState.settings?.bonusTime ?? 30000) / 1000;
+    settingsModal.bonusTimeInput.value = bonusSeconds;
+  }
+
   // Populate color picker
   populateColorPicker();
 
@@ -2093,10 +2135,25 @@ function getSelectedColor() {
  * Save settings
  */
 function saveSettings() {
+  // Collect settings to update
+  const settingsToUpdate = {};
+
   // Save thresholds
   const thresholds = getThresholdsFromUI();
   if (thresholds.length > 0) {
-    sendUpdateSettings({ warningThresholds: thresholds });
+    settingsToUpdate.warningThresholds = thresholds;
+  }
+
+  // Save bonus time
+  if (settingsModal.bonusTimeInput) {
+    const bonusSeconds = parseInt(settingsModal.bonusTimeInput.value, 10) || 0;
+    const bonusTime = Math.max(0, Math.min(bonusSeconds * 1000, 300000)); // 0-5 minutes in ms
+    settingsToUpdate.bonusTime = bonusTime;
+  }
+
+  // Send settings update if there are any changes
+  if (Object.keys(settingsToUpdate).length > 0) {
+    sendUpdateSettings(settingsToUpdate);
   }
 
   // Save game name
@@ -2643,6 +2700,7 @@ function updateGameUI() {
   updateOtherPlayers();
   updatePlayerStats();
   updatePlayOrderButtonVisibility();
+  updateHeaderPauseButton();
   updateTargetingUI();
 }
 
@@ -3457,6 +3515,14 @@ function setupGameEventListeners() {
   if (gameUI.settingsBtn) {
     gameUI.settingsBtn.addEventListener("click", () => {
       showSettingsModal();
+      playClick();
+    });
+  }
+
+  // Pause button (header)
+  if (gameUI.pauseBtn) {
+    gameUI.pauseBtn.addEventListener("click", () => {
+      sendPause();
       playClick();
     });
   }

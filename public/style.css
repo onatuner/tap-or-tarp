@@ -1612,6 +1612,11 @@ h1 {
   height: 24px;
 }
 
+.game-pause-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
 /* Landscape: smaller icons */
 @media (orientation: landscape) and (max-height: 500px) {
   .game-icon-btn {
@@ -3465,6 +3470,23 @@ a:focus:not(:focus-visible) {
 .settings-input:focus {
   outline: none;
   border-color: var(--color-success);
+}
+
+.settings-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-input-group .settings-input {
+  width: auto;
+  flex: 1;
+  max-width: 100px;
+}
+
+.settings-input-suffix {
+  color: #999;
+  font-size: 0.9em;
 }
 
 /* Danger zone */
