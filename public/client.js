@@ -3359,8 +3359,9 @@ function updateOtherPlayers() {
       }
 
       // Update state classes (including selectable/claimed-other)
+      const isFinished = gameState.status === "finished";
       card.classList.remove("active", "eliminated", "paused", "critical", "warning", "targeted", "awaiting-priority", "original-player", "selectable-target", "selectable", "claimed-other");
-      if (isActive && !isPaused) card.classList.add("active");
+      if (isActive && !isPaused && !isFinished) card.classList.add("active");
       if (player.isEliminated) {
         card.classList.add("eliminated");
         // Add dead banner if not present
@@ -3399,7 +3400,7 @@ function updateOtherPlayers() {
       // Update status indicator
       const statusSpan = card.querySelector(".game-player-card-status");
       if (statusSpan) {
-        const status = getPlayerStatusIcon(player, isActive, isPaused);
+        const status = getPlayerStatusIcon(player, isActive, isPaused, isFinished);
         statusSpan.textContent = status.icon;
         statusSpan.className = "game-player-card-status";
         if (status.class) statusSpan.classList.add(status.class);
@@ -3426,9 +3427,10 @@ function updateOtherPlayers() {
     const isClaimed = player.claimedBy !== null;
     const isMyPlayer = player.claimedBy === myClientId;
     const isActive = player.id === gameState.activePlayer;
+    const isFinished = gameState.status === "finished";
 
     // Apply state classes
-    if (isActive && !isPaused) {
+    if (isActive && !isPaused && !isFinished) {
       card.classList.add("active");
     }
 
@@ -3479,7 +3481,7 @@ function updateOtherPlayers() {
     const statusSpan = document.createElement("span");
     statusSpan.className = "game-player-card-status";
 
-    const status = getPlayerStatusIcon(player, isActive, isPaused);
+    const status = getPlayerStatusIcon(player, isActive, isPaused, isFinished);
     statusSpan.textContent = status.icon;
     if (status.class) {
       statusSpan.classList.add(status.class);
@@ -3541,7 +3543,7 @@ function formatTimeCompact(ms) {
 /**
  * Get the status icon and class for a player
  */
-function getPlayerStatusIcon(player, isActive, isPaused) {
+function getPlayerStatusIcon(player, isActive, isPaused, isFinished = false) {
   // Priority order: eliminated > paused > critical > warning > active > none
   if (player.isEliminated) {
     return { icon: "\u2620", class: "status-eliminated" }; // ☠
@@ -3555,7 +3557,7 @@ function getPlayerStatusIcon(player, isActive, isPaused) {
   if (!player.isEliminated && player.timeRemaining < CONSTANTS.WARNING_THRESHOLD_1MIN) {
     return { icon: "\u26A0", class: "status-warning" }; // ⚠
   }
-  if (isActive) {
+  if (isActive && !isFinished) {
     return { icon: "\u25CF", class: "status-active" }; // ●
   }
   return { icon: "", class: "" }; // No status
