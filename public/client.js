@@ -2810,7 +2810,7 @@ function updateInteractionButton() {
       gameUI.interactionBtn.setAttribute("aria-label", "Waiting for target selection");
     }
   } else if (isResolving) {
-    // Target resolution mode - interrupts are still active
+    // Target resolution mode - ALL targeted players have priority simultaneously
     const hasInterrupts = gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0;
 
     if (myHasPriority && myInInterruptQueue) {
@@ -2819,20 +2819,14 @@ function updateInteractionButton() {
       gameUI.interactionBtn.classList.add("game-interaction-btn-priority");
       gameUI.interactionBtn.disabled = false;
       gameUI.interactionBtn.setAttribute("aria-label", "Pass interrupt priority");
-    } else if (myAwaitingPriority && isMyTurn && !hasInterrupts) {
-      // I'm the current target and no one has interrupted - pass target priority
+    } else if (myAwaitingPriority && !hasInterrupts) {
+      // I'm a targeted player and no one has interrupted - pass target priority
       gameUI.interactionBtn.textContent = "PASS PRIORITY";
       gameUI.interactionBtn.classList.add("game-interaction-btn-priority");
       gameUI.interactionBtn.disabled = false;
-      gameUI.interactionBtn.setAttribute("aria-label", "Pass priority to next target");
-    } else if (myAwaitingPriority && isMyTurn && hasInterrupts) {
-      // I'm the current target but someone interrupted - can interrupt back or wait
-      gameUI.interactionBtn.textContent = "INTERRUPT";
-      gameUI.interactionBtn.classList.add("game-interaction-btn-interrupt");
-      gameUI.interactionBtn.disabled = false;
-      gameUI.interactionBtn.setAttribute("aria-label", "Interrupt to respond");
-    } else if (myAwaitingPriority) {
-      // I'm a target waiting my turn - can still interrupt
+      gameUI.interactionBtn.setAttribute("aria-label", "Pass priority");
+    } else if (myAwaitingPriority && hasInterrupts) {
+      // I'm a targeted player but someone interrupted - can interrupt back or wait
       gameUI.interactionBtn.textContent = "INTERRUPT";
       gameUI.interactionBtn.classList.add("game-interaction-btn-interrupt");
       gameUI.interactionBtn.disabled = false;

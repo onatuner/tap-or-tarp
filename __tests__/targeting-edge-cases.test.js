@@ -219,7 +219,7 @@ describe("Targeting Edge Cases", () => {
       expect(targetPlayer.timeRemaining).toBeLessThan(targetTime);
     });
 
-    it("should not tick non-active targets", () => {
+    it("should tick all targets simultaneously during resolution", () => {
       // Add multiple targets
       session.cancelTargeting();
       session.startTargetSelection();
@@ -232,15 +232,12 @@ describe("Targeting Edge Cases", () => {
       const target1Time = target1.timeRemaining;
       const target2Time = target2.timeRemaining;
 
-      // Active player is target1 (id=2)
-      expect(session.activePlayer).toBe(2);
-
       session.lastTick = Date.now() - 100;
       session.tick();
 
-      // Only active target should tick
+      // ALL targets should tick simultaneously during resolution
       expect(target1.timeRemaining).toBeLessThan(target1Time);
-      expect(target2.timeRemaining).toBe(target2Time);
+      expect(target2.timeRemaining).toBeLessThan(target2Time);
     });
   });
 
