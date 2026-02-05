@@ -807,13 +807,24 @@ function showWinnerModal(winnerId, winnerName) {
       <h2 class="winner-title">Victory!</h2>
       <div class="winner-name ${colorClass}">${winnerName}</div>
       <p class="winner-subtitle">is the winner!</p>
-      <button class="winner-close-btn" onclick="this.closest('.winner-modal-overlay').remove()">
-        Close
-      </button>
+      <button class="winner-close-btn">Close</button>
     </div>
   `;
 
   document.body.appendChild(modalOverlay);
+
+  // Add close button event listener
+  const closeBtn = modalOverlay.querySelector(".winner-close-btn");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => modalOverlay.remove());
+  }
+
+  // Also close when clicking overlay background
+  modalOverlay.addEventListener("click", (e) => {
+    if (e.target === modalOverlay) {
+      modalOverlay.remove();
+    }
+  });
 
   // Auto-remove after 10 seconds
   setTimeout(() => {
