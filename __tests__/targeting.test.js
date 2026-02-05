@@ -133,12 +133,12 @@ describe("Target Player System", () => {
       expect(session.originalActivePlayer).toBe(1);
     });
 
-    test("should set first target as active", () => {
+    test("should keep activePlayer as original during parallel resolution", () => {
       session.confirmTargets();
-      expect(session.activePlayer).toBe(2);
+      expect(session.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
     });
 
-    test("should set up awaitingPriority queue", () => {
+    test("should set up awaitingPriority queue for all targets", () => {
       session.confirmTargets();
       expect(session.awaitingPriority).toEqual([2, 3]);
     });
@@ -164,9 +164,9 @@ describe("Target Player System", () => {
       session.confirmTargets();
     });
 
-    test("should move to next target", () => {
+    test("should remove player from awaitingPriority", () => {
       expect(session.passTargetPriority(2)).toBe(true);
-      expect(session.activePlayer).toBe(3);
+      expect(session.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
       expect(session.awaitingPriority).toEqual([3]);
     });
 
@@ -217,11 +217,11 @@ describe("Target Player System", () => {
   });
 
   describe("cancelTargeting", () => {
-    test("should return to original player from resolving", () => {
+    test("should reset targeting state from resolving", () => {
       session.startTargetSelection();
       session.toggleTarget(2);
       session.confirmTargets();
-      expect(session.activePlayer).toBe(2);
+      expect(session.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
 
       session.cancelTargeting();
       expect(session.targetingState).toBe(TARGETING.STATES.NONE);
@@ -382,16 +382,16 @@ describe("Target Player System", () => {
       session.confirmTargets();
       expect(session.targetingState).toBe(TARGETING.STATES.RESOLVING);
       expect(session.originalActivePlayer).toBe(1);
-      expect(session.activePlayer).toBe(2);
+      expect(session.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
 
-      // First target passes
+      // First target passes (can be in any order with parallel priority)
       session.passTargetPriority(2);
-      expect(session.activePlayer).toBe(3);
+      expect(session.activePlayer).toBe(1);
       expect(session.awaitingPriority).toEqual([3, 4]);
 
       // Second target passes
       session.passTargetPriority(3);
-      expect(session.activePlayer).toBe(4);
+      expect(session.activePlayer).toBe(1);
       expect(session.awaitingPriority).toEqual([4]);
 
       // Last target passes
@@ -406,7 +406,7 @@ describe("Target Player System", () => {
       session.toggleTarget(3);
       session.confirmTargets();
       session.passTargetPriority(2);
-      expect(session.activePlayer).toBe(3);
+      expect(session.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
 
       session.cancelTargeting();
       expect(session.activePlayer).toBe(1);

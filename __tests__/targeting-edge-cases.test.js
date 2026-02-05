@@ -55,7 +55,7 @@ describe("Targeting Edge Cases", () => {
       expect(session.status).toBe("running");
     });
 
-    it("should move to next target if multiple targets and first times out", () => {
+    it("should continue with remaining target if multiple targets and first times out", () => {
       // Add another target
       session.cancelTargeting();
       session.startTargetSelection();
@@ -71,9 +71,9 @@ describe("Targeting Edge Cases", () => {
       session.lastTick = Date.now() - 100;
       session.tick();
 
-      // Should have moved to next target, not completed
+      // Should continue resolution with remaining target
       expect(session.targetingState).toBe(TARGETING.STATES.RESOLVING);
-      expect(session.activePlayer).toBe(3);
+      expect(session.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
       expect(session.awaitingPriority).toEqual([3]);
     });
   });
@@ -91,7 +91,7 @@ describe("Targeting Edge Cases", () => {
       session.handleEliminatedTarget(2);
 
       expect(session.awaitingPriority).not.toContain(2);
-      expect(session.activePlayer).toBe(3);
+      expect(session.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
     });
 
     it("should complete targeting if all targets eliminated", () => {
@@ -108,13 +108,13 @@ describe("Targeting Edge Cases", () => {
       session.eliminate(2);
 
       expect(session.awaitingPriority).not.toContain(2);
-      expect(session.activePlayer).toBe(3);
+      expect(session.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
     });
 
     it("should complete targeting when last target eliminated via eliminate()", () => {
       // Pass priority for first target
       session.passTargetPriority(2);
-      expect(session.activePlayer).toBe(3);
+      expect(session.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
 
       // Eliminate the last remaining target
       session.eliminate(3);
@@ -127,7 +127,7 @@ describe("Targeting Edge Cases", () => {
       session.updatePlayer(2, { life: 0 });
 
       expect(session.awaitingPriority).not.toContain(2);
-      expect(session.activePlayer).toBe(3);
+      expect(session.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
     });
   });
 
@@ -156,7 +156,7 @@ describe("Targeting Edge Cases", () => {
     it("should preserve active player when paused", () => {
       session.pause();
 
-      expect(session.activePlayer).toBe(2);
+      expect(session.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
     });
   });
 
@@ -178,7 +178,7 @@ describe("Targeting Edge Cases", () => {
     it("should maintain active player after resume", () => {
       session.resume();
 
-      expect(session.activePlayer).toBe(2);
+      expect(session.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
     });
 
     it("should allow target to pass priority after resume", () => {
@@ -276,7 +276,7 @@ describe("Targeting Edge Cases", () => {
       expect(restored.targetedPlayers).toEqual([2, 3]);
       expect(restored.awaitingPriority).toEqual([2, 3]);
       expect(restored.originalActivePlayer).toBe(1);
-      expect(restored.activePlayer).toBe(2);
+      expect(restored.activePlayer).toBe(1); // activePlayer stays as original during parallel resolution
 
       restored.cleanup();
     });
