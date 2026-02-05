@@ -1662,6 +1662,30 @@ h1 {
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 2px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+/* Highlighted turn indicator when it's my action */
+.game-turn-indicator.my-action {
+  color: #000;
+  font-weight: 700;
+  font-size: 0.85em;
+  background: linear-gradient(135deg, #ffcc00, #ff9500);
+  box-shadow: 0 0 20px rgba(255, 170, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3);
+  animation: pulse-turn 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-turn {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(255, 170, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 170, 0, 0.8), 0 2px 12px rgba(0, 0, 0, 0.4);
+    transform: scale(1.05);
+  }
 }
 
 .game-time-value {
@@ -1672,6 +1696,12 @@ h1 {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   text-align: center;
   line-height: 1;
+}
+
+/* Time display highlight when it's my action */
+.game-time-display.my-action .game-time-value {
+  color: #ffcc00;
+  text-shadow: 0 0 15px rgba(255, 200, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Time warning states */
@@ -1715,6 +1745,11 @@ h1 {
   .game-turn-indicator {
     font-size: 0.9em;
     letter-spacing: 2px;
+    padding: 6px 16px;
+  }
+
+  .game-turn-indicator.my-action {
+    font-size: 1.1em;
   }
 
   .game-time-value {

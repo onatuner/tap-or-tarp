@@ -2638,7 +2638,8 @@ function updateTimeDisplay() {
   const isPaused = gameState.status === "paused";
 
   // Remove all state classes
-  gameUI.timeDisplay.classList.remove("warning", "critical", "paused");
+  gameUI.timeDisplay.classList.remove("warning", "critical", "paused", "my-action");
+  gameUI.turnIndicator.classList.remove("my-action");
 
   if (isWaiting) {
     // Show game code in waiting state (copyable)
@@ -2674,10 +2675,14 @@ function updateTimeDisplay() {
       gameState.interruptingPlayers.includes(myPlayer.id);
 
     // Update turn indicator based on targeting state and interrupts
+    // Track if it's my action needed for highlighting
+    let isMyAction = false;
+
     if (isResolving) {
       if (myHasInterruptPriority) {
         // I have interrupt priority during targeting
         gameUI.turnIndicator.textContent = "YOUR PRIORITY";
+        isMyAction = true;
       } else if (hasInterrupts) {
         // Someone else has interrupt priority
         const interrupter = gameState.players.find(p => p.id === interruptPriorityId);
@@ -2686,8 +2691,10 @@ function updateTimeDisplay() {
         }
       } else if (myAwaitingPriority && isMyTurn) {
         gameUI.turnIndicator.textContent = "RESPOND";
+        isMyAction = true;
       } else if (myAwaitingPriority) {
         gameUI.turnIndicator.textContent = "WAITING TO RESPOND";
+        isMyAction = true;
       } else if (isOriginalPlayer) {
         gameUI.turnIndicator.textContent = "AWAITING RESPONSES";
       } else if (activePlayer) {
@@ -2696,14 +2703,20 @@ function updateTimeDisplay() {
     } else if (isSelecting) {
       if (isMyTurn) {
         gameUI.turnIndicator.textContent = "SELECT TARGETS";
+        isMyAction = true;
       } else if (activePlayer) {
         gameUI.turnIndicator.textContent = `${activePlayer.name} Targeting`;
       }
     } else if (isMyTurn) {
       gameUI.turnIndicator.textContent = "YOUR TURN";
+      isMyAction = true;
     } else if (activePlayer) {
       gameUI.turnIndicator.textContent = `${activePlayer.name}'s Turn`;
     }
+
+    // Add/remove highlight class based on whether it's my action
+    gameUI.turnIndicator.classList.toggle("my-action", isMyAction);
+    gameUI.timeDisplay.classList.toggle("my-action", isMyAction);
 
     // Update time display with appropriate format and state
     if (timeRemaining < CONSTANTS.CRITICAL_THRESHOLD) {
