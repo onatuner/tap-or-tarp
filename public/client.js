@@ -1664,49 +1664,59 @@ function createPlayerCard(player, isActive) {
   nameInput.type = "text";
   nameInput.value = player.name;
   nameInput.maxLength = 20;
+  nameInput.autocomplete = "off";
+  nameInput.autocapitalize = "words";
+
+  // Track original name for reverting
+  let originalName = player.name;
 
   // Stop all events from bubbling to card
-  nameInput.addEventListener("click", e => {
+  const stopProp = (e) => {
     e.stopPropagation();
-  });
+  };
 
-  nameInput.addEventListener("mousedown", e => {
+  nameInput.addEventListener("click", stopProp);
+  nameInput.addEventListener("mousedown", stopProp);
+  nameInput.addEventListener("touchstart", stopProp, { passive: false });
+  nameInput.addEventListener("touchend", (e) => {
     e.stopPropagation();
+    // Ensure input gets focus on touch
+    nameInput.focus();
   });
-
-  nameInput.addEventListener("touchstart", e => {
-    e.stopPropagation();
-  }, { passive: true });
 
   nameInput.addEventListener("focus", e => {
     e.stopPropagation();
+    originalName = nameInput.value;
     // Select all text on focus for easy replacement
-    nameInput.select();
+    setTimeout(() => nameInput.select(), 10);
   });
 
-  // Handle name change
-  nameInput.addEventListener("change", e => {
-    const newName = e.target.value.trim();
-    if (newName && newName !== player.name) {
+  // Handle name change on blur
+  nameInput.addEventListener("blur", () => {
+    const newName = nameInput.value.trim();
+    if (newName && newName !== originalName) {
+      console.log("Updating player name:", player.id, newName);
       sendUpdatePlayer(player.id, { name: newName });
+      originalName = newName;
       // Add visual feedback
       nameInput.classList.add("saving");
       setTimeout(() => nameInput.classList.remove("saving"), 500);
     } else if (!newName) {
       // Revert to original if empty
-      e.target.value = player.name;
+      nameInput.value = originalName;
     }
   });
 
   // Handle Enter key to submit and Escape to cancel
   nameInput.addEventListener("keydown", e => {
+    e.stopPropagation();
     if (e.key === "Enter") {
       e.preventDefault();
-      nameInput.blur(); // Trigger change event
+      nameInput.blur(); // Trigger blur event
     }
     if (e.key === "Escape") {
       e.preventDefault();
-      nameInput.value = player.name; // Revert
+      nameInput.value = originalName; // Revert
       nameInput.blur();
     }
   });
