@@ -3015,6 +3015,24 @@ function updateTimeDisplay() {
     gameUI.turnIndicator.classList.remove("copyable");
     gameUI.timeValue.textContent = "--:--";
     gameUI.timeDisplay.classList.add("paused");
+  } else if (gameState.status === "finished") {
+    // Game is over - show winner or game over
+    gameUI.turnIndicator.classList.remove("copyable");
+    if (gameState.winner) {
+      const winner = gameState.players.find(p => p.id === gameState.winner);
+      const isMyWin = myPlayer && myPlayer.id === gameState.winner;
+      if (isMyWin) {
+        gameUI.turnIndicator.textContent = "🏆 VICTORY! 🏆";
+        gameUI.turnIndicator.classList.add("my-action");
+      } else if (winner) {
+        gameUI.turnIndicator.textContent = `${winner.name} Wins!`;
+      } else {
+        gameUI.turnIndicator.textContent = "GAME OVER";
+      }
+    } else {
+      gameUI.turnIndicator.textContent = "GAME OVER";
+    }
+    gameUI.timeValue.textContent = myPlayer ? formatTime(myPlayer.timeRemaining) : "--:--";
   } else if (myPlayer) {
     gameUI.turnIndicator.classList.remove("copyable");
     // Show time and turn indicator
@@ -3113,6 +3131,26 @@ function updateInteractionButton() {
   const isPaused = gameState.status === "paused";
   const allPlayersClaimed = gameState.players.every(p => p.claimedBy !== null);
 
+  // If game is finished and player is the winner, show winner button
+  if (gameState.status === "finished" && myPlayer && gameState.winner === myPlayer.id) {
+    gameUI.interactionBtn.classList.remove(
+      "game-interaction-btn-pass",
+      "game-interaction-btn-interrupt",
+      "game-interaction-btn-priority",
+      "game-interaction-btn-start",
+      "game-interaction-btn-target",
+      "game-interaction-btn-confirm"
+    );
+    gameUI.interactionBtn.classList.add("game-interaction-btn-winner");
+    gameUI.interactionBtn.textContent = "🏆 WINNER 🏆";
+    gameUI.interactionBtn.disabled = true;
+    gameUI.interactionBtn.setAttribute("aria-label", "You are the winner!");
+    if (gameUI.cancelTargetingBtn) {
+      gameUI.cancelTargetingBtn.style.display = "none";
+    }
+    return;
+  }
+
   // If player is eliminated, disable the button
   if (myPlayer && myPlayer.isEliminated) {
     gameUI.interactionBtn.classList.remove(
@@ -3121,7 +3159,8 @@ function updateInteractionButton() {
       "game-interaction-btn-priority",
       "game-interaction-btn-start",
       "game-interaction-btn-target",
-      "game-interaction-btn-confirm"
+      "game-interaction-btn-confirm",
+      "game-interaction-btn-winner"
     );
     gameUI.interactionBtn.textContent = "ELIMINATED";
     gameUI.interactionBtn.disabled = true;
@@ -3160,7 +3199,8 @@ function updateInteractionButton() {
     "game-interaction-btn-priority",
     "game-interaction-btn-start",
     "game-interaction-btn-target",
-    "game-interaction-btn-confirm"
+    "game-interaction-btn-confirm",
+    "game-interaction-btn-winner"
   );
 
   // Show cancel targeting button only during selection mode when it's my turn
