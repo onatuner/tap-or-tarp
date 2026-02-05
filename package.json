@@ -10,7 +10,7 @@
     "dev:raw": "node server.js",
     "lint": "eslint server.js public/client.js",
     "format": "prettier --write server.js public/*.js public/*.html public/*.css",
-    "test": "jest",
+    "test": "jest --forceExit",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
   },
@@ -48,5 +48,14 @@
     "jest": "^30.2.0",
     "pino-pretty": "^13.0.0",
     "prettier": "^3.2.5"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ],
+    "setupFilesAfterEnv": [
+      "./jest.setup.js"
+    ]
   }
 }
