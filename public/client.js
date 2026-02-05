@@ -3113,6 +3113,25 @@ function updateInteractionButton() {
   const isPaused = gameState.status === "paused";
   const allPlayersClaimed = gameState.players.every(p => p.claimedBy !== null);
 
+  // If player is eliminated, disable the button
+  if (myPlayer && myPlayer.isEliminated) {
+    gameUI.interactionBtn.classList.remove(
+      "game-interaction-btn-pass",
+      "game-interaction-btn-interrupt",
+      "game-interaction-btn-priority",
+      "game-interaction-btn-start",
+      "game-interaction-btn-target",
+      "game-interaction-btn-confirm"
+    );
+    gameUI.interactionBtn.textContent = "ELIMINATED";
+    gameUI.interactionBtn.disabled = true;
+    gameUI.interactionBtn.setAttribute("aria-label", "You have been eliminated");
+    if (gameUI.cancelTargetingBtn) {
+      gameUI.cancelTargetingBtn.style.display = "none";
+    }
+    return;
+  }
+
   // Targeting state checks
   const targetingState = gameState.targetingState || CONSTANTS.TARGETING.STATES.NONE;
   const isSelecting = targetingState === CONSTANTS.TARGETING.STATES.SELECTING;
