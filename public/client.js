@@ -2649,8 +2649,26 @@ function renderGames(games) {
       </div>
     `;
 
-    gameCard.addEventListener("click", () => {
+    const handleJoinClick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Visual feedback
+      gameCard.style.opacity = "0.5";
+      gameCard.style.pointerEvents = "none";
+      setTimeout(() => {
+        gameCard.style.opacity = "";
+        gameCard.style.pointerEvents = "";
+      }, 500);
+      console.log("Joining game:", game.id);
       sendJoinGame(game.id);
+    };
+
+    gameCard.addEventListener("click", handleJoinClick);
+    // Add touch support for mobile
+    gameCard.addEventListener("touchend", (e) => {
+      // Prevent double-firing with click
+      e.preventDefault();
+      handleJoinClick(e);
     });
 
     setupForm.gameList.appendChild(gameCard);
