@@ -1821,9 +1821,9 @@ h1 {
   align-items: center;
   justify-content: center;
   min-height: 0; /* Allow shrinking */
-  max-height: calc(var(--player-card-height) + var(--spacing-md));
+  max-height: calc(var(--player-card-height) + var(--spacing-md) + 12px);
   flex-shrink: 1;
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: 12px var(--spacing-md) var(--spacing-xs); /* Extra top padding for TURN badge */
 }
 
 .game-player-cards {
@@ -2238,8 +2238,8 @@ h1 {
 @media (orientation: landscape) and (max-height: 500px) {
   .game-other-players {
     min-height: 0;
-    max-height: calc(var(--player-card-height) + var(--spacing-xs));
-    padding: var(--spacing-xs) var(--spacing-sm);
+    max-height: calc(var(--player-card-height) + var(--spacing-xs) + 12px);
+    padding: 12px var(--spacing-sm) var(--spacing-xs); /* Extra top padding for TURN badge */
   }
 
   .game-player-cards {
@@ -2290,8 +2290,8 @@ h1 {
 /* Desktop enhancements for player cards */
 @media (min-width: 769px) {
   .game-other-players {
-    max-height: calc(var(--player-card-height) * 1.5 + var(--spacing-md));
-    padding: var(--spacing-sm) var(--spacing-md);
+    max-height: calc(var(--player-card-height) * 1.5 + var(--spacing-md) + 14px);
+    padding: 14px var(--spacing-md) var(--spacing-sm); /* Extra top padding for TURN badge */
   }
 
   .game-player-cards {
@@ -2333,6 +2333,13 @@ h1 {
   .game-player-card-status {
     font-size: 0.7em;
     height: 14px;
+  }
+
+  /* Larger TURN badge on desktop */
+  .game-player-card.active::before {
+    font-size: 11px;
+    padding: 3px 10px;
+    top: -12px;
   }
 }
 
