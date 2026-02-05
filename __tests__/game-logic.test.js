@@ -621,13 +621,24 @@ describe("GameSession", () => {
       expect(session.activePlayer).toBe(2);
     });
 
-    test("should pause if all players eliminated", () => {
+    test("should finish game and declare winner when only one player remains", () => {
+      session.start();
+      session.eliminate(1);
+      session.eliminate(2);
+      session.eliminate(3);
+      // Only player 4 remains - they should be the winner
+      expect(session.status).toBe("finished");
+      expect(session.winner).toBe(4);
+    });
+
+    test("should finish game with no winner if all players eliminated", () => {
       session.start();
       session.eliminate(1);
       session.eliminate(2);
       session.eliminate(3);
       session.eliminate(4);
-      expect(session.status).toBe("paused");
+      expect(session.status).toBe("finished");
+      expect(session.winner).toBe(null);
     });
   });
 
@@ -883,7 +894,9 @@ describe("GameSession", () => {
       expect(quickSession.players[0].timeRemaining).toBe(0);
       expect(quickSession.players[0].penalties).toBeGreaterThanOrEqual(1);
       expect(quickSession.players[0].isEliminated).toBe(true);
-      expect(quickSession.status).toBe("paused");
+      // With only 2 players, when one is eliminated, the other wins
+      expect(quickSession.status).toBe("finished");
+      expect(quickSession.winner).toBe(2);
 
       quickSession.cleanup();
     });

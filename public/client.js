@@ -697,6 +697,9 @@ function handleMessage(message) {
     case "gameEnded":
       backToMenu();
       break;
+    case "gameComplete":
+      handleGameComplete(message.data);
+      break;
     case "gameRenamed":
       if (gameState && message.data.name) {
         gameState.name = message.data.name;
@@ -727,6 +730,57 @@ function handleMessage(message) {
       handleTargetingCanceled(message.data);
       break;
   }
+}
+
+/**
+ * Handle game completion - when only one player remains
+ * @param {object} data - Contains winnerId and winnerName
+ */
+function handleGameComplete(data) {
+  const { winnerId, winnerName } = data;
+
+  if (winnerId !== null && winnerName) {
+    // Show winner notification
+    showWinnerModal(winnerId, winnerName);
+  } else {
+    // Draw - no winner
+    showToast("Game Over - No winner!", "info", 5000);
+  }
+}
+
+/**
+ * Show a modal announcing the winner
+ * @param {number} winnerId - Winner's player ID
+ * @param {string} winnerName - Winner's name
+ */
+function showWinnerModal(winnerId, winnerName) {
+  // Get the winner's color for styling
+  const winner = gameState?.players?.find(p => p.id === winnerId);
+  const colorClass = winner?.color ? `player-color-${winner.color}` : `player-${winnerId}`;
+
+  // Create modal overlay
+  const modalOverlay = document.createElement("div");
+  modalOverlay.className = "winner-modal-overlay";
+  modalOverlay.innerHTML = `
+    <div class="winner-modal">
+      <div class="winner-trophy">🏆</div>
+      <h2 class="winner-title">Victory!</h2>
+      <div class="winner-name ${colorClass}">${winnerName}</div>
+      <p class="winner-subtitle">is the winner!</p>
+      <button class="winner-close-btn" onclick="this.closest('.winner-modal-overlay').remove()">
+        Close
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(modalOverlay);
+
+  // Auto-remove after 10 seconds
+  setTimeout(() => {
+    if (modalOverlay.parentNode) {
+      modalOverlay.remove();
+    }
+  }, 10000);
 }
 
 /**
