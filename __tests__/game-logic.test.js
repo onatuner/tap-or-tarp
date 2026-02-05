@@ -880,6 +880,7 @@ describe("GameSession", () => {
         {
           playerCount: 2,
           initialTime: 100,
+          timeoutGracePeriod: 0,
         },
         (type, data) => {
           broadcastMessages.push({ type, data });

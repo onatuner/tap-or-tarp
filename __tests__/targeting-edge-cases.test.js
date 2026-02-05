@@ -7,9 +7,13 @@ describe("Targeting Edge Cases", () => {
 
   beforeEach(() => {
     broadcastMessages = [];
-    session = new BaseGameSession("TEST01", { playerCount: 4 }, (type, data) => {
-      broadcastMessages.push({ type, data });
-    });
+    session = new BaseGameSession(
+      "TEST01",
+      { playerCount: 4, timeoutGracePeriod: 0 },
+      (type, data) => {
+        broadcastMessages.push({ type, data });
+      }
+    );
     // Start game so targeting can be used
     session.start();
   });
