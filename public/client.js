@@ -3347,8 +3347,8 @@ function handleInteractionClick() {
     if (myHasPriority && myInInterruptQueue) {
       // Pass interrupt priority
       safeSend({ type: "passPriority", data: {} });
-    } else if (myAwaitingPriority && isMyTurn && !hasInterrupts) {
-      // Pass target priority (only if no one has interrupted)
+    } else if (myAwaitingPriority && !hasInterrupts) {
+      // Pass target priority - all targeted players can pass simultaneously
       sendPassTargetPriority();
     } else if (myPlayer && !myHasPriority) {
       // Interrupt during targeting resolution
