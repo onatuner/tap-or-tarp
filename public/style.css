@@ -514,13 +514,20 @@ h1 {
   color: #fff;
   font-size: 1em;
   font-weight: 600;
-  padding: 2px 4px;
+  padding: 8px 4px;
   margin: 0;
   width: 70%;
   max-width: 120px;
   cursor: text;
   transition: border-color 0.2s ease, background-color 0.2s ease;
   border-radius: 2px;
+  touch-action: manipulation;
+  -webkit-user-select: text;
+  user-select: text;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .player-name input:hover {
@@ -1985,6 +1992,14 @@ h1 {
   50% {
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
+}
+
+/* Spectator mode styling */
+.game-interaction-btn:disabled[aria-label="You are spectating this game"] {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #8b9dc3;
+  border: 1px dashed #4a5568;
+  font-style: italic;
 }
 
 /* Landscape: narrower button */

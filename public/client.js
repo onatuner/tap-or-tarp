@@ -1670,18 +1670,30 @@ function createPlayerCard(player, isActive) {
   // Track original name for reverting
   let originalName = player.name;
 
-  // Stop all events from bubbling to card
-  const stopProp = (e) => {
+  // Stop all events from bubbling to card and ensure input is tappable on mobile
+  const stopAndPrevent = (e) => {
     e.stopPropagation();
   };
 
-  nameInput.addEventListener("click", stopProp);
-  nameInput.addEventListener("mousedown", stopProp);
-  nameInput.addEventListener("touchstart", stopProp, { passive: false });
+  nameInput.addEventListener("click", stopAndPrevent);
+  nameInput.addEventListener("mousedown", stopAndPrevent);
+
+  // Mobile touch handling - must prevent default to avoid card capturing the event
+  nameInput.addEventListener("touchstart", (e) => {
+    e.stopPropagation();
+    // Don't preventDefault here - let the browser handle touch-to-focus
+  }, { passive: true });
+
   nameInput.addEventListener("touchend", (e) => {
     e.stopPropagation();
-    // Ensure input gets focus on touch
+    e.preventDefault(); // Prevent click event from also firing
+    // Explicitly focus the input on touch end
     nameInput.focus();
+  }, { passive: false });
+
+  // Pointer events for better cross-platform support
+  nameInput.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
   });
 
   nameInput.addEventListener("focus", e => {
@@ -3149,10 +3161,15 @@ function updateTimeDisplay() {
       gameUI.timeValue.textContent = formatTime(timeRemaining);
     }
   } else {
-    // No claimed player, show active player's time
+    // No claimed player - spectator mode
+    gameUI.turnIndicator.classList.remove("copyable");
     if (activePlayer) {
       gameUI.turnIndicator.textContent = `${activePlayer.name}'s Turn`;
-      gameUI.timeValue.textContent = formatTime(activePlayer.timeRemaining);
+      // Hide time for spectators - show SPECTATING instead
+      gameUI.timeValue.textContent = "SPECTATING";
+    } else {
+      gameUI.turnIndicator.textContent = "SPECTATING";
+      gameUI.timeValue.textContent = "--:--";
     }
   }
 }
@@ -3335,8 +3352,13 @@ function updateInteractionButton() {
     gameUI.interactionBtn.classList.add("game-interaction-btn-interrupt");
     gameUI.interactionBtn.disabled = false;
     gameUI.interactionBtn.setAttribute("aria-label", "Interrupt and take priority");
+  } else if (!myPlayer && !isWaiting) {
+    // Spectator mode (no claimed player and game is running/paused/finished)
+    gameUI.interactionBtn.textContent = "SPECTATING";
+    gameUI.interactionBtn.disabled = true;
+    gameUI.interactionBtn.setAttribute("aria-label", "You are spectating this game");
   } else {
-    // Disabled state (no claimed player or waiting for something)
+    // Disabled state (waiting for something)
     gameUI.interactionBtn.textContent = "WAITING...";
     gameUI.interactionBtn.disabled = true;
     gameUI.interactionBtn.setAttribute("aria-label", "Waiting for game action");
@@ -3719,7 +3741,14 @@ function updatePlayerStats() {
   }
 
   if (!myPlayer) {
-    // Dim stats and reset to default values when no player claimed
+    // If game is running/paused/finished and no player claimed, hide stats entirely (spectator mode)
+    if (!isWaiting) {
+      gameUI.playerStats.style.display = "none";
+      return;
+    }
+
+    // In waiting state, dim stats and reset to default values
+    gameUI.playerStats.style.display = "";
     gameUI.playerStats.style.opacity = "0.5";
 
     // Reset displayed values to defaults
@@ -3739,6 +3768,9 @@ function updatePlayerStats() {
     prevStatValues.generic = null;
     return;
   }
+
+  // Ensure stats are visible when player is claimed
+  gameUI.playerStats.style.display = "";
 
   gameUI.playerStats.style.opacity = "1";
 
