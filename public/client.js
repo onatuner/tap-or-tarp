@@ -328,6 +328,9 @@ const settingsModal = {
   adminKickBtn: document.getElementById("admin-kick-btn"),
   adminTimeInput: document.getElementById("admin-time-input"),
   adminAddTimeBtn: document.getElementById("admin-add-time-btn"),
+  // Timeout penalty settings
+  timeoutLivesInput: document.getElementById("settings-timeout-lives"),
+  timeoutDrunkInput: document.getElementById("settings-timeout-drunk"),
 };
 
 const colorPickerModal = {
@@ -381,6 +384,19 @@ const timeoutModal = {
   message: document.getElementById("timeout-message"),
   acknowledge: document.getElementById("acknowledge-timeout"),
 };
+
+const timeoutChoiceModal = {
+  modal: document.getElementById("timeout-choice-modal"),
+  timer: document.getElementById("timeout-choice-timer"),
+  livesAmount: document.getElementById("timeout-lives-amount"),
+  drunkAmount: document.getElementById("timeout-drunk-amount"),
+  livesBtn: document.getElementById("timeout-choice-lives"),
+  drunkBtn: document.getElementById("timeout-choice-drunk"),
+  dieBtn: document.getElementById("timeout-choice-die"),
+};
+
+let timeoutChoiceInterval = null;
+let timeoutChoiceDeadline = null;
 
 function initAudio() {
   audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -651,10 +667,16 @@ function handleMessage(message) {
       }
       console.error("Server error:", message.data.message);
       break;
-    case "state":
+    case "state": {
       gameState = message.data;
+      // Check if timeout choice should be hidden (player's timeout resolved)
+      const myPlayerState = gameState?.players.find(p => p.claimedBy === myClientId);
+      if (myPlayerState && !myPlayerState.timeoutPending && timeoutChoiceModal.modal?.style.display === "flex") {
+        hideTimeoutChoiceModal();
+      }
       renderGame();
       break;
+    }
     case "tick":
       if (gameState) {
         gameState.players.forEach(player => {
@@ -744,6 +766,9 @@ function handleMessage(message) {
     case "targetingCanceled":
       handleTargetingCanceled(message.data);
       break;
+    case "timeoutChoice":
+      handleTimeoutChoice(message.data);
+      break;
   }
 }
 
@@ -796,6 +821,101 @@ function showWinnerModal(winnerId, winnerName) {
       modalOverlay.remove();
     }
   }, 10000);
+}
+
+/**
+ * Handle timeout choice message from server
+ * @param {object} data - Contains playerId, options (livesLoss, drunkGain), deadline
+ */
+function handleTimeoutChoice(data) {
+  const { playerId, options, deadline } = data;
+
+  // Check if this is for the current player
+  const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+  if (!myPlayer || myPlayer.id !== playerId) {
+    return; // Not for this player
+  }
+
+  // Show the timeout choice modal
+  showTimeoutChoiceModal(options.livesLoss, options.drunkGain, deadline);
+}
+
+/**
+ * Show the timeout choice modal with countdown
+ * @param {number} livesLoss - Amount of life to lose
+ * @param {number} drunkGain - Amount of drunk to gain
+ * @param {number} deadline - Timestamp when auto-select happens
+ */
+function showTimeoutChoiceModal(livesLoss, drunkGain, deadline) {
+  if (!timeoutChoiceModal.modal) return;
+
+  // Update penalty amounts in the modal
+  if (timeoutChoiceModal.livesAmount) {
+    timeoutChoiceModal.livesAmount.textContent = livesLoss;
+  }
+  if (timeoutChoiceModal.drunkAmount) {
+    timeoutChoiceModal.drunkAmount.textContent = drunkGain;
+  }
+
+  // Store deadline for countdown
+  timeoutChoiceDeadline = deadline;
+
+  // Start countdown timer
+  updateTimeoutChoiceCountdown();
+  if (timeoutChoiceInterval) {
+    clearInterval(timeoutChoiceInterval);
+  }
+  timeoutChoiceInterval = setInterval(updateTimeoutChoiceCountdown, 1000);
+
+  // Show the modal
+  timeoutChoiceModal.modal.style.display = "flex";
+
+  // Play timeout alarm sound
+  playTimeout();
+}
+
+/**
+ * Update the countdown timer in the timeout choice modal
+ */
+function updateTimeoutChoiceCountdown() {
+  if (!timeoutChoiceDeadline || !timeoutChoiceModal.timer) return;
+
+  const remaining = Math.max(0, Math.ceil((timeoutChoiceDeadline - Date.now()) / 1000));
+  timeoutChoiceModal.timer.textContent = remaining;
+
+  // If countdown reaches 0, auto-select "die" (server will do this, but hide modal)
+  if (remaining <= 0) {
+    hideTimeoutChoiceModal();
+  }
+}
+
+/**
+ * Hide the timeout choice modal and clean up
+ */
+function hideTimeoutChoiceModal() {
+  if (timeoutChoiceModal.modal) {
+    timeoutChoiceModal.modal.style.display = "none";
+  }
+  if (timeoutChoiceInterval) {
+    clearInterval(timeoutChoiceInterval);
+    timeoutChoiceInterval = null;
+  }
+  timeoutChoiceDeadline = null;
+}
+
+/**
+ * Send the player's timeout choice to the server
+ * @param {string} choice - "loseLives", "gainDrunk", or "die"
+ */
+function sendTimeoutChoice(choice) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+  ws.send(JSON.stringify({
+    type: "timeoutChoice",
+    data: { choice }
+  }));
+
+  hideTimeoutChoiceModal();
 }
 
 /**
@@ -1996,6 +2116,14 @@ function showSettingsModal() {
     settingsModal.bonusTimeInput.value = bonusSeconds;
   }
 
+  // Populate timeout penalty settings
+  if (settingsModal.timeoutLivesInput && gameState) {
+    settingsModal.timeoutLivesInput.value = gameState.settings?.timeoutPenaltyLives ?? 2;
+  }
+  if (settingsModal.timeoutDrunkInput && gameState) {
+    settingsModal.timeoutDrunkInput.value = gameState.settings?.timeoutPenaltyDrunk ?? 2;
+  }
+
   // Populate color picker
   populateColorPicker();
 
@@ -2209,6 +2337,16 @@ function saveSettings() {
     settingsToUpdate.bonusTime = bonusTime;
   }
 
+  // Save timeout penalty settings
+  if (settingsModal.timeoutLivesInput) {
+    const lives = parseInt(settingsModal.timeoutLivesInput.value, 10) || 2;
+    settingsToUpdate.timeoutPenaltyLives = Math.max(0, Math.min(lives, 20));
+  }
+  if (settingsModal.timeoutDrunkInput) {
+    const drunk = parseInt(settingsModal.timeoutDrunkInput.value, 10) || 2;
+    settingsToUpdate.timeoutPenaltyDrunk = Math.max(0, Math.min(drunk, 20));
+  }
+
   // Send settings update if there are any changes
   if (Object.keys(settingsToUpdate).length > 0) {
     sendUpdateSettings(settingsToUpdate);
@@ -2335,6 +2473,29 @@ function setupSettingsEventListeners() {
       sendAdminAddTime(playerId, minutes);
       playClick();
     }
+  });
+}
+
+/**
+ * Setup timeout choice modal event listeners
+ */
+function setupTimeoutChoiceEventListeners() {
+  // Lose lives button
+  timeoutChoiceModal.livesBtn?.addEventListener("click", () => {
+    sendTimeoutChoice("loseLives");
+    playClick();
+  });
+
+  // Gain drunk button
+  timeoutChoiceModal.drunkBtn?.addEventListener("click", () => {
+    sendTimeoutChoice("gainDrunk");
+    playClick();
+  });
+
+  // Die button
+  timeoutChoiceModal.dieBtn?.addEventListener("click", () => {
+    sendTimeoutChoice("die");
+    playClick();
   });
 }
 
@@ -3750,6 +3911,7 @@ function setupStatButtons() {
 // Initialize game event listeners
 setupGameEventListeners();
 setupSettingsEventListeners();
+setupTimeoutChoiceEventListeners();
 
 // Handle orientation changes to ensure layout recalculates
 window.addEventListener("orientationchange", () => {

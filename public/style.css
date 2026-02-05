@@ -647,6 +647,126 @@ h1 {
   justify-content: center;
 }
 
+/* Timeout Choice Modal */
+.modal-timeout-choice {
+  background: linear-gradient(135deg, #1a0a0a 0%, #0d0505 100%);
+  border: 2px solid #cc0000;
+  max-width: 400px;
+}
+
+.modal-timeout-choice h2 {
+  color: #ff3333;
+  font-size: 2em;
+  text-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+  animation: pulse-glow 1s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { text-shadow: 0 0 20px rgba(255, 0, 0, 0.5); }
+  50% { text-shadow: 0 0 30px rgba(255, 0, 0, 0.8); }
+}
+
+.timeout-choice-desc {
+  color: #ccc;
+  margin-bottom: 15px;
+}
+
+.timeout-choice-countdown {
+  background: rgba(255, 0, 0, 0.2);
+  border: 1px solid #cc0000;
+  border-radius: 8px;
+  padding: 10px 15px;
+  margin-bottom: 20px;
+  font-size: 1.1em;
+  color: #ff6666;
+}
+
+.timeout-countdown-value {
+  font-weight: bold;
+  font-size: 1.3em;
+  color: #ff3333;
+}
+
+.timeout-choice-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timeout-choice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 15px 20px;
+  font-size: 1.1em;
+  border-radius: 10px;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.timeout-choice-icon {
+  font-size: 1.5em;
+}
+
+.timeout-choice-lives {
+  background: linear-gradient(135deg, #330000 0%, #1a0000 100%);
+  border-color: #cc0000;
+  color: #ff6666;
+}
+
+.timeout-choice-lives:hover {
+  background: linear-gradient(135deg, #440000 0%, #220000 100%);
+  transform: scale(1.02);
+}
+
+.timeout-choice-drunk {
+  background: linear-gradient(135deg, #332200 0%, #1a1100 100%);
+  border-color: #cc8800;
+  color: #ffbb66;
+}
+
+.timeout-choice-drunk:hover {
+  background: linear-gradient(135deg, #443300 0%, #221100 100%);
+  transform: scale(1.02);
+}
+
+.timeout-choice-die {
+  background: linear-gradient(135deg, #0d0d0d 0%, #000000 100%);
+  border-color: #666;
+  color: #999;
+}
+
+.timeout-choice-die:hover {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+  border-color: #888;
+  transform: scale(1.02);
+}
+
+/* Timeout penalty settings */
+.timeout-penalty-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.timeout-penalty-settings .settings-input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timeout-penalty-settings label {
+  min-width: 90px;
+  color: #aaa;
+}
+
+.settings-input-small {
+  width: 80px;
+}
+
 .active-indicator {
   font-size: 0.8em;
   padding: 5px 10px;

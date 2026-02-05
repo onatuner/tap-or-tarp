@@ -344,6 +344,21 @@
               </div>
               <button id="settings-add-threshold-btn" class="settings-add-btn">+ Add Threshold</button>
             </div>
+
+            <div class="settings-section">
+              <label class="settings-label">Timeout Penalty Options</label>
+              <p class="settings-hint">When a player's timer runs out, they choose a penalty</p>
+              <div class="timeout-penalty-settings">
+                <div class="settings-input-group">
+                  <label for="settings-timeout-lives">Lives Loss:</label>
+                  <input type="number" id="settings-timeout-lives" class="settings-input settings-input-small" min="0" max="20" value="2" />
+                </div>
+                <div class="settings-input-group">
+                  <label for="settings-timeout-drunk">Drunk Gain:</label>
+                  <input type="number" id="settings-timeout-drunk" class="settings-input settings-input-small" min="0" max="20" value="2" />
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- More Tab -->
@@ -430,6 +445,33 @@
           <button id="acknowledge-timeout" class="btn btn-primary" aria-label="Acknowledge timeout">
             Acknowledge
           </button>
+        </div>
+      </div>
+
+      <!-- Timeout Choice Modal -->
+      <div id="timeout-choice-modal" style="display: none" class="modal">
+        <div class="modal-content modal-timeout-choice">
+          <h2>TIME'S UP!</h2>
+          <p class="timeout-choice-desc">Your timer has run out. Choose your penalty:</p>
+          <div class="timeout-choice-countdown">
+            <span>Auto-select in: </span>
+            <span id="timeout-choice-timer" class="timeout-countdown-value">30</span>
+            <span>s</span>
+          </div>
+          <div class="timeout-choice-options">
+            <button id="timeout-choice-lives" class="btn timeout-choice-btn timeout-choice-lives">
+              <span class="timeout-choice-icon">&#10084;</span>
+              <span class="timeout-choice-label">Lose <span id="timeout-lives-amount">2</span> Life</span>
+            </button>
+            <button id="timeout-choice-drunk" class="btn timeout-choice-btn timeout-choice-drunk">
+              <span class="timeout-choice-icon">&#127866;</span>
+              <span class="timeout-choice-label">Gain <span id="timeout-drunk-amount">2</span> Drunk</span>
+            </button>
+            <button id="timeout-choice-die" class="btn timeout-choice-btn timeout-choice-die">
+              <span class="timeout-choice-icon">&#128128;</span>
+              <span class="timeout-choice-label">Accept Death</span>
+            </button>
+          </div>
         </div>
       </div>
 
