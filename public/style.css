@@ -1673,18 +1673,16 @@ h1 {
   font-weight: 700;
   font-size: 0.85em;
   background: linear-gradient(135deg, #ffcc00, #ff9500);
-  box-shadow: 0 0 20px rgba(255, 170, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3);
-  animation: pulse-turn 1.5s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(255, 170, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+  animation: pulse-turn 3s ease-in-out infinite;
 }
 
 @keyframes pulse-turn {
   0%, 100% {
-    box-shadow: 0 0 15px rgba(255, 170, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
-    transform: scale(1);
+    box-shadow: 0 0 10px rgba(255, 170, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.3);
   }
   50% {
-    box-shadow: 0 0 30px rgba(255, 170, 0, 0.8), 0 2px 12px rgba(0, 0, 0, 0.4);
-    transform: scale(1.05);
+    box-shadow: 0 0 18px rgba(255, 170, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 }
 
