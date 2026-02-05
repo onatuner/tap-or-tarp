@@ -9,9 +9,9 @@ primary_region = 'ams'
 [build]
 
 [env]
-  # Storage configuration - use 'redis' for horizontal scaling
-  STORAGE_TYPE = "sqlite"
-  # STORAGE_TYPE = "redis"  # Uncomment for horizontal scaling
+  # Storage configuration - Redis for horizontal scaling and persistence
+  STORAGE_TYPE = "redis"
+  REDIS_PRIMARY = "true"
 
 [http_service]
   internal_port = 8080
