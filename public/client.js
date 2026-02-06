@@ -1052,18 +1052,16 @@ function updatePlayOrderButtonVisibility() {
 
 /**
  * Update header pause button visibility and icon based on game state
- * Only visible to game owner during active gameplay
  */
 function updateHeaderPauseButton() {
   const pauseBtn = gameUI.pauseBtn;
   if (!pauseBtn || !gameState) return;
 
-  // Only show for game owner during active game
+  // Show for any claimed player during active game
   const myPlayer = gameState.players?.find(p => p.claimedBy === myClientId);
-  const isOwner = myPlayer?.id === 1;
   const isGameActive = gameState.status === "running" || gameState.status === "paused";
 
-  pauseBtn.style.display = (isOwner && isGameActive) ? "" : "none";
+  pauseBtn.style.display = (myPlayer && isGameActive) ? "" : "none";
 
   // Update icon based on state
   if (gameState.status === "paused") {
