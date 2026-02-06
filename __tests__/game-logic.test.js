@@ -295,11 +295,19 @@ describe("GameSession", () => {
       expect(session.players[0].tokenExpiry).toBeGreaterThan(Date.now());
     });
 
-    test("should not claim during non-waiting status", () => {
+    test("should allow claiming unclaimed non-eliminated player during running status", () => {
       session.start();
       const result = session.claimPlayer(1, "client1");
+      expect(result.success).toBe(true);
+      expect(session.players[0].claimedBy).toBe("client1");
+    });
+
+    test("should not claim eliminated player during running status", () => {
+      session.start();
+      session.players[0].isEliminated = true;
+      const result = session.claimPlayer(1, "client1");
       expect(result.success).toBe(false);
-      expect(result.reason).toBe("Game already started");
+      expect(result.reason).toBe("Player is eliminated");
     });
 
     test("should not claim already claimed player by different client", () => {

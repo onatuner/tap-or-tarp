@@ -3163,9 +3163,12 @@ function updateTimeDisplay() {
   } else {
     // No claimed player - spectator mode
     gameUI.turnIndicator.classList.remove("copyable");
-    if (activePlayer) {
+    const availablePlayer = gameState.players.find(p => !p.claimedBy && !p.isEliminated);
+    if (availablePlayer) {
+      gameUI.turnIndicator.textContent = "JOIN GAME";
+      gameUI.timeValue.textContent = "--:--";
+    } else if (activePlayer) {
       gameUI.turnIndicator.textContent = `${activePlayer.name}'s Turn`;
-      // Hide time for spectators - show SPECTATING instead
       gameUI.timeValue.textContent = "SPECTATING";
     } else {
       gameUI.turnIndicator.textContent = "SPECTATING";
@@ -3354,9 +3357,16 @@ function updateInteractionButton() {
     gameUI.interactionBtn.setAttribute("aria-label", "Interrupt and take priority");
   } else if (!myPlayer && !isWaiting) {
     // Spectator mode (no claimed player and game is running/paused/finished)
-    gameUI.interactionBtn.textContent = "SPECTATING";
-    gameUI.interactionBtn.disabled = true;
-    gameUI.interactionBtn.setAttribute("aria-label", "You are spectating this game");
+    const availablePlayer = gameState.players.find(p => !p.claimedBy && !p.isEliminated);
+    if (availablePlayer) {
+      gameUI.interactionBtn.textContent = "JOIN GAME";
+      gameUI.interactionBtn.disabled = false;
+      gameUI.interactionBtn.setAttribute("aria-label", "Join the game by claiming an available player");
+    } else {
+      gameUI.interactionBtn.textContent = "SPECTATING";
+      gameUI.interactionBtn.disabled = true;
+      gameUI.interactionBtn.setAttribute("aria-label", "You are spectating this game");
+    }
   } else {
     // Disabled state (waiting for something)
     gameUI.interactionBtn.textContent = "WAITING...";
@@ -3375,9 +3385,9 @@ function updateOtherPlayers() {
   const isWaiting = gameState.status === "waiting";
   const isPaused = gameState.status === "paused";
 
-  // In waiting state without a claimed player, show all players
+  // Without a claimed player, show all players so spectators can claim one
   // Otherwise, show only other players
-  const playersToShow = (isWaiting && !myPlayer)
+  const playersToShow = (!myPlayer)
     ? gameState.players
     : gameState.players.filter(p => p.claimedBy !== myClientId);
 
@@ -3453,6 +3463,9 @@ function updateOtherPlayers() {
         } else if (!isMyPlayer) {
           card.classList.add("claimed-other");
         }
+      } else if (!myPlayer && !isClaimed && !player.isEliminated) {
+        // Spectator can claim unclaimed, non-eliminated players
+        card.classList.add("selectable");
       }
 
       // Update targeting classes
@@ -3517,6 +3530,9 @@ function updateOtherPlayers() {
       } else if (!isMyPlayer) {
         card.classList.add("claimed-other");
       }
+    } else if (!myPlayer && !isClaimed && !player.isEliminated) {
+      // Spectator can claim unclaimed, non-eliminated players
+      card.classList.add("selectable");
     }
 
     // Apply targeting classes
@@ -3572,11 +3588,25 @@ function updateOtherPlayers() {
           playClick();
         }
       } else if (gameState && gameState.status === "running") {
+        // Allow spectators to claim unclaimed, non-eliminated players
+        const currentMyPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+        if (!currentMyPlayer && !currentIsClaimed && currentPlayer && !currentPlayer.isEliminated) {
+          sendClaim(player.id);
+          playClick();
+          return;
+        }
         // In game - check for targeting first
         const targetingHandled = handlePlayerCardTargetClick(player.id);
         if (!targetingHandled) {
           // Not in targeting mode - show player details popup
           showPlayerDetailsPopup(currentPlayer || player, card);
+        }
+      } else if (gameState && gameState.status === "paused") {
+        // Allow spectators to claim unclaimed, non-eliminated players in paused state
+        const currentMyPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+        if (!currentMyPlayer && !currentIsClaimed && currentPlayer && !currentPlayer.isEliminated) {
+          sendClaim(player.id);
+          playClick();
         }
       }
     });
@@ -3859,6 +3889,15 @@ function handleInteractionClick() {
     gameState.interruptingPlayers.includes(myPlayer.id);
 
   const hasInterrupts = gameState.interruptingPlayers && gameState.interruptingPlayers.length > 0;
+
+  // Spectator joining: claim the first available player
+  if (!myPlayer && !isWaiting) {
+    const availablePlayer = gameState.players.find(p => !p.claimedBy && !p.isEliminated);
+    if (availablePlayer) {
+      sendClaim(availablePlayer.id);
+      return;
+    }
+  }
 
   if (isWaiting) {
     sendStart();
