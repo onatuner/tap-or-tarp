@@ -4453,6 +4453,45 @@ a:focus:not(:focus-visible) {
 }
 
 /* =============================================================================
+   WASTELANDS CAMPAIGN THEME
+   ============================================================================= */
+.game-layout.campaign-wastelands {
+  --bg-primary: #100c08;
+  --bg-secondary: #1a1510;
+  --bg-elevated: #221c14;
+  --color-accent: #c4840b;
+  --color-info: #b87333;
+  --border-subtle: rgba(255, 180, 80, 0.08);
+  --border-default: rgba(255, 180, 80, 0.12);
+  --text-secondary: #b0a090;
+  --text-muted: #706050;
+}
+
+.game-layout.campaign-wastelands .game-campaign-stats {
+  border-top-color: rgba(255, 160, 60, 0.15);
+}
+
+.game-layout.campaign-wastelands .game-campaign-stat {
+  background: rgba(255, 160, 60, 0.08);
+}
+
+.game-layout.campaign-wastelands .game-campaign-stat-label {
+  color: #b08050;
+}
+
+.game-layout.campaign-wastelands .game-campaign-stat-value {
+  color: #f0d8b0;
+}
+
+.game-layout.campaign-wastelands .game-interaction-btn-pass {
+  background: #8a9a22;
+}
+
+.game-layout.campaign-wastelands .game-icon-btn:hover {
+  background: rgba(255, 180, 80, 0.1);
+}
+
+/* =============================================================================
    DEBUG MODE (uncomment for overflow detection)
    ============================================================================= */
 /*

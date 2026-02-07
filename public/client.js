@@ -1996,6 +1996,14 @@ function renderGame() {
   // Show unified game screen
   document.body.classList.add("game-active");
   screens.game.style.display = "flex";
+
+  // Toggle campaign theme class
+  if (gameState.mode === "campaign" && gameState.campaign?.preset === "wastelands") {
+    screens.game.classList.add("campaign-wastelands");
+  } else {
+    screens.game.classList.remove("campaign-wastelands");
+  }
+
   // Add enter animation class
   screens.game.classList.add("screen-enter");
   setTimeout(() => screens.game.classList.remove("screen-enter"), 200);
