@@ -1997,11 +1997,12 @@ function renderGame() {
   document.body.classList.add("game-active");
   screens.game.style.display = "flex";
 
-  // Toggle campaign theme class
+  // Toggle campaign theme class on #app so modals also inherit
+  const app = document.getElementById("app");
   if (gameState.mode === "campaign" && gameState.campaign?.preset === "wastelands") {
-    screens.game.classList.add("campaign-wastelands");
+    app.classList.add("campaign-wastelands");
   } else {
-    screens.game.classList.remove("campaign-wastelands");
+    app.classList.remove("campaign-wastelands");
   }
 
   // Add enter animation class
@@ -2636,8 +2637,9 @@ function hideAllScreens() {
   Object.values(screens).forEach(screen => {
     if (screen) screen.style.display = "none";
   });
-  // Remove game-active class when hiding screens
+  // Remove game-active class and campaign theme when hiding screens
   document.body.classList.remove("game-active");
+  document.getElementById("app").classList.remove("campaign-wastelands");
 }
 
 function showScreen(screenName) {
