@@ -489,6 +489,25 @@
         </div>
       </div>
 
+      <div id="name-prompt-modal" style="display: none" class="modal">
+        <div class="modal-content modal-small">
+          <h3>Enter Your Name</h3>
+          <input
+            type="text"
+            id="name-prompt-input"
+            maxlength="20"
+            autocapitalize="words"
+            placeholder="Your name"
+            class="name-input"
+          />
+          <input type="hidden" id="name-prompt-player-id" />
+          <div class="modal-actions">
+            <button id="name-prompt-confirm" class="btn btn-primary">Confirm</button>
+            <button id="name-prompt-cancel" class="btn btn-secondary">Cancel</button>
+          </div>
+        </div>
+      </div>
+
       <div id="color-picker-modal" style="display: none" class="modal">
         <div class="modal-content modal-small">
           <h3>Choose Color</h3>

@@ -348,6 +348,14 @@ const colorPickerModal = {
   cancel: document.getElementById("cancel-color-picker"),
 };
 
+const namePromptModal = {
+  modal: document.getElementById("name-prompt-modal"),
+  input: document.getElementById("name-prompt-input"),
+  playerIdInput: document.getElementById("name-prompt-player-id"),
+  confirm: document.getElementById("name-prompt-confirm"),
+  cancel: document.getElementById("name-prompt-cancel"),
+};
+
 // settingsModal merged into settingsModal above
 
 // Dice modal elements
@@ -1932,7 +1940,11 @@ function createPlayerCard(player, isActive) {
       if (currentIsMyPlayer) {
         sendUnclaim();
       } else if (!currentIsClaimed) {
-        sendClaim(player.id);
+        if (gameState.mode === "campaign") {
+          claimWithNamePrompt(player.id);
+        } else {
+          sendClaim(player.id);
+        }
       }
       playClick();
     } else if (gameState && gameState.status === "running") {
@@ -1953,7 +1965,11 @@ function createPlayerCard(player, isActive) {
       if (currentIsMyPlayer) {
         sendUnclaim();
       } else if (!currentIsClaimed) {
-        sendClaim(player.id);
+        if (gameState.mode === "campaign") {
+          claimWithNamePrompt(player.id);
+        } else {
+          sendClaim(player.id);
+        }
       }
       playClick();
     }
@@ -2111,6 +2127,19 @@ function sendEndGame() {
 
 function sendClaim(playerId) {
   safeSend({ type: "claim", data: { playerId } });
+}
+
+function claimWithNamePrompt(playerId) {
+  // If player already has a stored name in campaign, skip the prompt
+  if (gameState && gameState.campaign && gameState.campaign.playerNames &&
+      gameState.campaign.playerNames[playerId]) {
+    sendClaim(playerId);
+    return;
+  }
+  namePromptModal.playerIdInput.value = playerId;
+  namePromptModal.input.value = "";
+  namePromptModal.modal.style.display = "flex";
+  namePromptModal.input.focus();
 }
 
 function sendUnclaim() {
@@ -2857,6 +2886,28 @@ setupForm.joinBtn.addEventListener("click", () => {
 colorPickerModal.cancel.addEventListener("click", () => {
   closeColorPicker();
   playClick();
+});
+
+namePromptModal.confirm.addEventListener("click", () => {
+  const playerId = parseInt(namePromptModal.playerIdInput.value);
+  const name = namePromptModal.input.value.trim();
+  namePromptModal.modal.style.display = "none";
+  sendClaim(playerId);
+  if (name) {
+    sendUpdatePlayer(playerId, { name });
+  }
+  playClick();
+});
+
+namePromptModal.cancel.addEventListener("click", () => {
+  namePromptModal.modal.style.display = "none";
+  playClick();
+});
+
+namePromptModal.input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    namePromptModal.confirm.click();
+  }
 });
 
 // Dice modal events
@@ -3610,14 +3661,22 @@ function updateOtherPlayers() {
           sendUnclaim();
           playClick();
         } else if (!currentIsClaimed) {
-          sendClaim(player.id);
+          if (gameState.mode === "campaign") {
+            claimWithNamePrompt(player.id);
+          } else {
+            sendClaim(player.id);
+          }
           playClick();
         }
       } else if (gameState && gameState.status === "running") {
         // Allow spectators to claim unclaimed, non-eliminated players
         const currentMyPlayer = gameState.players.find(p => p.claimedBy === myClientId);
         if (!currentMyPlayer && !currentIsClaimed && currentPlayer && !currentPlayer.isEliminated) {
-          sendClaim(player.id);
+          if (gameState.mode === "campaign") {
+            claimWithNamePrompt(player.id);
+          } else {
+            sendClaim(player.id);
+          }
           playClick();
           return;
         }
@@ -3631,7 +3690,11 @@ function updateOtherPlayers() {
         // Allow spectators to claim unclaimed, non-eliminated players in paused state
         const currentMyPlayer = gameState.players.find(p => p.claimedBy === myClientId);
         if (!currentMyPlayer && !currentIsClaimed && currentPlayer && !currentPlayer.isEliminated) {
-          sendClaim(player.id);
+          if (gameState.mode === "campaign") {
+            claimWithNamePrompt(player.id);
+          } else {
+            sendClaim(player.id);
+          }
           playClick();
         }
       }
@@ -3971,7 +4034,11 @@ function handleInteractionClick() {
   if (!myPlayer && !isWaiting) {
     const availablePlayer = gameState.players.find(p => !p.claimedBy && !p.isEliminated);
     if (availablePlayer) {
-      sendClaim(availablePlayer.id);
+      if (gameState.mode === "campaign") {
+        claimWithNamePrompt(availablePlayer.id);
+      } else {
+        sendClaim(availablePlayer.id);
+      }
       return;
     }
   }
