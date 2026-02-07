@@ -445,7 +445,7 @@ const campaignInfoModal = {
 const CAMPAIGN_DESCRIPTIONS = {
   wastelands: {
     title: "The Wastelands",
-    text: "The world burned. What remains is dust, rust, and the desperate few who survived. In The Wastelands, every spell is a weapon and every point of damage is currency.\n\nBattle across 3 rounds with rising stakes \u2014 round multipliers increase from 1x to 1.5x to 2x. Hit more opponents to climb the player multiplier ladder and rack up massive points. With every player level, your creatures gain +1/+0 to their stats. The scavenger with the highest total score after the final battle claims dominion over the wastes.\n\nYou start with 10 life and 5 cards. Survive, deal damage, and dominate.",
+    text: "The world burned. What remains is dust, rust, and the desperate few who survived. In The Wastelands, every spell is a weapon and every point of damage is currency.\n\nBattle across 3 rounds with rising stakes \u2014 round multipliers increase from 1x to 1.5x to 2x. Hit more opponents to climb the player multiplier ladder and rack up massive points. With every player level, your creatures gain +1/+0 to their stats. The winner of the final battle claims dominion over the wastes.\n\nYou start with 10 life and 5 cards. Survive, deal damage, and dominate.",
   },
 };
 
@@ -756,7 +756,12 @@ function handleMessage(message) {
       console.error("Server error:", message.data.message);
       break;
     case "state": {
+      const prevActive = gameState?.activePlayer;
       gameState = message.data;
+      // Show bonus time indicator on turn change
+      if (prevActive !== gameState.activePlayer && gameState.status === "running" && gameState.settings?.bonusTime > 0) {
+        showBonusTimeIndicator(gameState.settings.bonusTime);
+      }
       // Check if timeout choice should be hidden (player's timeout resolved)
       const myPlayerState = gameState?.players.find(p => p.claimedBy === myClientId);
       if (myPlayerState && !myPlayerState.timeoutPending && timeoutChoiceModal.modal?.style.display === "flex") {
@@ -2956,7 +2961,7 @@ function renderGames(games) {
     const gameCard = document.createElement("div");
     gameCard.className = "game-card";
 
-    const modeName = game.mode === "casual" ? "Casual" : game.mode;
+    const modeName = game.mode.charAt(0).toUpperCase() + game.mode.slice(1);
     const statusText = game.status === "waiting" ? "Waiting" : game.status;
     const timeAgo = formatTimeAgo(game.lastActivity);
     const timePerPlayer = formatMinutes(game.settings.initialTime);
@@ -3426,6 +3431,21 @@ function updateTargetingUI() {
 
   // Update targeting queue
   updateTargetingQueue();
+}
+
+/**
+ * Show a floating "+Xs" indicator near the timer when bonus time is added
+ */
+function showBonusTimeIndicator(ms) {
+  if (!gameUI.timeDisplay) return;
+  const existing = gameUI.timeDisplay.querySelector(".bonus-time-indicator");
+  if (existing) existing.remove();
+  const seconds = Math.round(ms / 1000);
+  const el = document.createElement("div");
+  el.className = "bonus-time-indicator";
+  el.textContent = `+${seconds}s`;
+  el.addEventListener("animationend", () => el.remove());
+  gameUI.timeDisplay.appendChild(el);
 }
 
 /**

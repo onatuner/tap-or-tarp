@@ -1933,6 +1933,25 @@ h1 {
   color: var(--text-muted);
 }
 
+.bonus-time-indicator {
+  color: var(--color-success);
+  font-size: 1rem;
+  font-weight: 600;
+  pointer-events: none;
+  animation: bonus-float 1.5s ease-out forwards;
+}
+
+@keyframes bonus-float {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
 /* Landscape: compact turn indicator */
 @media (orientation: landscape) and (max-height: 500px) {
   .game-turn-indicator {
