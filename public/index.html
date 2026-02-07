@@ -235,12 +235,10 @@
             </svg>
           </button>
           <button class="game-icon-btn game-play-order-btn" style="display: none" aria-label="Roll for play order">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <line x1="4" y1="6" x2="14" y2="6"/>
-              <line x1="4" y1="12" x2="17" y2="12"/>
-              <line x1="4" y1="18" x2="11" y2="18"/>
-              <path d="M18 15l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M18 9l3-3-3-3" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
+              <text x="5" y="8.5" font-size="8" font-weight="700" font-family="Inter, sans-serif">1.</text>
+              <text x="5" y="16" font-size="8" font-weight="700" font-family="Inter, sans-serif">2.</text>
+              <text x="5" y="23.5" font-size="8" font-weight="700" font-family="Inter, sans-serif">3.</text>
             </svg>
           </button>
           <button class="game-icon-btn game-info-btn" aria-label="Campaign info" style="display: none">
@@ -674,6 +672,12 @@
           </div>
           <div class="dice-result-large"></div>
         </div>
+      </div>
+
+      <!-- Play Order Result Toast -->
+      <div id="play-order-toast" class="play-order-toast" style="display: none" role="alert" aria-live="polite">
+        <div class="play-order-toast-header">Play Order</div>
+        <div class="play-order-results"></div>
       </div>
     </div>
 

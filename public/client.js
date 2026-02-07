@@ -379,6 +379,12 @@ const diceToast = {
   resultLarge: null,
 };
 
+// Play order toast element
+const playOrderToast = {
+  element: document.getElementById("play-order-toast"),
+  results: null,
+};
+
 // Campaign info modal elements
 const campaignInfoModal = {
   modal: document.getElementById("campaign-info-modal"),
@@ -1019,16 +1025,8 @@ function highlightRandomSelectedPlayer(playerId) {
 function handlePlayOrderRolled(data) {
   const { rolls, newOrder } = data;
 
-  // Build message showing all rolls
-  const rollMessages = rolls.map(r => {
-    const rollStr = r.rolls.length > 1
-      ? `${r.rolls.join(" → ")} (tiebreaker)`
-      : `${r.finalRoll}`;
-    return `${r.position}. ${r.playerName}: ${rollStr}`;
-  }).join("\n");
-
-  // Show toast with results
-  showToast(`🎲 Play Order Decided!\n${rollMessages}`, "info", 6000);
+  // Show play order overlay with staggered reveals
+  showPlayOrderToast(rolls);
 
   // Update local game state with new player order
   if (gameState && newOrder) {
@@ -1056,13 +1054,6 @@ function handlePlayOrderRolled(data) {
     // Re-render player cards with new order
     updateOtherPlayers();
   }
-
-  // Highlight players in order with staggered animation
-  rolls.forEach((roll, index) => {
-    setTimeout(() => {
-      highlightRandomSelectedPlayer(roll.playerId);
-    }, index * 500);
-  });
 }
 
 /**
@@ -1497,6 +1488,67 @@ function hideDiceToast() {
   setTimeout(() => {
     if (diceToast.element) {
       diceToast.element.style.display = "none";
+    }
+  }, 300);
+}
+
+// ============================================================================
+// PLAY ORDER TOAST
+// ============================================================================
+
+let playOrderToastTimeout = null;
+
+/**
+ * Show play order results as a centered overlay with staggered row reveals
+ * @param {Array} rolls - Array of { position, playerName, rolls, finalRoll, playerId }
+ */
+function showPlayOrderToast(rolls) {
+  if (!playOrderToast.element) return;
+
+  if (!playOrderToast.results) {
+    playOrderToast.results = playOrderToast.element.querySelector(".play-order-results");
+  }
+  if (!playOrderToast.results) return;
+
+  // Build rows
+  playOrderToast.results.innerHTML = rolls.map((r, i) => {
+    const rollStr = r.rolls.length > 1 ? r.rolls.join(" \u2192 ") : `${r.finalRoll}`;
+    return `<div class="play-order-row" style="animation-delay: ${i * 400}ms">
+      <span class="play-order-position">${r.position}.</span>
+      <span class="play-order-name">${r.playerName}</span>
+      <span class="play-order-roll-value">${rollStr}</span>
+    </div>`;
+  }).join("");
+
+  // Clear any existing timeout
+  if (playOrderToastTimeout) {
+    clearTimeout(playOrderToastTimeout);
+  }
+
+  // Show toast
+  playOrderToast.element.style.display = "block";
+  void playOrderToast.element.offsetWidth;
+  playOrderToast.element.classList.add("visible");
+
+  // Auto-hide after all reveals + viewing time
+  const totalRevealTime = rolls.length * 400 + 400;
+  const viewingTime = 2500;
+  playOrderToastTimeout = setTimeout(() => {
+    hidePlayOrderToast();
+  }, totalRevealTime + viewingTime);
+}
+
+/**
+ * Hide the play order toast
+ */
+function hidePlayOrderToast() {
+  if (!playOrderToast.element) return;
+
+  playOrderToast.element.classList.remove("visible");
+
+  setTimeout(() => {
+    if (playOrderToast.element) {
+      playOrderToast.element.style.display = "none";
     }
   }, 300);
 }
@@ -3011,6 +3063,11 @@ diceModal.modal?.addEventListener("click", e => {
 // Click dice toast to dismiss
 diceToast.element?.addEventListener("click", () => {
   hideDiceToast();
+});
+
+// Click play order toast to dismiss
+playOrderToast.element?.addEventListener("click", () => {
+  hidePlayOrderToast();
 });
 
 timeoutModal.acknowledge.addEventListener("click", () => {

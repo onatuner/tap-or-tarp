@@ -4318,6 +4318,113 @@ a:focus:not(:focus-visible) {
 }
 
 /* =============================================================================
+   PLAY ORDER TOAST
+   ============================================================================= */
+
+.play-order-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background: var(--bg-secondary);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 24px 32px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  min-width: 240px;
+}
+
+.play-order-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+
+.play-order-toast-header {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #aaa;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.play-order-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  opacity: 0;
+  animation: play-order-reveal 0.4s ease-out forwards;
+}
+
+.play-order-position {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #888;
+  min-width: 28px;
+  text-align: right;
+}
+
+.play-order-name {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  text-align: left;
+}
+
+.play-order-roll-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  min-width: 48px;
+  text-align: right;
+}
+
+@keyframes play-order-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+  60% {
+    transform: translateY(-2px) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .play-order-toast {
+    width: 85%;
+    max-width: 300px;
+    padding: 20px;
+  }
+
+  .play-order-roll-value {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .play-order-toast {
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+
+  .play-order-toast.visible {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* =============================================================================
    WINNER MODAL
    ============================================================================= */
 
@@ -4557,6 +4664,10 @@ a:focus:not(:focus-visible) {
 
 .campaign-wastelands .dice-roll-info {
   color: var(--text-secondary);
+}
+
+.campaign-wastelands .play-order-toast {
+  border-color: rgba(196, 132, 11, 0.3);
 }
 
 /* Winner modal overrides */
