@@ -760,7 +760,7 @@ function handleMessage(message) {
       gameState = message.data;
       // Show bonus time indicator on turn change for the new active player's client
       const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-      if (prevActive !== gameState.activePlayer && gameState.status === "running" && gameState.settings?.bonusTime > 0 && myPlayer && myPlayer.id === gameState.activePlayer) {
+      if (prevActive && prevActive !== gameState.activePlayer && gameState.status === "running" && gameState.settings?.bonusTime > 0 && myPlayer && myPlayer.id === gameState.activePlayer) {
         showBonusTimeIndicator(gameState.settings.bonusTime);
       }
       // Check if timeout choice should be hidden (player's timeout resolved)
