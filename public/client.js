@@ -2740,12 +2740,6 @@ function renderGames(games) {
     };
 
     gameCard.addEventListener("click", handleJoinClick);
-    // Add touch support for mobile
-    gameCard.addEventListener("touchend", (e) => {
-      // Prevent double-firing with click
-      e.preventDefault();
-      handleJoinClick(e);
-    });
 
     setupForm.gameList.appendChild(gameCard);
   });

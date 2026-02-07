@@ -4501,6 +4501,23 @@ a:focus:not(:focus-visible) {
   background: rgba(255, 180, 80, 0.12);
 }
 
+.campaign-wastelands .settings-game-code {
+  background: rgba(196, 132, 11, 0.08);
+}
+
+.campaign-wastelands .settings-input:focus {
+  box-shadow: 0 0 0 3px rgba(196, 132, 11, 0.1);
+}
+
+/* Button overrides */
+.campaign-wastelands .btn-primary:hover {
+  background: #a06a08;
+}
+
+.campaign-wastelands .btn-secondary:hover {
+  background: rgba(255, 180, 80, 0.08);
+}
+
 /* Dice modal overrides */
 .campaign-wastelands .dice-select:focus,
 .campaign-wastelands .dice-custom-input:focus {
@@ -4514,6 +4531,14 @@ a:focus:not(:focus-visible) {
 
 .campaign-wastelands .dice-toast {
   border-color: rgba(196, 132, 11, 0.3);
+}
+
+.campaign-wastelands .dice-roller-name {
+  color: var(--color-accent);
+}
+
+.campaign-wastelands .dice-roll-info {
+  color: var(--text-secondary);
 }
 
 /* =============================================================================
