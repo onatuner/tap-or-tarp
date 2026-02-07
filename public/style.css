@@ -2679,32 +2679,36 @@ h1 {
 
 /* Game view player name edit - make it look editable */
 .game-player-name-edit {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid transparent;
-  color: #fff;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  color: var(--text-primary);
   font-size: 0.85em;
   font-weight: 600;
-  padding: 2px 4px;
+  font-family: inherit;
+  padding: 4px 8px;
   width: 100%;
-  max-width: 100px;
+  max-width: 120px;
   cursor: text;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .game-player-name-edit:hover {
-  border-bottom-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .game-player-name-edit:focus {
-  border-bottom-color: var(--color-primary, #3b82f6);
-  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-accent);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
   outline: none;
 }
 
 .game-player-name-edit.saving {
-  border-bottom-color: var(--color-success, #22c55e);
+  border-color: var(--color-success);
 }
 
 /* Stats row */

@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run test:coverage:*)",
+      "Bash(wc:*)",
+      "Bash(npm test:*)",
+      "Bash(git push)",
+      "Bash(node --check:*)",
+      "Bash(npx jest --clearCache)",
+      "Bash(git add:*)",
+      "Bash(printf:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)",
+      "Bash(git commit:*)",
+      "Bash(npx jest:*)",
+      "Bash(node -e:*)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(node server.js:*)",
+      "Bash(timeout:*)",
+      "Bash(node:*)",
+      "Bash(powershell:*)",
+      "Bash(del C:Usersonat_Projectsrogue-magictest-rename.js)",
+      "WebFetch(domain:localhost)"
+    ]
+  }
+}

@@ -3762,10 +3762,10 @@ function updatePlayerStats() {
     gameUI.playerStats.classList.remove("show-name");
   }
 
-  // Update player name display
-  const nameValueEl = gameUI.playerStats.querySelector(".game-player-name-value");
-  if (nameValueEl && myPlayer) {
-    nameValueEl.textContent = myPlayer.name;
+  // Update player name display (only if user is not actively editing)
+  const nameEditEl = gameUI.playerStats.querySelector(".game-player-name-edit");
+  if (nameEditEl && myPlayer && document.activeElement !== nameEditEl) {
+    nameEditEl.value = myPlayer.name;
   }
 
   if (!myPlayer) {
@@ -4008,6 +4008,46 @@ function setupGameEventListeners() {
 }
 
 /**
+ * Setup the player name edit input in the stats bar
+ */
+function setupNameEdit() {
+  const nameInput = gameUI.playerStats?.querySelector(".game-player-name-edit");
+  if (!nameInput) return;
+
+  let originalName = "";
+
+  nameInput.addEventListener("focus", () => {
+    originalName = nameInput.value;
+    setTimeout(() => nameInput.select(), 10);
+  });
+
+  nameInput.addEventListener("blur", () => {
+    const newName = nameInput.value.trim();
+    const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+    if (myPlayer && newName && newName !== originalName) {
+      sendUpdatePlayer(myPlayer.id, { name: newName });
+      originalName = newName;
+      nameInput.classList.add("saving");
+      setTimeout(() => nameInput.classList.remove("saving"), 500);
+    } else if (!newName) {
+      nameInput.value = originalName;
+    }
+  });
+
+  nameInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      nameInput.blur();
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      nameInput.value = originalName;
+      nameInput.blur();
+    }
+  });
+}
+
+/**
  * Setup the +/- buttons for player stats
  */
 function setupStatButtons() {
@@ -4081,6 +4121,7 @@ function setupStatButtons() {
 setupGameEventListeners();
 setupSettingsEventListeners();
 setupTimeoutChoiceEventListeners();
+setupNameEdit();
 
 // Handle orientation changes to ensure layout recalculates
 window.addEventListener("orientationchange", () => {

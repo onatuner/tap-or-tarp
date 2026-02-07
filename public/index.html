@@ -250,7 +250,14 @@
           <!-- Player name row (visible in waiting state) -->
           <div class="game-player-name-row">
             <span class="game-player-name-label">You:</span>
-            <span class="game-player-name-value">Player 1</span>
+            <input
+              type="text"
+              class="game-player-name-edit"
+              value="Player 1"
+              maxlength="20"
+              autocomplete="off"
+              autocapitalize="words"
+            />
           </div>
           <!-- Stats row -->
           <div class="game-stats-row">
