@@ -331,6 +331,7 @@ const settingsModal = {
   // Timeout penalty settings
   timeoutLivesInput: document.getElementById("settings-timeout-lives"),
   timeoutDrunkInput: document.getElementById("settings-timeout-drunk"),
+  timeoutBonusTimeInput: document.getElementById("settings-timeout-bonus-time"),
 };
 
 const colorPickerModal = {
@@ -2154,6 +2155,10 @@ function showSettingsModal() {
   if (settingsModal.timeoutDrunkInput && gameState) {
     settingsModal.timeoutDrunkInput.value = gameState.settings?.timeoutPenaltyDrunk ?? 2;
   }
+  if (settingsModal.timeoutBonusTimeInput && gameState) {
+    const bonusSeconds = (gameState.settings?.timeoutBonusTime ?? 60000) / 1000;
+    settingsModal.timeoutBonusTimeInput.value = bonusSeconds;
+  }
 
   // Populate color picker
   populateColorPicker();
@@ -2376,6 +2381,10 @@ function saveSettings() {
   if (settingsModal.timeoutDrunkInput) {
     const drunk = parseInt(settingsModal.timeoutDrunkInput.value, 10) || 2;
     settingsToUpdate.timeoutPenaltyDrunk = Math.max(0, Math.min(drunk, 20));
+  }
+  if (settingsModal.timeoutBonusTimeInput) {
+    const bonusSeconds = parseInt(settingsModal.timeoutBonusTimeInput.value, 10) || 60;
+    settingsToUpdate.timeoutBonusTime = Math.max(0, Math.min(bonusSeconds * 1000, 300000));
   }
 
   // Send settings update if there are any changes
