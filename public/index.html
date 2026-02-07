@@ -370,31 +370,11 @@
 
           <!-- Player Tab -->
           <div class="settings-panel active" data-panel="player" role="tabpanel" id="panel-player" aria-labelledby="tab-player">
-            <div class="settings-buttons">
-              <button id="settings-reset-btn" class="settings-action-btn settings-action-btn-secondary">
-                <span class="action-icon">🔄</span>
-                <span class="action-label">Reset</span>
-              </button>
-              <button id="settings-random-start-btn" class="settings-action-btn settings-action-btn-secondary" style="display: none">
-                <span class="action-icon">🎲</span>
-                <span class="action-label">Random Start</span>
-              </button>
-            </div>
-
             <div class="settings-section">
               <label class="settings-label">Player Color</label>
               <div id="settings-color-picker" class="settings-color-grid">
                 <!-- Colors populated by JS -->
               </div>
-            </div>
-
-            <div class="settings-section">
-              <label class="settings-label" for="settings-bonus-time">Bonus Time Per Turn</label>
-              <div class="settings-input-group">
-                <input type="number" id="settings-bonus-time" class="settings-input" min="0" max="300" value="30" />
-                <span class="settings-input-suffix">seconds</span>
-              </div>
-              <p class="settings-hint">Time added when a player's turn starts (0 to disable)</p>
             </div>
           </div>
 
@@ -460,6 +440,26 @@
 
           <!-- Admin Tab (Owner Only) -->
           <div class="settings-panel" data-panel="admin" role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" hidden>
+            <div class="settings-buttons">
+              <button id="settings-reset-btn" class="settings-action-btn settings-action-btn-secondary">
+                <span class="action-icon">🔄</span>
+                <span class="action-label">Reset</span>
+              </button>
+              <button id="settings-random-start-btn" class="settings-action-btn settings-action-btn-secondary" style="display: none">
+                <span class="action-icon">🎲</span>
+                <span class="action-label">Random Start</span>
+              </button>
+            </div>
+
+            <div class="settings-section admin-section">
+              <label class="settings-label" for="settings-bonus-time">Bonus Time Per Turn</label>
+              <div class="settings-input-group">
+                <input type="number" id="settings-bonus-time" class="settings-input" min="0" max="300" value="30" />
+                <span class="settings-input-suffix">seconds</span>
+              </div>
+              <p class="settings-hint">Time added when a player's turn starts (0 to disable)</p>
+            </div>
+
             <div class="settings-section admin-section">
               <label class="settings-label">Player Management</label>
               <div class="admin-player-select">
