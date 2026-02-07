@@ -2518,7 +2518,7 @@ function setupSettingsEventListeners() {
 
   // Close lobby button
   settingsModal.closeLobbyBtn?.addEventListener("click", () => {
-    if (confirm("Are you sure you want to close the lobby? This will end the game for all players.")) {
+    if (confirm("Are you sure you want to delete this lobby? This will end the game for all players.")) {
       sendEndGame();
       hideSettingsModal();
       playClick();
