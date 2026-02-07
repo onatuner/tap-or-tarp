@@ -3874,10 +3874,11 @@ function updatePlayerStats() {
     gameUI.playerStats.style.display = "";
     gameUI.playerStats.style.opacity = "0.5";
 
-    // Reset displayed values to defaults
+    // Reset displayed values to defaults (use campaign starting life if available)
+    const defaultLife = gameState?.campaign?.config?.startingLife ?? 20;
     const lifeValue = gameUI.lifeStat?.querySelector(".game-stat-value");
     if (lifeValue) {
-      lifeValue.textContent = "20";
+      lifeValue.textContent = String(defaultLife);
       lifeValue.classList.remove("negative");
     }
     const poisonValue = gameUI.poisonStat?.querySelector(".game-stat-value");
