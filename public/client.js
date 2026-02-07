@@ -3964,11 +3964,23 @@ function updateCampaignStats() {
   const levelEl = gameUI.campaignStats.querySelector('[data-stat="level"] .game-campaign-stat-value');
   const pointsEl = gameUI.campaignStats.querySelector('[data-stat="points"] .game-campaign-stat-value');
   const multEl = gameUI.campaignStats.querySelector('[data-stat="multiplier"] .game-campaign-stat-value');
+  const handChip = gameUI.campaignStats.querySelector('[data-stat="hand"]');
+  const handEl = gameUI.campaignStats.querySelector('[data-stat="hand"] .game-campaign-stat-value');
   const battleEl = gameUI.campaignStats.querySelector('[data-stat="battle"] .game-campaign-stat-value');
 
   if (levelEl) updateStatValue(levelEl, String(level), levelEl.textContent);
   if (pointsEl) updateStatValue(pointsEl, String(points), pointsEl.textContent);
   if (multEl) updateStatValue(multEl, effectiveMult.toFixed(1) + "x", multEl.textContent);
+
+  if (handChip) {
+    if (campaign.handSize !== undefined) {
+      handChip.style.display = "";
+      if (handEl) updateStatValue(handEl, String(campaign.handSize), handEl.textContent);
+    } else {
+      handChip.style.display = "none";
+    }
+  }
+
   if (battleEl) updateStatValue(battleEl, battleText, battleEl.textContent);
 }
 

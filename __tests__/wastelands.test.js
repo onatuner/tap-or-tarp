@@ -82,7 +82,7 @@ describe("Damage Recording", () => {
     session.status = "running";
     session.activePlayer = 1;
     // Player 1 deals 3 damage to player 2
-    session.updatePlayer(2, { life: 17 }); // default is 20
+    session.updatePlayer(2, { life: 7 }); // starting life is 10
     expect(session.campaign.damageTracker[1][2]).toBe(3);
   });
 
@@ -91,9 +91,9 @@ describe("Damage Recording", () => {
     session.status = "running";
     session.activePlayer = 1;
     // First deal some damage
-    session.updatePlayer(2, { life: 17 });
+    session.updatePlayer(2, { life: 7 });
     // Then heal
-    session.updatePlayer(2, { life: 20 });
+    session.updatePlayer(2, { life: 10 });
     // Damage should still be 3, not reduced
     expect(session.campaign.damageTracker[1][2]).toBe(3);
   });
@@ -132,7 +132,7 @@ describe("Damage Recording", () => {
     session.players[1].claimedBy = "client-2";
     session.interrupt(2);
     // Player 2 deals damage to player 3 during interrupt
-    session.updatePlayer(3, { life: 15 });
+    session.updatePlayer(3, { life: 5 });
     expect(session.campaign.damageTracker[2][3]).toBe(5);
     // Active player should NOT get credit
     expect(session.campaign.damageTracker[1]?.[3]).toBeUndefined();
@@ -144,7 +144,7 @@ describe("Damage Recording", () => {
     session.activePlayer = 2; // Targeting changes active player
     session.originalActivePlayer = 1;
     session.targetingState = "resolving";
-    session.updatePlayer(3, { life: 15 });
+    session.updatePlayer(3, { life: 5 });
     // Original active player gets credit
     expect(session.campaign.damageTracker[1][3]).toBe(5);
   });
@@ -153,8 +153,8 @@ describe("Damage Recording", () => {
     const { session } = createWastelandsSession();
     session.status = "running";
     session.activePlayer = 1;
-    session.updatePlayer(2, { life: 17 }); // 3 damage
-    session.updatePlayer(2, { life: 14 }); // 3 more damage
+    session.updatePlayer(2, { life: 7 }); // 3 damage
+    session.updatePlayer(2, { life: 4 }); // 3 more damage
     expect(session.campaign.damageTracker[1][2]).toBe(6);
   });
 
@@ -162,8 +162,8 @@ describe("Damage Recording", () => {
     const { session } = createWastelandsSession();
     session.status = "running";
     session.activePlayer = 1;
-    session.updatePlayer(2, { life: 17 }); // 3 to player 2
-    session.updatePlayer(3, { life: 15 }); // 5 to player 3
+    session.updatePlayer(2, { life: 7 }); // 3 to player 2
+    session.updatePlayer(3, { life: 5 }); // 5 to player 3
     expect(session.campaign.damageTracker[1][2]).toBe(3);
     expect(session.campaign.damageTracker[1][3]).toBe(5);
     expect(session.campaign.getTotalDamage(1)).toBe(8);
@@ -176,7 +176,7 @@ describe("Scoring Formula", () => {
     const { session } = createWastelandsSession();
     session.status = "running";
     session.activePlayer = 1;
-    session.updatePlayer(2, { life: 10 }); // 10 damage
+    session.updatePlayer(2, { life: 0 }); // 10 damage (starting life is 10)
     // round 1: battleMult=1.0, 1 unique target: playerMult=1.0
     // points = 0 + floor(10 * 1.0 * 1.0) = 10
     expect(session.campaign.playerPoints[1]).toBe(10);
@@ -186,8 +186,8 @@ describe("Scoring Formula", () => {
     const { session } = createWastelandsSession();
     session.status = "running";
     session.activePlayer = 1;
-    session.updatePlayer(2, { life: 15 }); // 5 damage
-    session.updatePlayer(3, { life: 15 }); // 5 damage
+    session.updatePlayer(2, { life: 5 }); // 5 damage (starting life is 10)
+    session.updatePlayer(3, { life: 5 }); // 5 damage
     // 2 unique targets: playerMult=1.5, battleMult=1.0
     // points = 0 + floor(10 * 1.5 * 1.0) = 15
     expect(session.campaign.playerPoints[1]).toBe(15);
@@ -413,7 +413,7 @@ describe("CampaignGameSession getState with Wastelands", () => {
     const { session } = createWastelandsSession();
     session.status = "running";
     session.activePlayer = 1;
-    session.updatePlayer(2, { life: 15 });
+    session.updatePlayer(2, { life: 5 }); // 5 damage (starting life is 10)
 
     const state = session.getState();
     expect(state.campaign.damageTracker).toBeDefined();
