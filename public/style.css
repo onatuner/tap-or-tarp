@@ -4565,6 +4565,47 @@ a:focus:not(:focus-visible) {
 }
 
 /* =============================================================================
+   CAMPAIGN INFO MODAL
+   ============================================================================= */
+
+.preset-select-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preset-select-row select {
+  flex: 1;
+}
+
+.preset-info-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.preset-info-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.campaign-info-text {
+  text-align: left;
+  white-space: pre-line;
+  line-height: 1.6;
+}
+
+/* =============================================================================
    DEBUG MODE (uncomment for overflow detection)
    ============================================================================= */
 /*

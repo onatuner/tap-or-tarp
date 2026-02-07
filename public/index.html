@@ -101,9 +101,18 @@
         <div class="setup-form">
           <div class="form-group">
             <label for="campaign-preset">Campaign Preset</label>
-            <select id="campaign-preset">
-              <option value="wastelands">The Wastelands</option>
-            </select>
+            <div class="preset-select-row">
+              <select id="campaign-preset">
+                <option value="wastelands">The Wastelands</option>
+              </select>
+              <button id="campaign-preset-info-btn" class="preset-info-btn" aria-label="Campaign info">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+              </button>
+            </div>
           </div>
           <div class="form-group">
             <label for="campaign-player-count">Number of Players (2-8)</label>
@@ -232,6 +241,13 @@
               <line x1="4" y1="18" x2="11" y2="18"/>
               <path d="M18 15l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M18 9l3-3-3-3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="game-icon-btn game-info-btn" aria-label="Campaign info" style="display: none">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
           </button>
           <button class="game-icon-btn game-settings-btn" aria-label="Open game settings">
@@ -634,6 +650,17 @@
             <button id="close-dice-modal" class="btn btn-secondary">
               Close
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campaign Info Modal -->
+      <div id="campaign-info-modal" style="display: none" class="modal">
+        <div class="modal-content campaign-info-modal-content">
+          <h2 id="campaign-info-title">Campaign Info</h2>
+          <p id="campaign-info-text" class="campaign-info-text"></p>
+          <div class="modal-actions">
+            <button id="campaign-info-close" class="btn btn-secondary">Close</button>
           </div>
         </div>
       </div>

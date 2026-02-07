@@ -241,6 +241,7 @@ const gameUI = {
   otherPlayers: document.querySelector(".game-other-players"),
   playerCards: document.querySelector(".game-player-cards"),
   playerStats: document.querySelector(".game-player-stats"),
+  infoBtn: document.querySelector(".game-info-btn"),
   campaignStats: document.querySelector(".game-campaign-stats"),
   statsRow: document.querySelector(".game-stats-row"),
   lifeStat: document.querySelector(".game-stats-row .game-stat-life"),
@@ -376,6 +377,23 @@ const diceToast = {
   rollerName: null,
   sidesDisplay: null,
   resultLarge: null,
+};
+
+// Campaign info modal elements
+const campaignInfoModal = {
+  modal: document.getElementById("campaign-info-modal"),
+  title: document.getElementById("campaign-info-title"),
+  text: document.getElementById("campaign-info-text"),
+  closeBtn: document.getElementById("campaign-info-close"),
+  presetInfoBtn: document.getElementById("campaign-preset-info-btn"),
+};
+
+// Client-side campaign descriptions for the creation screen (no game state yet)
+const CAMPAIGN_DESCRIPTIONS = {
+  wastelands: {
+    title: "The Wastelands",
+    text: "The world burned. What remains is dust, rust, and the desperate few who survived. In The Wastelands, every spell is a weapon and every point of damage is currency.\n\nBattle across 3 rounds with rising stakes \u2014 round multipliers increase from 1x to 1.5x to 2x. Hit more opponents to climb the player multiplier ladder and rack up massive points. The scavenger with the highest total score after the final battle claims dominion over the wastes.\n\nYou start with 10 life and 5 cards. Survive, deal damage, and dominate.",
+  },
 };
 
 // Available player colors
@@ -1096,6 +1114,28 @@ function updateHeaderPauseButton() {
       </svg>
     `;
     pauseBtn.setAttribute("aria-label", "Pause game");
+  }
+}
+
+/**
+ * Show/hide the in-game campaign info button based on mode and flavorText
+ */
+function updateInfoButtonVisibility() {
+  if (!gameUI.infoBtn || !gameState) return;
+  const hasFlavorText = gameState.mode === "campaign" && gameState.campaign?.config?.flavorText;
+  gameUI.infoBtn.style.display = hasFlavorText ? "flex" : "none";
+}
+
+function showCampaignInfoModal(title, text) {
+  if (!campaignInfoModal.modal) return;
+  campaignInfoModal.title.textContent = title;
+  campaignInfoModal.text.textContent = text;
+  campaignInfoModal.modal.style.display = "flex";
+}
+
+function closeCampaignInfoModal() {
+  if (campaignInfoModal.modal) {
+    campaignInfoModal.modal.style.display = "none";
   }
 }
 
@@ -2880,6 +2920,33 @@ campaignForm.createBtn.addEventListener("click", () => {
   sendCreateGame(settings);
 });
 
+// Campaign preset info button (creation screen)
+if (campaignInfoModal.presetInfoBtn) {
+  campaignInfoModal.presetInfoBtn.addEventListener("click", () => {
+    const preset = campaignForm.preset.value;
+    const desc = CAMPAIGN_DESCRIPTIONS[preset];
+    if (desc) {
+      showCampaignInfoModal(desc.title, desc.text);
+    }
+    playClick();
+  });
+}
+
+// Campaign info modal close
+if (campaignInfoModal.closeBtn) {
+  campaignInfoModal.closeBtn.addEventListener("click", () => {
+    closeCampaignInfoModal();
+    playClick();
+  });
+}
+if (campaignInfoModal.modal) {
+  campaignInfoModal.modal.addEventListener("click", (e) => {
+    if (e.target === campaignInfoModal.modal) {
+      closeCampaignInfoModal();
+    }
+  });
+}
+
 setupForm.joinBtn.addEventListener("click", () => {
   const gameId = setupForm.joinGame.value.trim().toUpperCase();
   if (gameId) {
@@ -3078,6 +3145,7 @@ function updateGameUI() {
   updateCampaignStats();
   updatePlayOrderButtonVisibility();
   updateHeaderPauseButton();
+  updateInfoButtonVisibility();
   updateTargetingUI();
 }
 
@@ -4124,6 +4192,19 @@ function setupGameEventListeners() {
   if (gameUI.pauseBtn) {
     gameUI.pauseBtn.addEventListener("click", () => {
       sendPause();
+      playClick();
+    });
+  }
+
+  // In-game info button
+  if (gameUI.infoBtn) {
+    gameUI.infoBtn.addEventListener("click", () => {
+      if (gameState?.campaign?.config?.flavorText) {
+        showCampaignInfoModal(
+          gameState.campaign.config.name || "Campaign Info",
+          gameState.campaign.config.flavorText
+        );
+      }
       playClick();
     });
   }
