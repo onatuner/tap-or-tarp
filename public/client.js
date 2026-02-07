@@ -211,6 +211,47 @@ function cleanupExpiredTokens(tokens) {
   }
 }
 
+// Player defaults persistence
+function loadDefaults() {
+  try {
+    const stored = localStorage.getItem("playerDefaults");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return {
+        name: parsed.name || "",
+        color: parsed.color || "",
+        audioMuted: parsed.audioMuted || false,
+        warningThresholds: parsed.warningThresholds || [300000, 60000, 30000],
+        timeoutPenaltyLives: parsed.timeoutPenaltyLives ?? 2,
+        timeoutPenaltyDrunk: parsed.timeoutPenaltyDrunk ?? 2,
+        timeoutBonusTime: parsed.timeoutBonusTime ?? 60000,
+      };
+    }
+  } catch (e) {
+    console.error("Failed to load player defaults:", e);
+  }
+  return {
+    name: "",
+    color: "",
+    audioMuted: false,
+    warningThresholds: [300000, 60000, 30000],
+    timeoutPenaltyLives: 2,
+    timeoutPenaltyDrunk: 2,
+    timeoutBonusTime: 60000,
+  };
+}
+
+function savePlayerDefaults(defaults) {
+  try {
+    localStorage.setItem("playerDefaults", JSON.stringify(defaults));
+  } catch (e) {
+    console.error("Failed to save player defaults:", e);
+  }
+}
+
+// Apply mute default on load
+audioEnabled = !loadDefaults().audioMuted;
+
 // Screen elements
 const screens = {
   mainMenu: document.getElementById("main-menu-screen"),
@@ -278,6 +319,13 @@ const backButtons = {
 const menuSettingsForm = {
   muteCheckbox: document.getElementById("menu-mute-checkbox"),
   save: document.getElementById("menu-settings-save-btn"),
+  nameInput: document.getElementById("menu-player-name"),
+  colorPicker: document.getElementById("menu-color-picker"),
+  thresholdsContainer: document.getElementById("menu-thresholds-container"),
+  addThresholdBtn: document.getElementById("menu-add-threshold-btn"),
+  timeoutLivesInput: document.getElementById("menu-timeout-lives"),
+  timeoutDrunkInput: document.getElementById("menu-timeout-drunk"),
+  timeoutBonusTimeInput: document.getElementById("menu-timeout-bonus-time"),
 };
 
 const feedbackForm = {
@@ -2233,6 +2281,13 @@ function sendEndGame() {
 
 function sendClaim(playerId) {
   safeSend({ type: "claim", data: { playerId } });
+  const defaults = loadDefaults();
+  const updates = {};
+  if (defaults.name) updates.name = defaults.name;
+  if (defaults.color) updates.color = defaults.color;
+  if (Object.keys(updates).length > 0) {
+    sendUpdatePlayer(playerId, updates);
+  }
 }
 
 function claimWithNamePrompt(playerId) {
@@ -2243,7 +2298,7 @@ function claimWithNamePrompt(playerId) {
     return;
   }
   namePromptModal.playerIdInput.value = playerId;
-  namePromptModal.input.value = "";
+  namePromptModal.input.value = loadDefaults().name || "";
   namePromptModal.modal.style.display = "flex";
   namePromptModal.input.focus();
 }
@@ -2402,6 +2457,95 @@ function getThresholdsFromUI() {
   if (!settingsModal.thresholdsContainer) return [];
 
   const inputs = settingsModal.thresholdsContainer.querySelectorAll(".settings-threshold-input");
+  const thresholds = [];
+
+  inputs.forEach(input => {
+    const minutes = parseFloat(input.value);
+    if (!isNaN(minutes) && minutes > 0) {
+      thresholds.push(Math.round(minutes * 60000));
+    }
+  });
+
+  return [...new Set(thresholds)].sort((a, b) => b - a);
+}
+
+/**
+ * Populate the menu settings color picker
+ */
+function populateMenuColorPicker(defaults) {
+  const container = menuSettingsForm.colorPicker;
+  if (!container) return;
+
+  container.innerHTML = "";
+  const currentColorId = defaults.color || "";
+
+  PLAYER_COLORS.forEach(color => {
+    const option = document.createElement("div");
+    option.className = "settings-color-option" + (color.id === currentColorId ? " selected" : "");
+    option.style.background = `linear-gradient(135deg, ${color.primary} 0%, ${color.secondary} 100%)`;
+    option.title = color.name;
+    option.dataset.colorId = color.id;
+
+    option.addEventListener("click", () => {
+      container.querySelectorAll(".settings-color-option").forEach(opt => {
+        opt.classList.remove("selected");
+      });
+      option.classList.add("selected");
+    });
+
+    container.appendChild(option);
+  });
+}
+
+/**
+ * Populate the menu settings thresholds list
+ */
+function populateMenuThresholds(defaults) {
+  const container = menuSettingsForm.thresholdsContainer;
+  if (!container) return;
+
+  container.innerHTML = "";
+  const thresholds = defaults.warningThresholds || [300000, 60000, 30000];
+
+  thresholds.forEach((ms, index) => {
+    const minutes = ms / 60000;
+    addMenuThresholdItem(minutes, index);
+  });
+}
+
+/**
+ * Add a threshold item to the menu settings list
+ */
+function addMenuThresholdItem(value = 1, index = null) {
+  const container = menuSettingsForm.thresholdsContainer;
+  if (!container) return;
+
+  const item = document.createElement("div");
+  item.className = "settings-threshold-item";
+  item.dataset.index = index !== null ? index : container.children.length;
+
+  item.innerHTML = `
+    <input type="number" class="settings-threshold-input" value="${value}" min="0.1" step="0.1" />
+    <span class="settings-threshold-unit">min</span>
+    <button type="button" class="settings-threshold-remove" aria-label="Remove">&times;</button>
+  `;
+
+  item.querySelector(".settings-threshold-remove").addEventListener("click", () => {
+    if (container.children.length > 1) {
+      item.remove();
+    }
+  });
+
+  container.appendChild(item);
+}
+
+/**
+ * Get thresholds from menu settings UI
+ */
+function getMenuThresholdsFromUI() {
+  if (!menuSettingsForm.thresholdsContainer) return [];
+
+  const inputs = menuSettingsForm.thresholdsContainer.querySelectorAll(".settings-threshold-input");
   const thresholds = [];
 
   inputs.forEach(input => {
@@ -2906,7 +3050,14 @@ menuButtons.load.addEventListener("click", () => {
 });
 
 menuButtons.settings.addEventListener("click", () => {
-  menuSettingsForm.muteCheckbox.checked = !audioEnabled;
+  const defaults = loadDefaults();
+  menuSettingsForm.nameInput.value = defaults.name;
+  menuSettingsForm.muteCheckbox.checked = defaults.audioMuted;
+  menuSettingsForm.timeoutLivesInput.value = defaults.timeoutPenaltyLives;
+  menuSettingsForm.timeoutDrunkInput.value = defaults.timeoutPenaltyDrunk;
+  menuSettingsForm.timeoutBonusTimeInput.value = defaults.timeoutBonusTime / 1000;
+  populateMenuColorPicker(defaults);
+  populateMenuThresholds(defaults);
   showScreen("menuSettings");
   playClick();
 });
@@ -2973,8 +3124,24 @@ feedbackForm.listBackBtn.addEventListener("click", () => {
 
 // Menu settings save
 menuSettingsForm.save.addEventListener("click", () => {
-  audioEnabled = !menuSettingsForm.muteCheckbox.checked;
+  const selectedColor = menuSettingsForm.colorPicker?.querySelector(".settings-color-option.selected");
+  const defaults = {
+    name: menuSettingsForm.nameInput.value.trim(),
+    color: selectedColor?.dataset.colorId || "",
+    audioMuted: menuSettingsForm.muteCheckbox.checked,
+    warningThresholds: getMenuThresholdsFromUI(),
+    timeoutPenaltyLives: parseInt(menuSettingsForm.timeoutLivesInput.value) || 0,
+    timeoutPenaltyDrunk: parseInt(menuSettingsForm.timeoutDrunkInput.value) || 0,
+    timeoutBonusTime: (parseInt(menuSettingsForm.timeoutBonusTimeInput.value) || 0) * 1000,
+  };
+  savePlayerDefaults(defaults);
+  audioEnabled = !defaults.audioMuted;
   showScreen("mainMenu");
+  playClick();
+});
+
+menuSettingsForm.addThresholdBtn.addEventListener("click", () => {
+  addMenuThresholdItem(1);
   playClick();
 });
 

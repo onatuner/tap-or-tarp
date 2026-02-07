@@ -3696,6 +3696,10 @@ a:focus:not(:focus-visible) {
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
+#menu-settings-screen .settings-color-grid {
+  max-width: 280px;
+}
+
 /* Thresholds list */
 .settings-thresholds-list {
   display: flex;

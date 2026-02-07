@@ -30,7 +30,6 @@
           <button id="menu-casual-btn" class="btn btn-menu">Start New Casual Game</button>
           <button id="menu-campaign-btn" class="btn btn-menu">Start New Campaign</button>
           <button id="menu-join-btn" class="btn btn-menu">Join Game</button>
-          <button id="menu-load-btn" class="btn btn-menu">Load Game</button>
           <button id="menu-settings-btn" class="btn btn-menu">Settings</button>
           <button id="menu-feedback-btn" class="btn btn-menu">Feedback</button>
         </div>
@@ -152,12 +151,54 @@
       <div id="menu-settings-screen" style="display: none">
         <h1>Settings</h1>
         <div class="setup-form">
+          <div class="form-group">
+            <label for="menu-player-name">Player Name</label>
+            <input type="text" id="menu-player-name" class="form-input" maxlength="20" placeholder="Your name" />
+          </div>
+
+          <div class="form-group">
+            <label>Player Color</label>
+            <div id="menu-color-picker" class="settings-color-grid"></div>
+          </div>
+
           <div class="form-group checkbox-group">
             <label>
               <input type="checkbox" id="menu-mute-checkbox" />
               Mute Audio
             </label>
           </div>
+
+          <div class="form-group">
+            <label>Warning Thresholds</label>
+            <p class="form-hint">Audio alerts at these times</p>
+            <div id="menu-thresholds-container" class="settings-thresholds-list"></div>
+            <button type="button" id="menu-add-threshold-btn" class="settings-add-btn">+ Add Threshold</button>
+          </div>
+
+          <div class="form-group">
+            <label>Timeout Penalty Options</label>
+            <p class="form-hint">Penalty options when timer runs out</p>
+            <div class="timeout-penalty-settings">
+              <div class="settings-input-group">
+                <label for="menu-timeout-lives">Lives Loss:</label>
+                <input type="number" id="menu-timeout-lives" class="settings-input settings-input-small" min="0" max="20" value="2" />
+              </div>
+              <div class="settings-input-group">
+                <label for="menu-timeout-drunk">Drunk Gain:</label>
+                <input type="number" id="menu-timeout-drunk" class="settings-input settings-input-small" min="0" max="20" value="2" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="menu-timeout-bonus-time">Timeout Bonus Time</label>
+            <p class="form-hint">Time added after penalty</p>
+            <div class="settings-input-group">
+              <input type="number" id="menu-timeout-bonus-time" class="settings-input settings-input-small" min="0" max="300" value="60" />
+              <span class="settings-unit">seconds</span>
+            </div>
+          </div>
+
           <div class="menu-actions">
             <button id="menu-settings-save-btn" class="btn btn-primary" aria-label="Save settings">
               Save
