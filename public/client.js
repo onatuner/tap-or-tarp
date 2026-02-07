@@ -300,7 +300,6 @@ const menuButtons = {
   casual: document.getElementById("menu-casual-btn"),
   campaign: document.getElementById("menu-campaign-btn"),
   join: document.getElementById("menu-join-btn"),
-  load: document.getElementById("menu-load-btn"),
   settings: document.getElementById("menu-settings-btn"),
   feedback: document.getElementById("menu-feedback-btn"),
 };
@@ -446,7 +445,7 @@ const campaignInfoModal = {
 const CAMPAIGN_DESCRIPTIONS = {
   wastelands: {
     title: "The Wastelands",
-    text: "The world burned. What remains is dust, rust, and the desperate few who survived. In The Wastelands, every spell is a weapon and every point of damage is currency.\n\nBattle across 3 rounds with rising stakes \u2014 round multipliers increase from 1x to 1.5x to 2x. Hit more opponents to climb the player multiplier ladder and rack up massive points. The scavenger with the highest total score after the final battle claims dominion over the wastes.\n\nYou start with 10 life and 5 cards. Survive, deal damage, and dominate.",
+    text: "The world burned. What remains is dust, rust, and the desperate few who survived. In The Wastelands, every spell is a weapon and every point of damage is currency.\n\nBattle across 3 rounds with rising stakes \u2014 round multipliers increase from 1x to 1.5x to 2x. Hit more opponents to climb the player multiplier ladder and rack up massive points. With every player level, your creatures gain +1/+0 to their stats. The scavenger with the highest total score after the final battle claims dominion over the wastes.\n\nYou start with 10 life and 5 cards. Survive, deal damage, and dominate.",
   },
 };
 
@@ -3041,11 +3040,6 @@ menuButtons.campaign.addEventListener("click", () => {
 menuButtons.join.addEventListener("click", () => {
   showScreen("joinScreen");
   loadGames();
-  playClick();
-});
-
-menuButtons.load.addEventListener("click", () => {
-  showScreen("loadScreen");
   playClick();
 });
 
