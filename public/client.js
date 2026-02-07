@@ -302,6 +302,13 @@ const setupForm = {
   gameList: document.getElementById("game-list"),
 };
 
+const campaignForm = {
+  preset: document.getElementById("campaign-preset"),
+  playerCount: document.getElementById("campaign-player-count"),
+  gameName: document.getElementById("campaign-game-name"),
+  createBtn: document.getElementById("create-campaign"),
+};
+
 // Controls are now handled via gameUI and settingsModal
 
 const settingsModal = {
@@ -2827,6 +2834,16 @@ setupForm.createGame.addEventListener("click", () => {
     initialTime: parseInt(setupForm.initialTime.value) * 60 * 1000,
   };
   console.log("Settings:", settings);
+  sendCreateGame(settings);
+});
+
+campaignForm.createBtn.addEventListener("click", () => {
+  const settings = {
+    mode: "campaign",
+    campaignPreset: campaignForm.preset.value,
+    name: campaignForm.gameName.value.trim() || "Campaign",
+    playerCount: parseInt(campaignForm.playerCount.value),
+  };
   sendCreateGame(settings);
 });
 

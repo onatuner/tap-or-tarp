@@ -95,14 +95,40 @@
         </div>
       </div>
 
-      <!-- Campaign Screen (Placeholder) -->
+      <!-- Campaign Screen -->
       <div id="campaign-screen" style="display: none">
-        <h1>Campaign Mode</h1>
-        <div class="placeholder-content">
-          <p>Campaign mode coming soon!</p>
-          <button id="campaign-back-btn" class="btn btn-secondary" aria-label="Back to menu">
-            Back to Menu
-          </button>
+        <h1>New Campaign</h1>
+        <div class="setup-form">
+          <div class="form-group">
+            <label for="campaign-preset">Campaign Preset</label>
+            <select id="campaign-preset">
+              <option value="standard">Standard Campaign</option>
+              <option value="blitz">Blitz Campaign</option>
+              <option value="endurance">Endurance Campaign</option>
+              <option value="wastelands">The Wastelands</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="campaign-player-count">Number of Players (2-8)</label>
+            <input type="number" id="campaign-player-count" min="2" max="8" value="2" />
+          </div>
+          <div class="form-group">
+            <label for="campaign-game-name">Game Name</label>
+            <input
+              type="text"
+              id="campaign-game-name"
+              placeholder="Enter game name (optional)"
+              maxlength="50"
+            />
+          </div>
+          <div class="menu-actions">
+            <button id="create-campaign" class="btn btn-primary" aria-label="Create new campaign">
+              Create Campaign
+            </button>
+            <button id="campaign-back-btn" class="btn btn-secondary" aria-label="Back to menu">
+              Back
+            </button>
+          </div>
         </div>
       </div>
 
