@@ -2906,6 +2906,65 @@ h1 {
 }
 
 /* =============================================================================
+   CAMPAIGN STATS
+   ============================================================================= */
+.game-campaign-stats {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.game-campaign-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--spacing-xs);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  font-size: 0.85em;
+}
+
+.game-campaign-stat-label {
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.7em;
+}
+
+.game-campaign-stat-value {
+  color: #fff;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Landscape compact */
+@media (orientation: landscape) and (max-height: 500px) {
+  .game-campaign-stats {
+    padding: 2px 0;
+    gap: var(--spacing-xs);
+  }
+
+  .game-campaign-stat {
+    font-size: 0.75em;
+  }
+}
+
+/* Desktop enhancements */
+@media (min-width: 769px) {
+  .game-campaign-stats {
+    gap: var(--spacing-md);
+    padding: var(--spacing-xs) 0;
+  }
+
+  .game-campaign-stat {
+    font-size: 0.9em;
+    padding: 4px var(--spacing-sm);
+  }
+}
+
+/* =============================================================================
    ORIENTATION TRANSITIONS
    ============================================================================= */
 .game-layout,

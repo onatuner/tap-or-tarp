@@ -241,6 +241,7 @@ const gameUI = {
   otherPlayers: document.querySelector(".game-other-players"),
   playerCards: document.querySelector(".game-player-cards"),
   playerStats: document.querySelector(".game-player-stats"),
+  campaignStats: document.querySelector(".game-campaign-stats"),
   statsRow: document.querySelector(".game-stats-row"),
   lifeStat: document.querySelector(".game-stats-row .game-stat-life"),
   poisonStat: document.querySelector(".game-stats-row .game-stat-poison"),
@@ -3002,6 +3003,7 @@ function updateGameUI() {
   updateInteractionButton();
   updateOtherPlayers();
   updatePlayerStats();
+  updateCampaignStats();
   updatePlayOrderButtonVisibility();
   updateHeaderPauseButton();
   updateTargetingUI();
@@ -3833,6 +3835,57 @@ function updatePlayerStats() {
     updateStatValue(genericValue, myPlayer.genericCounter, prevStatValues.generic);
     prevStatValues.generic = myPlayer.genericCounter;
   }
+}
+
+/**
+ * Update campaign stats display (level, points, multiplier, battle progress)
+ */
+function updateCampaignStats() {
+  if (!gameUI.campaignStats) return;
+
+  const campaign = gameState?.campaign;
+  const hasScoringData = campaign?.playerPoints && campaign?.playerLevels;
+
+  if (gameState?.mode !== "campaign" || !hasScoringData) {
+    gameUI.campaignStats.style.display = "none";
+    return;
+  }
+
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  if (!myPlayer) {
+    gameUI.campaignStats.style.display = "none";
+    return;
+  }
+
+  gameUI.campaignStats.style.display = "flex";
+
+  const pid = myPlayer.id;
+  const level = campaign.playerLevels[pid] ?? 1;
+  const points = campaign.playerPoints[pid] ?? 0;
+
+  // Calculate effective multiplier (playerMult × battleMult)
+  let effectiveMult = 0;
+  if (campaign.config?.playerMultipliers && campaign.config?.battleMultipliers) {
+    const tracker = campaign.damageTracker?.[pid] || {};
+    const uniqueTargets = Object.values(tracker).filter(d => d > 0).length;
+    const playerMult = campaign.config.playerMultipliers[uniqueTargets] ??
+      campaign.config.playerMultipliers[Math.max(...Object.keys(campaign.config.playerMultipliers).map(Number))] ?? 1;
+    const battleMult = campaign.config.battleMultipliers[campaign.currentRound] ?? 1;
+    effectiveMult = playerMult * battleMult;
+  }
+
+  const battleText = `${campaign.currentRound}/${campaign.maxRounds}`;
+
+  // Update each stat chip with animation
+  const levelEl = gameUI.campaignStats.querySelector('[data-stat="level"] .game-campaign-stat-value');
+  const pointsEl = gameUI.campaignStats.querySelector('[data-stat="points"] .game-campaign-stat-value');
+  const multEl = gameUI.campaignStats.querySelector('[data-stat="multiplier"] .game-campaign-stat-value');
+  const battleEl = gameUI.campaignStats.querySelector('[data-stat="battle"] .game-campaign-stat-value');
+
+  if (levelEl) updateStatValue(levelEl, String(level), levelEl.textContent);
+  if (pointsEl) updateStatValue(pointsEl, String(points), pointsEl.textContent);
+  if (multEl) updateStatValue(multEl, effectiveMult.toFixed(1) + "x", multEl.textContent);
+  if (battleEl) updateStatValue(battleEl, battleText, battleEl.textContent);
 }
 
 /**
