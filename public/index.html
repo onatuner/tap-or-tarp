@@ -363,8 +363,8 @@
 
           <div class="settings-tabs" role="tablist" aria-label="Settings sections">
             <button class="settings-tab active" data-tab="player" role="tab" aria-selected="true" aria-controls="panel-player" id="tab-player">Player</button>
-            <button class="settings-tab" data-tab="alerts" role="tab" aria-selected="false" aria-controls="panel-alerts" id="tab-alerts">Alerts</button>
             <button class="settings-tab" data-tab="lobby" role="tab" aria-selected="false" aria-controls="panel-lobby" id="tab-lobby">Lobby</button>
+            <button class="settings-tab" data-tab="alerts" role="tab" aria-selected="false" aria-controls="panel-alerts" id="tab-alerts">Alerts</button>
             <button class="settings-tab" data-tab="admin" role="tab" aria-selected="false" aria-controls="panel-admin" id="tab-admin" style="display: none">Admin</button>
           </div>
 
@@ -397,7 +397,7 @@
 
             <div class="settings-section">
               <label class="settings-label">Timeout Penalty Options</label>
-              <p class="settings-hint">When a player's timer runs out, they choose a penalty</p>
+              <p class="settings-hint">Penalty options when timer runs out</p>
               <div class="timeout-penalty-settings">
                 <div class="settings-input-group">
                   <label for="settings-timeout-lives">Lives Loss:</label>
@@ -412,7 +412,7 @@
 
             <div class="settings-section">
               <label class="settings-label">Timeout Bonus Time</label>
-              <p class="settings-hint">Time added after taking a timeout penalty</p>
+              <p class="settings-hint">Time added after penalty</p>
               <div class="settings-input-group">
                 <input type="number" id="settings-timeout-bonus-time" class="settings-input settings-input-small" min="0" max="300" value="60" />
                 <span class="settings-unit">seconds</span>
@@ -458,19 +458,14 @@
                 <span class="action-icon">🔄</span>
                 <span class="action-label">Reset</span>
               </button>
-              <button id="settings-random-start-btn" class="settings-action-btn settings-action-btn-secondary" style="display: none">
-                <span class="action-icon">🎲</span>
-                <span class="action-label">Random Start</span>
-              </button>
             </div>
 
             <div class="settings-section admin-section">
               <label class="settings-label" for="settings-bonus-time">Bonus Time Per Turn</label>
               <div class="settings-input-group">
                 <input type="number" id="settings-bonus-time" class="settings-input" min="0" max="300" value="30" />
-                <span class="settings-input-suffix">seconds</span>
+                <span class="settings-input-suffix">sec / turn (0 = off)</span>
               </div>
-              <p class="settings-hint">Time added when a player's turn starts (0 to disable)</p>
             </div>
 
             <div class="settings-section admin-section">

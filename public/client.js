@@ -318,7 +318,6 @@ const settingsModal = {
   tabs: document.querySelectorAll(".settings-tab"),
   panels: document.querySelectorAll(".settings-panel"),
   resetBtn: document.getElementById("settings-reset-btn"),
-  randomStartBtn: document.getElementById("settings-random-start-btn"),
   playerNameInput: document.getElementById("settings-player-name-input"),
   colorPicker: document.getElementById("settings-color-picker"),
   thresholdsContainer: document.getElementById("settings-thresholds-container"),
@@ -1028,6 +1027,11 @@ function handlePlayOrderRolled(data) {
 
   // Show play order overlay with staggered reveals
   showPlayOrderToast(rolls);
+
+  // Hide the play order button now that order is decided
+  if (gameUI.playOrderBtn) {
+    gameUI.playOrderBtn.style.display = "none";
+  }
 
   // Update local game state with new player order
   if (gameState && newOrder) {
@@ -2311,13 +2315,6 @@ function showSettingsModal() {
   // Populate rename players list
   populateRenamePlayers();
 
-  // Show/hide random start button based on game state
-  if (settingsModal.randomStartBtn && gameState) {
-    const isWaiting = gameState.status === "waiting";
-    const hasClaimedPlayers = gameState.players.some(p => p.claimedBy !== null);
-    settingsModal.randomStartBtn.style.display = (isWaiting && hasClaimedPlayers) ? "flex" : "none";
-  }
-
   // Show admin tab for all players
   if (settingsModal.adminTab) {
     settingsModal.adminTab.style.display = "";
@@ -2630,13 +2627,6 @@ function setupSettingsEventListeners() {
       hideSettingsModal();
       playClick();
     }
-  });
-
-  // Random start button
-  settingsModal.randomStartBtn?.addEventListener("click", () => {
-    safeSend({ type: "randomStartPlayer", data: {} });
-    hideSettingsModal();
-    playClick();
   });
 
   // Add threshold button
