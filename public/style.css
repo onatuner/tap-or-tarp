@@ -4518,6 +4518,24 @@ a:focus:not(:focus-visible) {
   background: rgba(255, 180, 80, 0.08);
 }
 
+.campaign-wastelands .btn:focus-visible {
+  box-shadow: 0 0 0 4px rgba(196, 132, 11, 0.4);
+}
+
+/* Modal overrides */
+.campaign-wastelands .modal {
+  background: rgba(20, 12, 4, 0.8);
+}
+
+.campaign-wastelands .modal-content {
+  box-shadow: 0 16px 48px rgba(20, 12, 4, 0.6);
+}
+
+.campaign-wastelands .timeout-choice-die:hover {
+  background: rgba(255, 180, 80, 0.06);
+  border-color: rgba(255, 180, 80, 0.2);
+}
+
 /* Dice modal overrides */
 .campaign-wastelands .dice-select:focus,
 .campaign-wastelands .dice-custom-input:focus {
@@ -4539,6 +4557,11 @@ a:focus:not(:focus-visible) {
 
 .campaign-wastelands .dice-roll-info {
   color: var(--text-secondary);
+}
+
+/* Winner modal overrides */
+.campaign-wastelands .winner-modal {
+  background: linear-gradient(135deg, #1a1408 0%, #201810 100%);
 }
 
 /* =============================================================================
