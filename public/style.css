@@ -3848,6 +3848,23 @@ a:focus:not(:focus-visible) {
   transform: scale(0.98);
 }
 
+/* Rename players list */
+.settings-rename-players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-rename-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-rename-input {
+  flex: 1;
+}
+
 /* Admin panel */
 .admin-section {
   margin-bottom: 1rem;

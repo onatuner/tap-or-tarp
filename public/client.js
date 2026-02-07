@@ -326,6 +326,7 @@ const settingsModal = {
   bonusTimeInput: document.getElementById("settings-bonus-time"),
   gameCodeDisplay: document.getElementById("settings-game-code"),
   gameNameInput: document.getElementById("settings-game-name-input"),
+  renamePlayersContainer: document.getElementById("settings-rename-players"),
   closeLobbyBtn: document.getElementById("settings-close-lobby-btn"),
   saveBtn: document.getElementById("settings-save-btn"),
   cancelBtn: document.getElementById("settings-cancel-btn"),
@@ -2307,6 +2308,9 @@ function showSettingsModal() {
   // Populate color picker
   populateColorPicker();
 
+  // Populate rename players list
+  populateRenamePlayers();
+
   // Show/hide random start button based on game state
   if (settingsModal.randomStartBtn && gameState) {
     const isWaiting = gameState.status === "waiting";
@@ -2477,6 +2481,40 @@ function getSelectedColor() {
 }
 
 /**
+ * Populate the rename players list in the Lobby tab
+ */
+function populateRenamePlayers() {
+  const container = settingsModal.renamePlayersContainer;
+  if (!container || !gameState) return;
+
+  container.innerHTML = "";
+
+  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  const otherPlayers = gameState.players.filter(p => p.claimedBy !== null && p.id !== myPlayer?.id);
+
+  if (otherPlayers.length === 0) {
+    container.innerHTML = '<p class="settings-hint">No other players in the lobby</p>';
+    return;
+  }
+
+  otherPlayers.forEach(player => {
+    const row = document.createElement("div");
+    row.className = "settings-rename-row";
+    row.dataset.playerId = player.id;
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "settings-input settings-rename-input";
+    input.value = player.name;
+    input.maxLength = 20;
+    input.autocomplete = "off";
+
+    row.appendChild(input);
+    container.appendChild(row);
+  });
+}
+
+/**
  * Save settings
  */
 function saveSettings() {
@@ -2528,6 +2566,21 @@ function saveSettings() {
     if (newPlayerName && newPlayerName !== myPlayer.name) {
       sendUpdatePlayer(myPlayer.id, { name: newPlayerName });
     }
+  }
+
+  // Save renamed other players
+  if (settingsModal.renamePlayersContainer) {
+    const rows = settingsModal.renamePlayersContainer.querySelectorAll(".settings-rename-row");
+    rows.forEach(row => {
+      const playerId = parseInt(row.dataset.playerId, 10);
+      const input = row.querySelector(".settings-rename-input");
+      if (!input) return;
+      const newName = input.value.trim();
+      const player = gameState?.players.find(p => p.id === playerId);
+      if (player && newName && newName !== player.name) {
+        sendUpdatePlayer(playerId, { name: newName });
+      }
+    });
   }
 
   // Save color
