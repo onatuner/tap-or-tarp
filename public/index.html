@@ -362,19 +362,15 @@
           </div>
 
           <div class="settings-tabs" role="tablist" aria-label="Settings sections">
-            <button class="settings-tab active" data-tab="controls" role="tab" aria-selected="true" aria-controls="panel-controls" id="tab-controls">Controls</button>
-            <button class="settings-tab" data-tab="thresholds" role="tab" aria-selected="false" aria-controls="panel-thresholds" id="tab-thresholds">Thresholds</button>
-            <button class="settings-tab" data-tab="more" role="tab" aria-selected="false" aria-controls="panel-more" id="tab-more">More</button>
+            <button class="settings-tab active" data-tab="player" role="tab" aria-selected="true" aria-controls="panel-player" id="tab-player">Player</button>
+            <button class="settings-tab" data-tab="alerts" role="tab" aria-selected="false" aria-controls="panel-alerts" id="tab-alerts">Alerts</button>
+            <button class="settings-tab" data-tab="lobby" role="tab" aria-selected="false" aria-controls="panel-lobby" id="tab-lobby">Lobby</button>
             <button class="settings-tab" data-tab="admin" role="tab" aria-selected="false" aria-controls="panel-admin" id="tab-admin" style="display: none">Admin</button>
           </div>
 
-          <!-- Controls Tab -->
-          <div class="settings-panel active" data-panel="controls" role="tabpanel" id="panel-controls" aria-labelledby="tab-controls">
+          <!-- Player Tab -->
+          <div class="settings-panel active" data-panel="player" role="tabpanel" id="panel-player" aria-labelledby="tab-player">
             <div class="settings-buttons">
-              <button id="settings-pause-btn" class="settings-action-btn">
-                <span class="action-icon">⏸</span>
-                <span class="action-label">Pause</span>
-              </button>
               <button id="settings-reset-btn" class="settings-action-btn settings-action-btn-secondary">
                 <span class="action-icon">🔄</span>
                 <span class="action-label">Reset</span>
@@ -402,8 +398,8 @@
             </div>
           </div>
 
-          <!-- Thresholds Tab -->
-          <div class="settings-panel" data-panel="thresholds" role="tabpanel" id="panel-thresholds" aria-labelledby="tab-thresholds" hidden>
+          <!-- Alerts Tab -->
+          <div class="settings-panel" data-panel="alerts" role="tabpanel" id="panel-alerts" aria-labelledby="tab-alerts" hidden>
             <div class="settings-section">
               <label class="settings-label">Warning Thresholds</label>
               <p class="settings-hint">Audio alerts at these times</p>
@@ -438,8 +434,8 @@
             </div>
           </div>
 
-          <!-- More Tab -->
-          <div class="settings-panel" data-panel="more" role="tabpanel" id="panel-more" aria-labelledby="tab-more" hidden>
+          <!-- Lobby Tab -->
+          <div class="settings-panel" data-panel="lobby" role="tabpanel" id="panel-lobby" aria-labelledby="tab-lobby" hidden>
             <div class="settings-section">
               <label class="settings-label">Game Code</label>
               <div class="settings-game-code" id="settings-game-code">ABC123</div>
@@ -464,8 +460,6 @@
 
           <!-- Admin Tab (Owner Only) -->
           <div class="settings-panel" data-panel="admin" role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" hidden>
-            <p class="settings-hint settings-warning">Use these controls to correct mistakes during gameplay.</p>
-
             <div class="settings-section admin-section">
               <label class="settings-label">Player Management</label>
               <div class="admin-player-select">

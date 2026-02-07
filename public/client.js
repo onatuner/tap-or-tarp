@@ -317,7 +317,6 @@ const settingsModal = {
   closeBtn: document.querySelector(".settings-close"),
   tabs: document.querySelectorAll(".settings-tab"),
   panels: document.querySelectorAll(".settings-panel"),
-  pauseBtn: document.getElementById("settings-pause-btn"),
   resetBtn: document.getElementById("settings-reset-btn"),
   randomStartBtn: document.getElementById("settings-random-start-btn"),
   colorPicker: document.getElementById("settings-color-picker"),
@@ -2301,9 +2300,6 @@ function showSettingsModal() {
   // Populate color picker
   populateColorPicker();
 
-  // Update pause button text
-  updatePauseButton();
-
   // Show/hide random start button based on game state
   if (settingsModal.randomStartBtn && gameState) {
     const isWaiting = gameState.status === "waiting";
@@ -2320,7 +2316,7 @@ function showSettingsModal() {
   populateAdminPlayerDropdown();
 
   // Reset to first tab
-  switchSettingsTab("controls");
+  switchSettingsTab("player");
 
   settingsModal.modal.style.display = "flex";
 }
@@ -2348,24 +2344,6 @@ function switchSettingsTab(tabName) {
     panel.classList.toggle("active", isActive);
     panel.hidden = !isActive;
   });
-}
-
-/**
- * Update the pause button text
- */
-function updatePauseButton() {
-  if (!gameState || !settingsModal.pauseBtn) return;
-
-  const labelEl = settingsModal.pauseBtn.querySelector(".action-label");
-  const iconEl = settingsModal.pauseBtn.querySelector(".action-icon");
-
-  if (gameState.status === "paused") {
-    if (labelEl) labelEl.textContent = "Resume";
-    if (iconEl) iconEl.textContent = "▶";
-  } else {
-    if (labelEl) labelEl.textContent = "Pause";
-    if (iconEl) iconEl.textContent = "⏸";
-  }
 }
 
 /**
@@ -2575,15 +2553,6 @@ function setupSettingsEventListeners() {
       playClick();
       hapticFeedback("light");
     });
-  });
-
-  // Pause button
-  settingsModal.pauseBtn?.addEventListener("click", () => {
-    sendPause();
-    playPauseResume();
-    updatePauseButton();
-    // Don't close modal, let user see the state change
-    setTimeout(updatePauseButton, 100);
   });
 
   // Reset button
