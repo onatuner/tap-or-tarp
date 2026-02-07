@@ -319,6 +319,7 @@ const settingsModal = {
   panels: document.querySelectorAll(".settings-panel"),
   resetBtn: document.getElementById("settings-reset-btn"),
   randomStartBtn: document.getElementById("settings-random-start-btn"),
+  playerNameInput: document.getElementById("settings-player-name-input"),
   colorPicker: document.getElementById("settings-color-picker"),
   thresholdsContainer: document.getElementById("settings-thresholds-container"),
   addThresholdBtn: document.getElementById("settings-add-threshold-btn"),
@@ -2276,6 +2277,12 @@ function showSettingsModal() {
     settingsModal.gameNameInput.value = (gameState.name && gameState.name !== "Game") ? gameState.name : "";
   }
 
+  // Populate player name
+  if (settingsModal.playerNameInput && gameState) {
+    const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+    settingsModal.playerNameInput.value = myPlayer ? myPlayer.name : "";
+  }
+
   // Populate thresholds
   populateThresholds();
 
@@ -2514,9 +2521,17 @@ function saveSettings() {
     sendRenameGame(newName);
   }
 
+  // Save player name
+  const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+  if (settingsModal.playerNameInput && myPlayer) {
+    const newPlayerName = settingsModal.playerNameInput.value.trim();
+    if (newPlayerName && newPlayerName !== myPlayer.name) {
+      sendUpdatePlayer(myPlayer.id, { name: newPlayerName });
+    }
+  }
+
   // Save color
   const selectedColor = getSelectedColor();
-  const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
   if (selectedColor && myPlayer) {
     sendUpdatePlayer(myPlayer.id, { color: selectedColor });
   }

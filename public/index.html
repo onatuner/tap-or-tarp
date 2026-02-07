@@ -371,6 +371,12 @@
           <!-- Player Tab -->
           <div class="settings-panel active" data-panel="player" role="tabpanel" id="panel-player" aria-labelledby="tab-player">
             <div class="settings-section">
+              <label class="settings-label" for="settings-player-name-input">Player Name</label>
+              <input type="text" id="settings-player-name-input" class="settings-input"
+                     placeholder="Enter your name" maxlength="20" autocomplete="off" autocapitalize="words" />
+            </div>
+
+            <div class="settings-section">
               <label class="settings-label">Player Color</label>
               <div id="settings-color-picker" class="settings-color-grid">
                 <!-- Colors populated by JS -->
