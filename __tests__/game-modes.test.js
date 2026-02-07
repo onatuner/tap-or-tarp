@@ -292,6 +292,7 @@ describe("CampaignState", () => {
           totalTimeUsed: 0,
           penalties: 0,
           eliminations: 0,
+          accumulatedPoints: 0,
         });
       }
     });
