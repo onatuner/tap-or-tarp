@@ -78,6 +78,7 @@ jest.mock("../lib/server/persistence", () => ({
   ensureGameLoaded: jest.fn(),
   persistGameImmediately: jest.fn(() => Promise.resolve()),
   syncGameToRedis: jest.fn(() => Promise.resolve()),
+  getSessionForHandler: jest.fn(),
 }));
 
 // Import handlers after mocking
@@ -106,7 +107,7 @@ const {
 } = require("../lib/server/message-handlers/player");
 
 const { safeSend } = require("../lib/server/websocket");
-const { ensureGameLoaded } = require("../lib/server/persistence");
+const { ensureGameLoaded, getSessionForHandler } = require("../lib/server/persistence");
 const metrics = require("../lib/metrics");
 
 describe("Message Handlers", () => {
@@ -140,6 +141,10 @@ describe("Message Handlers", () => {
     });
     mockServerState.hasSession.mockImplementation(id => id === "TEST01");
     ensureGameLoaded.mockImplementation(async id => {
+      if (id === "TEST01") return session;
+      return null;
+    });
+    getSessionForHandler.mockImplementation(async id => {
       if (id === "TEST01") return session;
       return null;
     });
@@ -289,7 +294,7 @@ describe("Message Handlers", () => {
     });
 
     test("should do nothing if session not found", async () => {
-      mockServerState.getSession.mockReturnValueOnce(undefined);
+      getSessionForHandler.mockResolvedValueOnce(null);
       const data = { playerId: 1 };
 
       await handleClaim(mockWs, data);
@@ -394,7 +399,7 @@ describe("Message Handlers", () => {
     });
 
     test("should do nothing if session not found", async () => {
-      mockServerState.getSession.mockReturnValueOnce(undefined);
+      getSessionForHandler.mockResolvedValueOnce(null);
 
       await handleUnclaim(mockWs, {});
 
@@ -427,7 +432,7 @@ describe("Message Handlers", () => {
     });
 
     test("should do nothing if session not found", async () => {
-      mockServerState.getSession.mockReturnValueOnce(undefined);
+      getSessionForHandler.mockResolvedValueOnce(null);
 
       await handleStart(mockWs, {});
 

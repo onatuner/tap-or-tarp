@@ -1769,6 +1769,48 @@ function formatTimeWithDeciseconds(milliseconds) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}.${deciseconds}`;
 }
 
+/**
+ * Handle claim/unclaim logic for a player card click.
+ * Shared between large player cards and compact other-player cards.
+ * @param {number} playerId - The player ID that was clicked
+ * @returns {boolean} Whether a claim/unclaim action was taken
+ */
+function handleClaimClick(playerId) {
+  if (!gameState) return false;
+  const currentPlayer = gameState.players.find(p => p.id === playerId);
+  const currentIsClaimed = currentPlayer && currentPlayer.claimedBy !== null;
+  const currentIsMyPlayer = currentPlayer && currentPlayer.claimedBy === myClientId;
+
+  if (gameState.status === "waiting") {
+    if (currentIsMyPlayer) {
+      sendUnclaim();
+      playClick();
+      return true;
+    } else if (!currentIsClaimed) {
+      if (gameState.mode === "campaign") {
+        claimWithNamePrompt(playerId);
+      } else {
+        sendClaim(playerId);
+      }
+      playClick();
+      return true;
+    }
+  } else if (gameState.status === "running" || gameState.status === "paused") {
+    // Allow spectators to claim unclaimed, non-eliminated players
+    const currentMyPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+    if (!currentMyPlayer && !currentIsClaimed && currentPlayer && !currentPlayer.isEliminated) {
+      if (gameState.mode === "campaign") {
+        claimWithNamePrompt(playerId);
+      } else {
+        sendClaim(playerId);
+      }
+      playClick();
+      return true;
+    }
+  }
+  return false;
+}
+
 function createPlayerCard(player, isActive) {
   const card = document.createElement("div");
   card.className = "player-card";
@@ -1973,7 +2015,8 @@ function createPlayerCard(player, isActive) {
   lifeDown.textContent = "-";
   lifeDown.addEventListener("click", e => {
     e.stopPropagation();
-    sendUpdatePlayer(player.id, { life: player.life - 1 });
+    const current = gameState.players.find(p => p.id === player.id);
+    if (current) sendUpdatePlayer(player.id, { life: current.life - 1 });
   });
 
   const lifeDisplay = document.createElement("span");
@@ -1985,7 +2028,8 @@ function createPlayerCard(player, isActive) {
   lifeUp.textContent = "+";
   lifeUp.addEventListener("click", e => {
     e.stopPropagation();
-    sendUpdatePlayer(player.id, { life: player.life + 1 });
+    const current = gameState.players.find(p => p.id === player.id);
+    if (current) sendUpdatePlayer(player.id, { life: current.life + 1 });
   });
 
   lifeControls.appendChild(lifeDown);
@@ -2015,7 +2059,8 @@ function createPlayerCard(player, isActive) {
   drunkDown.textContent = "-";
   drunkDown.addEventListener("click", e => {
     e.stopPropagation();
-    sendUpdatePlayer(player.id, { drunkCounter: Math.max(0, player.drunkCounter - 1) });
+    const current = gameState.players.find(p => p.id === player.id);
+    if (current) sendUpdatePlayer(player.id, { drunkCounter: Math.max(0, current.drunkCounter - 1) });
   });
 
   const drunkDisplay = document.createElement("span");
@@ -2027,7 +2072,8 @@ function createPlayerCard(player, isActive) {
   drunkUp.textContent = "+";
   drunkUp.addEventListener("click", e => {
     e.stopPropagation();
-    sendUpdatePlayer(player.id, { drunkCounter: player.drunkCounter + 1 });
+    const current = gameState.players.find(p => p.id === player.id);
+    if (current) sendUpdatePlayer(player.id, { drunkCounter: current.drunkCounter + 1 });
   });
 
   drunkControls.appendChild(drunkDown);
@@ -2053,7 +2099,8 @@ function createPlayerCard(player, isActive) {
   genericDown.textContent = "-";
   genericDown.addEventListener("click", e => {
     e.stopPropagation();
-    sendUpdatePlayer(player.id, { genericCounter: Math.max(0, player.genericCounter - 1) });
+    const current = gameState.players.find(p => p.id === player.id);
+    if (current) sendUpdatePlayer(player.id, { genericCounter: Math.max(0, current.genericCounter - 1) });
   });
 
   const genericDisplay = document.createElement("span");
@@ -2065,7 +2112,8 @@ function createPlayerCard(player, isActive) {
   genericUp.textContent = "+";
   genericUp.addEventListener("click", e => {
     e.stopPropagation();
-    sendUpdatePlayer(player.id, { genericCounter: player.genericCounter + 1 });
+    const current = gameState.players.find(p => p.id === player.id);
+    if (current) sendUpdatePlayer(player.id, { genericCounter: current.genericCounter + 1 });
   });
 
   genericControls.appendChild(genericDown);
@@ -2079,50 +2127,18 @@ function createPlayerCard(player, isActive) {
   card.appendChild(countersSection);
 
   // Click to claim/unclaim in waiting phase or toggle target
-  // Check current game state, not stale closure variables
   card.addEventListener("click", () => {
-    const currentIsWaiting = gameState && gameState.status === "waiting";
-    const currentPlayer = gameState && gameState.players.find(p => p.id === player.id);
-    const currentIsClaimed = currentPlayer && currentPlayer.claimedBy !== null;
-    const currentIsMyPlayer = currentPlayer && currentPlayer.claimedBy === myClientId;
-
-    if (currentIsWaiting) {
-      if (currentIsMyPlayer) {
-        sendUnclaim();
-      } else if (!currentIsClaimed) {
-        if (gameState.mode === "campaign") {
-          claimWithNamePrompt(player.id);
-        } else {
-          sendClaim(player.id);
-        }
+    if (!handleClaimClick(player.id)) {
+      if (gameState && gameState.status === "running") {
+        handlePlayerCardTargetClick(player.id);
       }
-      playClick();
-    } else if (gameState && gameState.status === "running") {
-      // Handle targeting clicks during game
-      handlePlayerCardTargetClick(player.id);
     }
   });
 
   // Right-click also works for claiming
   card.addEventListener("contextmenu", e => {
     e.preventDefault();
-    const currentIsWaiting = gameState && gameState.status === "waiting";
-    const currentPlayer = gameState && gameState.players.find(p => p.id === player.id);
-    const currentIsClaimed = currentPlayer && currentPlayer.claimedBy !== null;
-    const currentIsMyPlayer = currentPlayer && currentPlayer.claimedBy === myClientId;
-
-    if (currentIsWaiting) {
-      if (currentIsMyPlayer) {
-        sendUnclaim();
-      } else if (!currentIsClaimed) {
-        if (gameState.mode === "campaign") {
-          claimWithNamePrompt(player.id);
-        } else {
-          sendClaim(player.id);
-        }
-      }
-      playClick();
-    }
+    handleClaimClick(player.id);
   });
 
   return card;
@@ -2224,19 +2240,8 @@ function sendPassTurn() {
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayer);
   if (!activePlayer || activePlayer.claimedBy !== myClientId) return;
 
-  const activeIndex = gameState.players.findIndex(p => p.id === gameState.activePlayer);
-  let nextPlayer;
-  let offset = 1;
-  do {
-    const nextIndex = (activeIndex + offset) % gameState.players.length;
-    nextPlayer = gameState.players[nextIndex];
-    offset++;
-  } while (nextPlayer.isEliminated && offset <= gameState.players.length);
-
-  if (!nextPlayer.isEliminated) {
-    sendSwitchPlayer(nextPlayer.id);
-    playClick();
-  }
+  safeSend({ type: "passTurn" });
+  playClick();
 }
 
 function sendUpdatePlayer(playerId, updates) {
@@ -2415,25 +2420,27 @@ function switchSettingsTab(tabName) {
 }
 
 /**
- * Populate the thresholds list
+ * Populate a thresholds container with items
+ * @param {HTMLElement} container - The thresholds container element
+ * @param {number[]} thresholds - Array of threshold values in ms
  */
-function populateThresholds() {
-  if (!gameState || !settingsModal.thresholdsContainer) return;
+function populateThresholdsFor(container, thresholds) {
+  if (!container) return;
 
-  const thresholds = gameState.settings?.warningThresholds || [300000, 60000, 30000];
-  settingsModal.thresholdsContainer.innerHTML = "";
-
+  container.innerHTML = "";
   thresholds.forEach((ms, index) => {
     const minutes = ms / 60000;
-    addThresholdItem(minutes, index);
+    addThresholdItemTo(container, minutes, index);
   });
 }
 
 /**
- * Add a threshold item to the list
+ * Add a threshold item to a container
+ * @param {HTMLElement} container - The thresholds container element
+ * @param {number} value - Threshold value in minutes
+ * @param {number|null} index - Optional index
  */
-function addThresholdItem(value = 1, index = null) {
-  const container = settingsModal.thresholdsContainer;
+function addThresholdItemTo(container, value = 1, index = null) {
   if (!container) return;
 
   const item = document.createElement("div");
@@ -2456,12 +2463,14 @@ function addThresholdItem(value = 1, index = null) {
 }
 
 /**
- * Get thresholds from UI
+ * Get thresholds from a container
+ * @param {HTMLElement} container - The thresholds container element
+ * @returns {number[]} Array of threshold values in ms, sorted descending
  */
-function getThresholdsFromUI() {
-  if (!settingsModal.thresholdsContainer) return [];
+function getThresholdsFromContainer(container) {
+  if (!container) return [];
 
-  const inputs = settingsModal.thresholdsContainer.querySelectorAll(".settings-threshold-input");
+  const inputs = container.querySelectorAll(".settings-threshold-input");
   const thresholds = [];
 
   inputs.forEach(input => {
@@ -2472,6 +2481,21 @@ function getThresholdsFromUI() {
   });
 
   return [...new Set(thresholds)].sort((a, b) => b - a);
+}
+
+// Convenience wrappers for settings modal
+function populateThresholds() {
+  if (!gameState) return;
+  const thresholds = gameState.settings?.warningThresholds || [300000, 60000, 30000];
+  populateThresholdsFor(settingsModal.thresholdsContainer, thresholds);
+}
+
+function addThresholdItem(value = 1, index = null) {
+  addThresholdItemTo(settingsModal.thresholdsContainer, value, index);
+}
+
+function getThresholdsFromUI() {
+  return getThresholdsFromContainer(settingsModal.thresholdsContainer);
 }
 
 /**
@@ -2502,65 +2526,18 @@ function populateMenuColorPicker(defaults) {
   });
 }
 
-/**
- * Populate the menu settings thresholds list
- */
+// Convenience wrappers for menu settings thresholds
 function populateMenuThresholds(defaults) {
-  const container = menuSettingsForm.thresholdsContainer;
-  if (!container) return;
-
-  container.innerHTML = "";
   const thresholds = defaults.warningThresholds || [300000, 60000, 30000];
-
-  thresholds.forEach((ms, index) => {
-    const minutes = ms / 60000;
-    addMenuThresholdItem(minutes, index);
-  });
+  populateThresholdsFor(menuSettingsForm.thresholdsContainer, thresholds);
 }
 
-/**
- * Add a threshold item to the menu settings list
- */
 function addMenuThresholdItem(value = 1, index = null) {
-  const container = menuSettingsForm.thresholdsContainer;
-  if (!container) return;
-
-  const item = document.createElement("div");
-  item.className = "settings-threshold-item";
-  item.dataset.index = index !== null ? index : container.children.length;
-
-  item.innerHTML = `
-    <input type="number" class="settings-threshold-input" value="${value}" min="0.1" step="0.1" />
-    <span class="settings-threshold-unit">min</span>
-    <button type="button" class="settings-threshold-remove" aria-label="Remove">&times;</button>
-  `;
-
-  item.querySelector(".settings-threshold-remove").addEventListener("click", () => {
-    if (container.children.length > 1) {
-      item.remove();
-    }
-  });
-
-  container.appendChild(item);
+  addThresholdItemTo(menuSettingsForm.thresholdsContainer, value, index);
 }
 
-/**
- * Get thresholds from menu settings UI
- */
 function getMenuThresholdsFromUI() {
-  if (!menuSettingsForm.thresholdsContainer) return [];
-
-  const inputs = menuSettingsForm.thresholdsContainer.querySelectorAll(".settings-threshold-input");
-  const thresholds = [];
-
-  inputs.forEach(input => {
-    const minutes = parseFloat(input.value);
-    if (!isNaN(minutes) && minutes > 0) {
-      thresholds.push(Math.round(minutes * 60000));
-    }
-  });
-
-  return [...new Set(thresholds)].sort((a, b) => b - a);
+  return getThresholdsFromContainer(menuSettingsForm.thresholdsContainer);
 }
 
 /**
@@ -3987,53 +3964,13 @@ function updateOtherPlayers() {
     // Click handler - check current game state, not stale closure variables
     card.addEventListener("click", (e) => {
       e.stopPropagation();
-      // Check current game state to handle transitions properly
-      const currentIsWaiting = gameState && gameState.status === "waiting";
-      const currentPlayer = gameState && gameState.players.find(p => p.id === player.id);
-      const currentIsClaimed = currentPlayer && currentPlayer.claimedBy !== null;
-      const currentIsMyPlayer = currentPlayer && currentPlayer.claimedBy === myClientId;
-
-      if (currentIsWaiting) {
-        // In waiting state - claim/unclaim
-        if (currentIsMyPlayer) {
-          sendUnclaim();
-          playClick();
-        } else if (!currentIsClaimed) {
-          if (gameState.mode === "campaign") {
-            claimWithNamePrompt(player.id);
-          } else {
-            sendClaim(player.id);
+      if (!handleClaimClick(player.id)) {
+        if (gameState && gameState.status === "running") {
+          const targetingHandled = handlePlayerCardTargetClick(player.id);
+          if (!targetingHandled) {
+            const currentPlayer = gameState.players.find(p => p.id === player.id);
+            showPlayerDetailsPopup(currentPlayer || player, card);
           }
-          playClick();
-        }
-      } else if (gameState && gameState.status === "running") {
-        // Allow spectators to claim unclaimed, non-eliminated players
-        const currentMyPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-        if (!currentMyPlayer && !currentIsClaimed && currentPlayer && !currentPlayer.isEliminated) {
-          if (gameState.mode === "campaign") {
-            claimWithNamePrompt(player.id);
-          } else {
-            sendClaim(player.id);
-          }
-          playClick();
-          return;
-        }
-        // In game - check for targeting first
-        const targetingHandled = handlePlayerCardTargetClick(player.id);
-        if (!targetingHandled) {
-          // Not in targeting mode - show player details popup
-          showPlayerDetailsPopup(currentPlayer || player, card);
-        }
-      } else if (gameState && gameState.status === "paused") {
-        // Allow spectators to claim unclaimed, non-eliminated players in paused state
-        const currentMyPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-        if (!currentMyPlayer && !currentIsClaimed && currentPlayer && !currentPlayer.isEliminated) {
-          if (gameState.mode === "campaign") {
-            claimWithNamePrompt(player.id);
-          } else {
-            sendClaim(player.id);
-          }
-          playClick();
         }
       }
     });
@@ -4140,6 +4077,9 @@ function showPlayerDetailsPopup(player, cardElement) {
   }
 
   // Close on tap outside (delayed to prevent immediate close)
+  // Remove any existing listeners first to prevent leaks from rapid re-opens
+  document.removeEventListener("click", handlePopupOutsideClick);
+  document.removeEventListener("touchstart", handlePopupOutsideClick);
   setTimeout(() => {
     document.addEventListener("click", handlePopupOutsideClick);
     document.addEventListener("touchstart", handlePopupOutsideClick);
