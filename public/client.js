@@ -1,5 +1,6 @@
 let ws;
 let gameState = null;
+let myPlayer = null;
 let audioEnabled = true;
 let audioContext;
 let reconnectAttempts = 0;
@@ -122,28 +123,6 @@ function saveReconnectToken(gameId, playerId, token) {
 }
 
 /**
- * Get a reconnection token for a game/player combination
- * Used by attemptStoredReconnection via getAllReconnectTokens
- * @param {string} gameId - Game session ID
- * @param {number} playerId - Player ID
- * @returns {{ token: string, gameId: string, playerId: number } | null}
- */
-// eslint-disable-next-line no-unused-vars
-function getReconnectToken(gameId, playerId) {
-  try {
-    const tokens = JSON.parse(localStorage.getItem(CONSTANTS.TOKEN_STORAGE_KEY) || "{}");
-    const data = tokens[`${gameId}-${playerId}`];
-    if (data && Date.now() - data.timestamp < CONSTANTS.TOKEN_MAX_AGE) {
-      return data;
-    }
-    return null;
-  } catch (e) {
-    console.error("Failed to get reconnect token:", e);
-    return null;
-  }
-}
-
-/**
  * Get all valid reconnection tokens (for attempting reconnection on page load)
  * @returns {Array<{ token: string, gameId: string, playerId: number }>}
  */
@@ -249,6 +228,10 @@ function savePlayerDefaults(defaults) {
   }
 }
 
+function updateMyPlayer() {
+  myPlayer = gameState?.players?.find(p => p.claimedBy === myClientId) || null;
+}
+
 // Apply mute default on load
 audioEnabled = !loadDefaults().audioMuted;
 
@@ -338,6 +321,7 @@ const feedbackForm = {
   formSection: document.getElementById("feedback-form-section"),
   listSection: document.getElementById("feedback-list-section"),
   list: document.getElementById("feedback-list"),
+  editingId: null,
 };
 
 const setupForm = {
@@ -464,8 +448,6 @@ const PLAYER_COLORS = [
   { id: "indigo", name: "Indigo", primary: "#5050dc", secondary: "#3c3cc8" },
   { id: "amber", name: "Amber", primary: "#ffc814", secondary: "#e6aa00" },
 ];
-
-let selectedPlayerForColor = null;
 
 const timeoutModal = {
   modal: document.getElementById("timeout-modal"),
@@ -683,12 +665,6 @@ function playPauseResume() {
 
 // Get the player ID claimed by this client (used for future features)
 // eslint-disable-next-line no-unused-vars
-function getMyPlayerId() {
-  if (!gameState || !myClientId) return null;
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-  return myPlayer ? myPlayer.id : null;
-}
-
 function connect() {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const wsUrl = `${protocol}//${window.location.host}`;
@@ -758,14 +734,13 @@ function handleMessage(message) {
     case "state": {
       const prevActive = gameState?.activePlayer;
       gameState = message.data;
+      updateMyPlayer();
       // Show bonus time indicator on turn change for the new active player's client
-      const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
       if (prevActive && prevActive !== gameState.activePlayer && gameState.status === "running" && gameState.settings?.bonusTime > 0 && myPlayer && myPlayer.id === gameState.activePlayer) {
         showBonusTimeIndicator(gameState.settings.bonusTime);
       }
       // Check if timeout choice should be hidden (player's timeout resolved)
-      const myPlayerState = gameState?.players.find(p => p.claimedBy === myClientId);
-      if (myPlayerState && !myPlayerState.timeoutPending && timeoutChoiceModal.modal?.style.display === "flex") {
+      if (myPlayer && !myPlayer.timeoutPending && timeoutChoiceModal.modal?.style.display === "flex") {
         hideTimeoutChoiceModal();
       }
       renderGame();
@@ -936,7 +911,7 @@ function handleTimeoutChoice(data) {
   const { playerId, options, deadline } = data;
 
   // Check if this is for the current player
-  const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+
   if (!myPlayer || myPlayer.id !== playerId) {
     return; // Not for this player
   }
@@ -1142,7 +1117,6 @@ function updateHeaderPauseButton() {
   if (!pauseBtn || !gameState) return;
 
   // Show for any claimed player during active game
-  const myPlayer = gameState.players?.find(p => p.claimedBy === myClientId);
   const isGameActive = gameState.status === "running" || gameState.status === "paused";
 
   pauseBtn.style.display = (myPlayer && isGameActive) ? "" : "none";
@@ -1373,7 +1347,7 @@ function updateCardTargetingClasses(card, playerId) {
 
   if (!gameState) return;
 
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+
   const isMyTurn = myPlayer && myPlayer.id === gameState.activePlayer;
   const isSelecting = gameState.targetingState === CONSTANTS.TARGETING.STATES.SELECTING;
   const isResolving = gameState.targetingState === CONSTANTS.TARGETING.STATES.RESOLVING;
@@ -1458,10 +1432,6 @@ function sendCancelTargeting() {
   safeSend({ type: "cancelTargeting", data: {} });
 }
 
-// Targeting instructions and queue display removed - functions kept as no-ops for compatibility
-function updateTargetingInstructions() {}
-function updateTargetingQueue() {}
-
 /**
  * Handle player card click for targeting
  * @param {number} playerId - Player ID that was clicked
@@ -1470,7 +1440,7 @@ function updateTargetingQueue() {}
 function handlePlayerCardTargetClick(playerId) {
   if (!gameState || gameState.status !== "running") return false;
 
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+
   if (!myPlayer) return false;
 
   const isMyTurn = myPlayer.id === gameState.activePlayer;
@@ -1736,16 +1706,14 @@ function attemptStoredReconnection() {
     playerId: mostRecent.playerId,
   };
 
-  ws.send(
-    JSON.stringify({
-      type: "reconnect",
-      data: {
-        gameId: mostRecent.gameId,
-        playerId: mostRecent.playerId,
-        token: mostRecent.token,
-      },
-    })
-  );
+  safeSend({
+    type: "reconnect",
+    data: {
+      gameId: mostRecent.gameId,
+      playerId: mostRecent.playerId,
+      token: mostRecent.token,
+    },
+  });
 }
 
 function formatTime(milliseconds) {
@@ -2316,7 +2284,7 @@ function claimWithNamePrompt(playerId) {
 function sendUnclaim() {
   // Clear the reconnection token for the player we're unclaiming
   if (gameState && myClientId) {
-    const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  
     if (myPlayer) {
       clearReconnectToken(gameState.id, myPlayer.id);
     }
@@ -2349,7 +2317,7 @@ function showSettingsModal() {
 
   // Populate player name
   if (settingsModal.playerNameInput && gameState) {
-    const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+  
     settingsModal.playerNameInput.value = myPlayer ? myPlayer.name : "";
   }
 
@@ -2573,7 +2541,7 @@ function populateColorPicker() {
   const container = settingsModal.colorPicker;
   container.innerHTML = "";
 
-  const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+
   const currentColorId = myPlayer?.color || getPlayerColor(myPlayer || { id: 1 }).id;
 
   PLAYER_COLORS.forEach(color => {
@@ -2612,7 +2580,7 @@ function populateRenamePlayers() {
 
   container.innerHTML = "";
 
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+
   const otherPlayers = gameState.players.filter(p => p.claimedBy !== null && p.id !== myPlayer?.id);
 
   if (otherPlayers.length === 0) {
@@ -2683,7 +2651,7 @@ function saveSettings() {
   }
 
   // Save player name
-  const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+
   if (settingsModal.playerNameInput && myPlayer) {
     const newPlayerName = settingsModal.playerNameInput.value.trim();
     if (newPlayerName && newPlayerName !== myPlayer.name) {
@@ -2843,41 +2811,6 @@ function getPlayerColor(player) {
   return PLAYER_COLORS.find(c => c.id === colorId) || PLAYER_COLORS[0];
 }
 
-function openColorPicker(player) {
-  selectedPlayerForColor = player;
-  const container = colorPickerModal.options;
-  container.innerHTML = "";
-
-  const currentColor = player.color || getPlayerColor(player).id;
-
-  PLAYER_COLORS.forEach(color => {
-    const option = document.createElement("div");
-    option.className = "color-option" + (color.id === currentColor ? " selected" : "");
-    option.style.background = `linear-gradient(135deg, ${color.primary} 0%, ${color.secondary} 100%)`;
-    option.title = color.name;
-
-    option.addEventListener("click", () => {
-      selectColor(color.id);
-    });
-
-    container.appendChild(option);
-  });
-
-  colorPickerModal.modal.style.display = "flex";
-}
-
-function selectColor(colorId) {
-  if (selectedPlayerForColor) {
-    sendUpdatePlayer(selectedPlayerForColor.id, { color: colorId });
-  }
-  closeColorPicker();
-}
-
-function closeColorPicker() {
-  colorPickerModal.modal.style.display = "none";
-  selectedPlayerForColor = null;
-}
-
 function hideAllScreens() {
   Object.values(screens).forEach(screen => {
     if (screen) screen.style.display = "none";
@@ -2901,6 +2834,7 @@ function backToMenu() {
   }
   showScreen("mainMenu");
   gameState = null;
+  myPlayer = null;
   setupForm.joinGame.value = "";
   setupForm.gameName.value = "";
   playClick();
@@ -3380,36 +3314,7 @@ function updateGameUI() {
 /**
  * Update targeting-related UI elements (instructions banner and queue)
  */
-function updateTargetingUI() {
-  if (!gameState) {
-    updateTargetingInstructions(null);
-    updateTargetingQueue();
-    return;
-  }
-
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
-  const isMyTurn = myPlayer && myPlayer.id === gameState.activePlayer;
-
-  // Update targeting instructions
-  if (gameState.targetingState === CONSTANTS.TARGETING.STATES.SELECTING && isMyTurn) {
-    const targetCount = gameState.targetedPlayers?.length || 0;
-    updateTargetingInstructions(
-      `Select players to target (${targetCount} selected) - Tap to toggle, then Confirm`
-    );
-  } else if (gameState.targetingState === CONSTANTS.TARGETING.STATES.RESOLVING) {
-    const awaitingCount = gameState.awaitingPriority?.length || 0;
-    if (myPlayer && gameState.awaitingPriority?.includes(myPlayer.id)) {
-      updateTargetingInstructions("Your turn to respond - Pass Priority when ready");
-    } else {
-      updateTargetingInstructions(`Waiting for ${awaitingCount} player(s) to respond...`);
-    }
-  } else {
-    updateTargetingInstructions(null);
-  }
-
-  // Update targeting queue
-  updateTargetingQueue();
-}
+function updateTargetingUI() {}
 
 /**
  * Show a floating "+Xs" indicator near the timer when bonus time is added
@@ -3432,7 +3337,7 @@ function showBonusTimeIndicator(ms) {
 function updateTimeDisplay() {
   if (!gameState || !gameUI.timeValue) return;
 
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayer);
   const isWaiting = gameState.status === "waiting";
   const isPaused = gameState.status === "paused";
@@ -3575,7 +3480,7 @@ function updateTimeDisplay() {
 function updateInteractionButton() {
   if (!gameState || !gameUI.interactionBtn) return;
 
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayer);
   const isMyTurn = myPlayer && myPlayer.id === gameState.activePlayer;
   const isWaiting = gameState.status === "waiting";
@@ -3773,7 +3678,7 @@ function updateInteractionButton() {
 function updateOtherPlayers() {
   if (!gameState || !gameUI.playerCards) return;
 
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+
   const isWaiting = gameState.status === "waiting";
   const isPaused = gameState.status === "paused";
 
@@ -3983,6 +3888,7 @@ function updateOtherPlayers() {
  * Format time in compact format (M:SS or S.s)
  */
 function formatTimeCompact(ms) {
+  if (ms <= 0) return "0:00";
   if (ms < CONSTANTS.CRITICAL_THRESHOLD) {
     // Show seconds with deciseconds for critical time
     const seconds = Math.floor(ms / 1000);
@@ -4121,7 +4027,7 @@ const prevStatValues = { life: null, drunk: null, generic: null };
 function updatePlayerStats() {
   if (!gameState || !gameUI.playerStats) return;
 
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+
   const isWaiting = gameState.status === "waiting";
 
   // Show/hide name row based on waiting state
@@ -4210,7 +4116,7 @@ function updateCampaignStats() {
     return;
   }
 
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+
   if (!myPlayer) {
     gameUI.campaignStats.style.display = "none";
     return;
@@ -4294,7 +4200,7 @@ function updateStatValue(element, newValue, oldValue) {
 function handleInteractionClick() {
   if (!gameState) return;
 
-  const myPlayer = gameState.players.find(p => p.claimedBy === myClientId);
+
   const isWaiting = gameState.status === "waiting";
   const isPaused = gameState.status === "paused";
   const isMyTurn = myPlayer && myPlayer.id === gameState.activePlayer;
@@ -4473,7 +4379,7 @@ function setupNameEdit() {
 
   nameInput.addEventListener("blur", () => {
     const newName = nameInput.value.trim();
-    const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+  
     if (myPlayer && newName && newName !== originalName) {
       sendUpdatePlayer(myPlayer.id, { name: newName });
       originalName = newName;
@@ -4507,7 +4413,7 @@ function setupStatButtons() {
   const lifeControls = gameUI.lifeStat?.querySelectorAll(".game-stat-btn");
   if (lifeControls && lifeControls.length === 2) {
     lifeControls[0].addEventListener("click", () => {
-      const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+    
       if (myPlayer) {
         sendUpdatePlayer(myPlayer.id, { life: myPlayer.life - 1 });
         playClick();
@@ -4515,7 +4421,7 @@ function setupStatButtons() {
       }
     });
     lifeControls[1].addEventListener("click", () => {
-      const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+    
       if (myPlayer) {
         sendUpdatePlayer(myPlayer.id, { life: myPlayer.life + 1 });
         playClick();
@@ -4528,7 +4434,7 @@ function setupStatButtons() {
   const poisonControls = gameUI.poisonStat?.querySelectorAll(".game-stat-btn");
   if (poisonControls && poisonControls.length === 2) {
     poisonControls[0].addEventListener("click", () => {
-      const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+    
       if (myPlayer) {
         sendUpdatePlayer(myPlayer.id, { drunkCounter: Math.max(0, myPlayer.drunkCounter - 1) });
         playClick();
@@ -4536,7 +4442,7 @@ function setupStatButtons() {
       }
     });
     poisonControls[1].addEventListener("click", () => {
-      const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+    
       if (myPlayer) {
         sendUpdatePlayer(myPlayer.id, { drunkCounter: myPlayer.drunkCounter + 1 });
         playClick();
@@ -4549,7 +4455,7 @@ function setupStatButtons() {
   const genericControls = gameUI.genericStat?.querySelectorAll(".game-stat-btn");
   if (genericControls && genericControls.length === 2) {
     genericControls[0].addEventListener("click", () => {
-      const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+    
       if (myPlayer) {
         sendUpdatePlayer(myPlayer.id, { genericCounter: Math.max(0, myPlayer.genericCounter - 1) });
         playClick();
@@ -4557,7 +4463,7 @@ function setupStatButtons() {
       }
     });
     genericControls[1].addEventListener("click", () => {
-      const myPlayer = gameState?.players.find(p => p.claimedBy === myClientId);
+    
       if (myPlayer) {
         sendUpdatePlayer(myPlayer.id, { genericCounter: myPlayer.genericCounter + 1 });
         playClick();

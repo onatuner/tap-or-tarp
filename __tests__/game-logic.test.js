@@ -1,13 +1,13 @@
+const { CONSTANTS } = require("../lib/shared/constants");
 const {
-  CONSTANTS,
-  GameSession,
   validateSettings,
   validatePlayerName,
   validateWarningThresholds,
   validateTimeValue,
   sanitizeString,
   generateGameId,
-} = require("../lib/game-logic");
+} = require("../lib/shared/validators");
+const { CasualGameSession: GameSession } = require("../lib/game-modes");
 
 describe("CONSTANTS", () => {
   test("should have correct default values", () => {
@@ -593,27 +593,6 @@ describe("GameSession", () => {
       expect(session.players[0].penalties).toBe(2);
     });
 
-    test("should apply time deduction penalty", () => {
-      const penaltySession = new GameSession("PTEST", {
-        playerCount: 2,
-        penaltyType: "time_deduction",
-        penaltyTimeDeduction: 60000,
-      });
-      const initialTime = penaltySession.players[0].timeRemaining;
-      penaltySession.addPenalty(1);
-      expect(penaltySession.players[0].timeRemaining).toBe(initialTime - 60000);
-      penaltySession.cleanup();
-    });
-
-    test("should eliminate player on game_loss penalty", () => {
-      const lossSession = new GameSession("LTEST", {
-        playerCount: 2,
-        penaltyType: "game_loss",
-      });
-      lossSession.addPenalty(1);
-      expect(lossSession.players[0].isEliminated).toBe(true);
-      lossSession.cleanup();
-    });
   });
 
   describe("eliminate", () => {

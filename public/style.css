@@ -667,13 +667,6 @@ h1 {
   z-index: 1000;
 }
 
-/* Hide desktop-only modals on mobile when using mobile layout */
-@media (max-width: 768px) {
-  .desktop-only-modal {
-    /* This modal is replaced by mobile version on small screens */
-  }
-}
-
 .modal-content {
   background: var(--bg-secondary);
   border: 1px solid var(--border-default);
@@ -1402,11 +1395,6 @@ h1 {
     padding: 4px 8px;
   }
 
-  #game-name-input {
-    padding: 6px 8px;
-    font-size: 0.85em;
-  }
-
   .form-group input,
   .form-group select {
     padding: 12px;
@@ -1476,11 +1464,6 @@ h1 {
     font-size: 0.8em;
   }
 
-  #add-threshold-btn {
-    padding: 2px 6px;
-    font-size: 0.7em;
-  }
-
   .player-colors-container {
     margin-bottom: 4px;
   }
@@ -1532,10 +1515,6 @@ h1 {
     padding: 2px 4px;
   }
 
-  #game-name-input {
-    padding: 3px 5px;
-    font-size: 0.75em;
-  }
 }
 
 .feedback-list {
@@ -2691,16 +2670,6 @@ h1 {
   font-size: 0.8em;
 }
 
-.game-player-name-value {
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 0.95em;
-  max-width: 150px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* Game view player name edit - make it look editable */
 .game-player-name-edit {
   background: var(--bg-surface);
@@ -3012,18 +2981,6 @@ h1 {
   }
 }
 
-/* Slide in from left (for entering) */
-@keyframes screen-slide-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 /* Slide out to right (for exiting) */
 @keyframes screen-slide-out-right {
   from {
@@ -3066,22 +3023,6 @@ h1 {
               filter 0.3s ease;
 }
 
-/* Smooth elimination fade */
-.game-player-card.eliminating {
-  animation: card-eliminate 0.3s ease-out forwards;
-}
-
-@keyframes card-eliminate {
-  from {
-    opacity: 1;
-    filter: grayscale(0);
-  }
-  to {
-    opacity: 0.5;
-    filter: grayscale(0.5);
-  }
-}
-
 /* Game paused overlay effect */
 .game-layout.game-paused .game-other-players {
   opacity: 0.6;
@@ -3103,17 +3044,6 @@ h1 {
   to { opacity: 1; }
 }
 
-/* Turn change pulse on interaction area */
-.game-interaction-area.turn-changed {
-  animation: turn-pulse 0.3s ease-out;
-}
-
-@keyframes turn-pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
-
 /* =============================================================================
    MICRO-INTERACTION ANIMATIONS
    ============================================================================= */
@@ -3127,16 +3057,6 @@ h1 {
 .settings-add-btn:active,
 .settings-danger-btn:active {
   transform: scale(0.92);
-}
-
-/* Counter value bounce animation */
-@keyframes value-bounce {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-}
-
-.game-stat-value.value-changed {
-  animation: value-bounce 0.2s ease-out;
 }
 
 /* Life change flash highlight */
@@ -3200,18 +3120,6 @@ h1 {
 .settings-tab.active::after {
   width: 100%;
   left: 0;
-}
-
-/* Popup appear animation */
-@keyframes popup-scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
 }
 
 /* Time critical pulse enhancement */
@@ -3943,12 +3851,6 @@ a:focus:not(:focus-visible) {
 
 .settings-action-btn-danger:hover {
   background: rgba(239, 68, 68, 0.2);
-}
-
-.settings-warning {
-  color: #f59e0b;
-  font-size: 0.9em;
-  margin-bottom: 1rem;
 }
 
 /* Footer */

@@ -9,13 +9,9 @@ const WebSocket = require("ws");
 const path = require("path");
 
 // Import server components
-const {
-  CONSTANTS,
-  GameSession,
-  validateSettings,
-  sanitizeString,
-  generateGameId,
-} = require("../lib/game-logic");
+const { CONSTANTS } = require("../lib/shared/constants");
+const { validateSettings, sanitizeString, generateGameId } = require("../lib/shared/validators");
+const { CasualGameSession: GameSession } = require("../lib/game-modes");
 const { createStorage } = require("../lib/storage");
 const { RateLimiter, ConnectionRateLimiter, getClientIP } = require("../lib/rate-limiter");
 
